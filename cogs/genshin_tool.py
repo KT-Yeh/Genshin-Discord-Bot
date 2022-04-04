@@ -22,8 +22,8 @@ class GenshinTool(commands.Cog, name='原神工具'):
     # 為使用者在Hoyolab簽到
     @commands.command(
         aliases=['D', 'daily'],
-        brief='Hololab每日簽到',
-        description='Hololab每日簽到',
+        brief='Hoyolab每日簽到',
+        description='Hoyolab每日簽到',
         usage='',
         help=''
     )
