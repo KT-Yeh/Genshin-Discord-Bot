@@ -6,6 +6,7 @@ from utility.CustomHelp import custom_help
 from utility.config import config
 from utility.utils import *
 
+# 設定使用者呼叫指定的冷卻時間(秒數)
 default_cooldown = commands.Cooldown(1, config.bot_cooldown, commands.BucketType.user)
 client = commands.Bot(
     command_prefix=config.bot_prefix, 
@@ -21,7 +22,7 @@ async def on_ready():
         command._buckets._cooldown = default_cooldown
     await client.change_presence(activity=discord.Game(name='Genshin Impact'))
 
-# Load cogs
+# 從cogs資料夾載入所有cog
 for filepath in Path('./cogs').glob('**/*.py'):
     cog_name = Path(filepath).stem
     client.load_extension(f'cogs.{cog_name}')

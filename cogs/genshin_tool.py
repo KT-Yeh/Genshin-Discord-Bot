@@ -7,7 +7,7 @@ class GenshinTool(commands.Cog, name='原神工具'):
     def __init__(self, bot):
         self.bot = bot
 
-    # Redeem a code
+    # 為使用者使用指定的兌換碼
     @commands.command(
         aliases=['R', 'redeem'],
         brief='使用兌換碼',
@@ -19,7 +19,7 @@ class GenshinTool(commands.Cog, name='原神工具'):
         result = await genshin_app.redeemCode(ctx.author.id, code)
         await ctx.send(result)
 
-    # Claim daily reward
+    # 為使用者在Hoyolab簽到
     @commands.command(
         aliases=['D', 'daily'],
         brief='Hololab每日簽到',

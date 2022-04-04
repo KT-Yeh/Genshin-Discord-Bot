@@ -8,7 +8,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
     def __init__(self, bot):
         self.bot = bot
 
-    # Get note info
+    # 取得使用者即時便箋資訊(樹脂、洞天寶錢、派遣...等)
     @commands.command(
         aliases=['G'], 
         brief='查詢原神即時便箋，包含樹脂、洞天寶錢...等', 
@@ -24,7 +24,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
         await msg.delete()
         await ctx.send(embed=embed)
     
-    # Get spiral abyss
+    # 取得深境螺旋資訊
     @commands.command(
         brief='查詢深境螺旋紀錄',
         description='查詢深境螺旋紀錄',
@@ -56,7 +56,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
         else:
             await ctx.send(result)
 
-    # Get traveler's diary
+    # 取得使用者旅行者札記
     @commands.command(
         brief='查詢旅行者札記(三個月內)',
         description='查詢旅行者札記',

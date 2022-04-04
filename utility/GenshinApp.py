@@ -21,12 +21,17 @@ class GenshinApp:
                 self.__avatar_dict = json.loads(f.read())
         except:
             self.__avatar_dict = { }
-        
+    
+
     async def setCookie(self, user_id: str, cookie: str) -> str:
+        """設定使用者Cookie
+        :param user_id: 使用者Discord ID
+        :cookie: Hoyolab cookie
+        """
         user_id = str(user_id)
         log.info(f'{user_id} Cookie設置:{cookie}')
         
-        # 從Cookie取得ltuid, ltoken, cookie_token, account_id
+        # 從Cookie確認是否有ltuid, ltoken, cookie_token, account_id
         if any(key not in cookie for key in ('cookie_token', 'ltuid', 'ltoken', 'account_id')):
             return '無效的Cookie，請重新輸入正確的Cookie'
         
@@ -61,6 +66,10 @@ class GenshinApp:
                 return message
     
     def setUID(self, user_id: str, uid: str) -> bool:
+        """設定原神UID，當帳號內有多名角色時，保存指定的UID
+        :param user_id: 使用者Discord ID
+        :param uid: 欲保存的原神UID
+        """
         try:
             user_id = str(user_id)
             uid = str(uid)
@@ -74,6 +83,9 @@ class GenshinApp:
 
 
     async def getDailyNote(self, user_id: str) -> str:
+        """取得使用者即時便箋(樹脂、洞天寶錢、派遣、每日、週本)
+        :param user_id: 使用者Discord ID
+        """
         user_id = str(user_id)
         check, msg = self.__checkUserData(user_id)
         if check == False:
@@ -95,6 +107,7 @@ class GenshinApp:
             return e.msg
 
         result = ''
+        # 從帳號內找出與已保存的UID匹配的角色
         for account in accounts:
             if uid == str(account.uid):
                 hidden_uid = uid.replace(uid[3:-3], '***', 1)
@@ -106,6 +119,10 @@ class GenshinApp:
         return result
     
     async def redeemCode(self, user_id: str, code: str) -> str:
+        """為使用者使用指定的兌換碼
+        :param user_id: 使用者Discord ID
+        :param code: Hoyolab兌換碼
+        """
         user_id = str(user_id)
         check, msg = self.__checkUserData(user_id)
         if check == False:
@@ -121,6 +138,9 @@ class GenshinApp:
             return '兌換碼使用成功！'
     
     async def claimDailyReward(self, user_id: str) -> str:
+        """為使用者在Hoyolab簽到
+        :param user_id: 使用者Discord ID
+        """
         user_id = str(user_id)
         check, msg = self.__checkUserData(user_id)
         if check == False:
@@ -135,6 +155,12 @@ class GenshinApp:
             return f'簽到成功！獲得 {reward.amount}x {reward.name}'
 
     async def getSpiralAbyss(self, user_id: str, uid: str = None, previous: bool = False, full_data: bool = False) -> Union[str, discord.Embed]:
+        """取得深境螺旋資訊
+        :param user_id: 欲登入的使用者Discord ID
+        :param uid: 欲查詢的原神UID，若為None，則查詢使用者自己已保存的UID
+        :param previous: 是否查詢前一期的資訊
+        :param full_data: 若為True，結果完整顯示9~12層資訊；若為False，結果只顯示最後一層資訊
+        """
         user_id = str(user_id)
         check, msg = self.__checkUserData(user_id)
         if check == False:
@@ -171,6 +197,10 @@ class GenshinApp:
         return embed
     
     async def getTravelerDiary(self, user_id: str, month: str) -> Union[str, discord.Embed]:
+        """取得使用者旅行者札記
+        :param user_id: 使用者Discord ID
+        :param month: 欲查詢的月份
+        """
         user_id = str(user_id)
         check, msg = self.__checkUserData(user_id)
         if check == False:
@@ -220,12 +250,15 @@ class GenshinApp:
     def __parseNotes(self, notes: genshin.models.Notes) -> str:
         result = ''
         result += f'當前樹脂：{notes.current_resin}/{notes.max_resin}\n'
-        day_msg = '今天' if notes.resin_recovered_at.day == datetime.now().day else '明天'
-        recover_time = notes.resin_recovered_at.strftime("%H:%M")
-        recover_time = '已額滿！' if recover_time == datetime.now().strftime("%H:%M") else f'{day_msg} {recover_time}'
-        result += f'樹脂全部恢復時間：{recover_time}\n'      
-        result += f'每日委託任務：{notes.completed_commissions} 已完成\n'   
-        result += f'當前洞天寶錢/上限：{notes.current_realm_currency}/{notes.max_realm_currency}\n'    
+        
+        if notes.current_resin == notes.max_resin:
+            recover_time = '已額滿！'  
+        else:
+            day_msg = '今天' if notes.resin_recovered_at.day == datetime.now().day else '明天'
+            recover_time = f'{day_msg} {notes.resin_recovered_at.strftime("%H:%M")}'
+        result += f'樹脂全部恢復時間：{recover_time}\n'
+        result += f'每日委託任務：{notes.completed_commissions} 已完成\n'
+        result += f'當前洞天寶錢/上限：{notes.current_realm_currency}/{notes.max_realm_currency}\n'
         result += f'寶錢全部恢復時間：{self.__weekday_dict[notes.realm_currency_recovered_at.weekday()]} {notes.realm_currency_recovered_at.strftime("%H:%M")}\n'
         result += f'週本樹脂減半：剩餘 {notes.remaining_resin_discounts} 次\n'
         result += f'--------------------\n'

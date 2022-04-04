@@ -7,7 +7,7 @@ class Setting(commands.Cog, name='設定'):
     def __init__(self, bot):
         self.bot = bot
     
-    # Set genshin cookie
+    # 設定使用者Cookie
     @commands.command(
         brief=f'設置Cookie(必需)',
         description='設置Cookie',
@@ -27,7 +27,7 @@ class Setting(commands.Cog, name='設定'):
         await msg.delete()
         await ctx.send(result)
 
-    # Set genshin uid
+    # 設定原神UID，當帳號內有多名角色時，保存指定的UID
     @commands.command(
         brief='指定要保存的UID(平時不會用到)',
         description='指定自己帳號內要保存的UID',
