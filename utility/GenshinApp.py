@@ -207,14 +207,14 @@ class GenshinApp:
     def __checkUserData(self, user_id: str, *,checkUserID = True, checkCookie = True, checkUID = True) -> Tuple[bool, str]:
         if checkUserID and user_id not in self.__user_data.keys():
             log.info('找不到使用者，請先設定Cookie(輸入 `%h` 顯示說明)')
-            return False, '找不到使用者，請先設定Cookie(輸入 `%h` 顯示說明)'
+            return False, f'找不到使用者，請先設定Cookie(輸入 `{config.bot_prefix}help cookie` 顯示說明)'
         else:
             if checkCookie and 'cookie' not in self.__user_data[user_id].keys():
                 log.info('找不到Cookie，請先設定Cookie(輸入 `%h` 顯示說明)')
-                return False, '找不到Cookie，請先設定Cookie(輸入 `%h` 顯示說明)'
+                return False, f'找不到Cookie，請先設定Cookie(輸入 `{config.bot_prefix}help cookie` 顯示說明)'
             if checkUID and 'uid' not in self.__user_data[user_id].keys():
                 log.info('找不到角色UID，請先設定UID(輸入 `%h` 顯示說明)')
-                return False, '找不到角色UID，請先設定UID(輸入 `%h` 顯示說明)'
+                return False, f'找不到角色UID，請先設定UID(輸入 `{config.bot_prefix}help` 顯示說明)'
         return True, None
 
     def __parseNotes(self, notes: genshin.models.Notes) -> str:
