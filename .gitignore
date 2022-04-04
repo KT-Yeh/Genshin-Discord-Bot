@@ -1,0 +1,12 @@
+# Cache
+__pycache__
+*.pyc
+
+# Config
+config.json
+
+# User data
+data/user_data.json
+
+# VS Code
+.vscode
