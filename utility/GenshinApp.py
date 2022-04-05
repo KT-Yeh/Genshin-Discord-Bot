@@ -152,7 +152,7 @@ class GenshinApp:
         except genshin.AlreadyClaimed:
             return '今日獎勵已經領過了！'
         else:
-            return f'簽到成功！獲得 {reward.amount}x {reward.name}'
+            return f'Hoyolab今日簽到成功！獲得 {reward.amount}x {reward.name}'
 
     async def getSpiralAbyss(self, user_id: str, uid: str = None, previous: bool = False, full_data: bool = False) -> Union[str, discord.Embed]:
         """取得深境螺旋資訊
