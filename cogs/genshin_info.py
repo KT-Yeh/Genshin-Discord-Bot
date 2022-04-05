@@ -21,7 +21,8 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
         user_id = ctx.author.id if len(args) == 0 else filter(str.isdigit, args[0])
         result = await genshin_app.getDailyNote(user_id)
         embed = discord.Embed(title='', description=result, color=0xFF5733)
-        await msg.delete()
+        if ctx.me.guild_permissions.manage_messages:
+            await msg.delete()
         await ctx.send(embed=embed)
     
     # 取得深境螺旋資訊

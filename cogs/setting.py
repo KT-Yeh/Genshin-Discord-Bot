@@ -20,12 +20,14 @@ class Setting(commands.Cog, name='設定'):
             "javascript:(()=>{_=(n)=>{for(i in(r=document.cookie.split(';'))){var a=r[i].split('=');if(a[0].trim()==n)return a[1]}};c=_('account_id')||alert('無效或過期的Cookie,請先登出後再重新登入!');c&&confirm('將Cookie複製到剪貼簿?')&&copy(document.cookie)})();"
     )
     async def cookie(self, ctx, *args):
-        await ctx.message.delete()
+        if ctx.me.guild_permissions.manage_messages:
+            await ctx.message.delete()
         msg = await ctx.send('設置中...')
         user_id = ctx.author.id
         cookie = ' '.join(args)
         result = await genshin_app.setCookie(user_id, cookie)
-        await msg.delete()
+        if ctx.me.guild_permissions.manage_messages:
+            await msg.delete()
         await ctx.send(result)
 
     # 設定原神UID，當帳號內有多名角色時，保存指定的UID
