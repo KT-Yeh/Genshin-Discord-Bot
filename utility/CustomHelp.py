@@ -6,7 +6,7 @@ class CustomHelpCommand(commands.DefaultHelpCommand):
         super().__init__(**options)
         self.no_category = '幫助'
         self.indent = 2
-        self.sort_commands = False
+        self.sort_commands = True
     
     async def send_bot_help(self, mapping):
         return await super().send_bot_help(mapping)
@@ -22,7 +22,7 @@ class CustomHelpCommand(commands.DefaultHelpCommand):
 
     def get_ending_note(self):
         command_name = self.invoked_with
-        return f'輸入 {self.clean_prefix}{command_name} [指令] 來獲取該指令的詳細資訊'
+        return f'輸入 "{self.clean_prefix}{command_name} 指令名稱" 來獲取該指令的詳細資訊'
 
 cmd_attr = {
     'aliases': ["h"],

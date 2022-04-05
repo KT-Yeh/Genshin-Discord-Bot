@@ -12,7 +12,8 @@ client = commands.Bot(
     command_prefix=config.bot_prefix, 
     help_command=custom_help,
     description=f'Hello，原神小幫手的指令前綴為"{config.bot_prefix}"\n'
-                f'第一次使用原神指令前必需先設置Cookie，可使用指令如下：'
+                f'第一次使用原神指令前必需先設置Cookie(請參閱 {config.bot_prefix}help cookie)\n'
+                f'小幫手全部指令如下：'
 )
 
 @client.event

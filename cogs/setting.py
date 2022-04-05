@@ -41,7 +41,7 @@ class Setting(commands.Cog, name='設定'):
         if genshin_app.setUID(user_id, uid):
             await ctx.send(f'角色UID: {uid} 已設定完成')
         else:
-            await ctx.send(f'角色UID: {uid} 設定失敗，請先設定Cookie(輸入 `{config.bot_prefix}help cookie` 取的詳情)')
+            await ctx.send(f'角色UID: {uid} 設定失敗，請先設定Cookie(輸入 `{config.bot_prefix}help cookie` 取得詳情)')
 
 def setup(client):
     client.add_cog(Setting(client))
