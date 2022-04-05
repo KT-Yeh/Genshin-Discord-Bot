@@ -10,13 +10,13 @@ class Setting(commands.Cog, name='設定'):
     # 設定使用者Cookie
     @commands.command(
         brief=f'設置Cookie(必需)',
-        description='設置Cookie',
-        usage='<你複製的Cookie>',
-        help='```https://cdn.discordapp.com/attachments/265340003884859412/960538996168069150/unknown.png \n```'
+        description='設置Cookie，請依照底下步驟取得你個人的Cookie然後貼在這裡',
+        usage='你取得的Cookie',
+        help='```https://i.imgur.com/XuQisa7.jpg \n```'
             f'1.瀏覽器打開Hoyolab登入帳號 https://www.hoyolab.com/\n'
             f'2.按F12打開開發者工具\n'
-            f'3.將開發者工具切換至控制台(Console)頁面\n'
-            f'4.複製底下整段程式碼，貼在控制台中按下Enter，然後將Cookie的結果貼在這裡(範例: {config.bot_prefix}cookie 你複製的Cookie)\n\n``````'
+            f'3.切換至主控台(Console)頁面\n'
+            f'4.複製底下整段程式碼，貼在主控台中按下Enter取得Cookie，然後將結果輸入在這裡(範例: {config.bot_prefix}cookie 你複製的Cookie)\n\n``````'
             "javascript:(()=>{_=(n)=>{for(i in(r=document.cookie.split(';'))){var a=r[i].split('=');if(a[0].trim()==n)return a[1]}};c=_('account_id')||alert('無效或過期的Cookie,請先登出後再重新登入!');c&&confirm('將Cookie複製到剪貼簿?')&&copy(document.cookie)})();"
     )
     async def cookie(self, ctx, *args):
