@@ -75,7 +75,6 @@ class GenshinApp:
             log.error(f'{user_id}角色UID:{uid}保存失敗')
             return False
 
-
     async def getDailyNote(self, user_id: str) -> str:
         """取得使用者即時便箋(樹脂、洞天寶錢、派遣、每日、週本)
         :param user_id: 使用者Discord ID
@@ -87,10 +86,10 @@ class GenshinApp:
    
         uid = self.__user_data[user_id]['uid']
         client = self.__getGenshinClient(user_id)
-        task1 = asyncio.create_task(client.genshin_accounts())
+        task1 = asyncio.create_task(client.get_diary(uid))
         task2 = asyncio.create_task(client.get_notes(uid))
         try:
-            accounts = await task1
+            account = await task1
             notes = await task2
             await client.close()
         except genshin.errors.DataNotPublic as e:
@@ -100,15 +99,8 @@ class GenshinApp:
             log.error(e.msg)
             return e.msg
 
-        result = ''
-        # 從帳號內找出與已保存的UID匹配的角色
-        for account in accounts:
-            if uid == str(account.uid):
-                hidden_uid = uid.replace(uid[3:-3], '***', 1)
-                log.info(f'{account.nickname} Lv{account.level} {self.__server_dict[account.server]} {hidden_uid}')
-                result += f'{account.nickname} Lv{account.level} {self.__server_dict[account.server]} {hidden_uid}\n'
-                break  
-        result += f'--------------------\n' 
+        result = f'{account.nickname} {self.__server_dict[account.region]} {uid.replace(uid[3:-3], "***", 1)}\n'
+        result += f'--------------------\n'
         result += self.__parseNotes(notes)
         return result
     
