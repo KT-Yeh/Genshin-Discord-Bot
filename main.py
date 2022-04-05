@@ -4,7 +4,7 @@ from pathlib import Path
 
 from utility.CustomHelp import custom_help
 from utility.config import config
-from utility.utils import *
+from utility.utils import log
 
 # 設定使用者呼叫指定的冷卻時間(秒數)
 default_cooldown = commands.Cooldown(1, config.bot_cooldown, commands.BucketType.user)

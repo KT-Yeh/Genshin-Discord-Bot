@@ -4,7 +4,7 @@ import discord
 import genshin
 from datetime import datetime
 from typing import Union, Tuple
-from .utils import log
+from .utils import log, getCharacterName
 from .config import config
 
 class GenshinApp:
@@ -15,13 +15,7 @@ class GenshinApp:
             with open('data/user_data.json', 'r', encoding="utf-8") as f:
                 self.__user_data = json.loads(f.read())
         except:
-            self.__user_data = { }
-        try:
-            with open('data/avatar.json', 'r', encoding="utf-8") as f:
-                self.__avatar_dict = json.loads(f.read())
-        except:
-            self.__avatar_dict = { }
-    
+            self.__user_data = { } 
 
     async def setCookie(self, user_id: str, cookie: str) -> str:
         """設定使用者Cookie
@@ -186,12 +180,11 @@ class GenshinApp:
                 continue
             for chamber in floor.chambers:
                 name = f'{floor.floor}-{chamber.chamber}　★{chamber.stars}'
+                # 取得深淵上下半層角色名字
                 chara_list = [[], []]
                 for i, battle in enumerate(chamber.battles):
                     for chara in battle.characters:
-                        ch_name = self.__avatar_dict.get(chara.name)
-                        ch_name = chara.name if ch_name is None else ch_name
-                        chara_list[i].append(ch_name)
+                        chara_list[i].append(getCharacterName(chara))
                 value = f'[{".".join(chara_list[0])}]／[{".".join(chara_list[1])}]'
                 embed.add_field(name=name, value=value)
         return embed
@@ -266,9 +259,7 @@ class GenshinApp:
         exped_finished = 0
         exped_msg = ''
         for expedition in notes.expeditions:
-            ch_name = self.__avatar_dict.get(expedition.character.name)
-            ch_name = expedition.character.name if ch_name is None else ch_name
-            exped_msg += f'· {ch_name}'
+            exped_msg += f'· {getCharacterName(expedition.character)}'
             if expedition.finished:
                 exped_finished += 1
                 exped_msg += '：已完成\n'
