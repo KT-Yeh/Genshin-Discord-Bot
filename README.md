@@ -1,7 +1,5 @@
 # 原神Discord Bot
-構想啟發自: https://github.com/Xm798/Genshin-Dailynote-Helper
 
-API使用自: https://github.com/thesadru/genshin.py
 
 ## 簡介
 使用Discord機器人快速查詢原神內資訊，不需開啟Hoyolab App，包含：
@@ -14,13 +12,7 @@ API使用自: https://github.com/thesadru/genshin.py
 ## 範例
 ![](https://i.imgur.com/N4O4LJI.png)
 
-## 安裝
-1. 安裝Python 3: https://www.python.org/downloads/
-2. 在專案資料夾開啟 cmd 或 powershell，輸入底下命令安裝相關套件：
-```
-pip3 install -r requirements.txt
-```
-## 使用
+## 安裝與使用
 
 ### 網頁端
 1. 到 [Discord Developer](https://discord.com/developers/applications "Discord Developer") 登入Discord帳號
@@ -45,9 +37,27 @@ pip3 install -r requirements.txt
 
 
 ### 本地端
-1. 在專案資料夾，用文字編輯器開啟 `config.example.json` 檔案，把剛才取得的 Token 貼在 `bot_token` 欄位，並將檔案另存為 `config.json`
-2. 在專案資料夾開啟 cmd 或 powershell，輸入
+1. 下載並安裝Python 3: https://www.python.org/downloads/
+2. 在專案資料夾 (Genshin-Discord-Bot) 內，用文字編輯器開啟 `config.example.json` 檔案，把剛才取得的 Token 貼在 `bot_token` 欄位，並將檔案另存為 `config.json`
+3. 在專案資料夾內開啟 cmd 或 powershell，輸入底下命令安裝相關套件：
+```
+pip3 install -r requirements.txt
+```
+4. 開始運行機器人
 ```
 python .\main.py
 ```
-3. 機器人開始運行
+
+## 配置檔案說明 (config.json)
+```python
+{
+    "bot_token": "ABCDEFG",  # 機器人Token，需從 Discord 網頁取得
+    "bot_prefix": "%",       # 機器人指令前綴
+    "bot_cooldown": "3"      # 機器人對同一使用者接收指令的冷卻時間 (單位：秒)
+}
+```
+
+## 結尾
+構想啟發自: https://github.com/Xm798/Genshin-Dailynote-Helper
+
+API使用自: https://github.com/thesadru/genshin.py
