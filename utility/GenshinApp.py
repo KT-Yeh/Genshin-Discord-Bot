@@ -79,6 +79,7 @@ class GenshinApp:
         """取得使用者即時便箋(樹脂、洞天寶錢、派遣、每日、週本)
         :param user_id: 使用者Discord ID
         """
+        log.info(f'getDailyNote(user_id={user_id})')
         user_id = str(user_id)
         check, msg = self.__checkUserData(user_id)
         if check == False:
@@ -109,6 +110,7 @@ class GenshinApp:
         :param user_id: 使用者Discord ID
         :param code: Hoyolab兌換碼
         """
+        log.info(f'redeemCode(uesr_id={user_id}, code={code}')
         user_id = str(user_id)
         check, msg = self.__checkUserData(user_id)
         if check == False:
@@ -127,6 +129,7 @@ class GenshinApp:
         """為使用者在Hoyolab簽到
         :param user_id: 使用者Discord ID
         """
+        log.info(f'claimDailyReward(uesr_id={user_id})')
         user_id = str(user_id)
         check, msg = self.__checkUserData(user_id)
         if check == False:
@@ -147,6 +150,7 @@ class GenshinApp:
         :param previous: 是否查詢前一期的資訊
         :param full_data: 若為True，結果完整顯示9~12層資訊；若為False，結果只顯示最後一層資訊
         """
+        log.info(f'getSpiralAbyss(user_id={user_id}, uid={uid})')
         user_id = str(user_id)
         check, msg = self.__checkUserData(user_id)
         if check == False:
@@ -186,6 +190,7 @@ class GenshinApp:
         :param user_id: 使用者Discord ID
         :param month: 欲查詢的月份
         """
+        log.info(f'getTravelerDiary(user_id={user_id}, month={month})')
         user_id = str(user_id)
         check, msg = self.__checkUserData(user_id)
         if check == False:
