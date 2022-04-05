@@ -23,6 +23,13 @@ async def on_ready():
         command._buckets._cooldown = default_cooldown
     await client.change_presence(activity=discord.Game(name='Genshin Impact'))
 
+@client.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.CommandNotFound):
+        await ctx.send(f'指令不存在，請使用 `{config.bot_prefix}help` 查看所有指令')
+    if isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send(f'指令缺少必要參數，請使用 `{config.bot_prefix}help` 查看使用方式')
+
 # 從cogs資料夾載入所有cog
 for filepath in Path('./cogs').glob('**/*.py'):
     cog_name = Path(filepath).stem
