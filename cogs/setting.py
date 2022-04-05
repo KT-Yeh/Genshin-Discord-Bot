@@ -13,7 +13,7 @@ class Setting(commands.Cog, name='設定'):
         description='設置Cookie，請依照底下步驟取得你個人的Cookie然後貼在這裡',
         usage='你取得的Cookie',
         help='```https://i.imgur.com/XuQisa7.jpg \n```'
-            f'1.瀏覽器打開Hoyolab登入帳號 https://www.hoyolab.com/\n'
+            f'1.電腦瀏覽器打開Hoyolab登入帳號 https://www.hoyolab.com/\n'
             f'2.按F12打開開發者工具\n'
             f'3.切換至主控台(Console)頁面\n'
             f'4.複製底下整段程式碼，貼在主控台中按下Enter取得Cookie，然後將結果輸入在這裡(範例: {config.bot_prefix}cookie 你複製的Cookie)\n\n``````'
