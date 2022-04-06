@@ -26,9 +26,9 @@ async def on_ready():
 @client.event
 async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandNotFound):
-        await ctx.send(f'指令不存在，請使用 `{config.bot_prefix}help` 查看所有指令')
+        return
     if isinstance(error, commands.MissingRequiredArgument):
-        await ctx.send(f'指令缺少必要參數，請使用 `{config.bot_prefix}help` 查看使用方式')
+        await ctx.send(f'指令缺少必要參數，請使用 `{config.bot_prefix}help {ctx.command}` 查看使用方式')
 
 # 從cogs資料夾載入所有cog
 for filepath in Path('./cogs').glob('**/*.py'):
