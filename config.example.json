@@ -1,5 +1,6 @@
 {
     "bot_token": "ABCDEFG",
     "bot_prefix": "%",
-    "bot_cooldown": "3"
+    "bot_cooldown": "3",
+    "auto_daily_reward_time": 8
 }
