@@ -17,7 +17,7 @@ class GenshinTool(commands.Cog, name='原神工具'):
     )
     async def r(self, ctx, code):
         result = await genshin_app.redeemCode(ctx.author.id, code)
-        await ctx.send(result)
+        await ctx.reply(result)
 
     # 為使用者在Hoyolab簽到
     @commands.command(
@@ -29,7 +29,7 @@ class GenshinTool(commands.Cog, name='原神工具'):
     )
     async def d(self, ctx):
         result = await genshin_app.claimDailyReward(ctx.author.id)
-        await ctx.send(result)
+        await ctx.reply(result)
 
 def setup(client):
     client.add_cog(GenshinTool(client))

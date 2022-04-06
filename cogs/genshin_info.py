@@ -23,7 +23,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
         embed = discord.Embed(title='', description=result, color=0xFF5733)
         if ctx.me.guild_permissions.manage_messages:
             await msg.delete()
-        await ctx.send(embed=embed)
+        await ctx.reply(embed=embed)
     
     # 取得深境螺旋資訊
     @commands.command(
@@ -53,9 +53,9 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
     
         result = await genshin_app.getSpiralAbyss(user_id, uid, previous, full_data)
         if type(result) == discord.Embed:
-            await ctx.send(embed=result)
+            await ctx.reply(embed=result)
         else:
-            await ctx.send(result)
+            await ctx.reply(result)
 
     # 取得使用者旅行者札記
     @commands.command(
@@ -70,9 +70,9 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
         month = month[0] if len(month) > 0 else datetime.datetime.now().month
         result = await genshin_app.getTravelerDiary(ctx.author.id, month)
         if type(result) == discord.Embed:
-            await ctx.send(embed=result)
+            await ctx.reply(embed=result)
         else:
-            await ctx.send(result)
+            await ctx.reply(result)
 
 def setup(client):
     client.add_cog(GenshinInfo(client))

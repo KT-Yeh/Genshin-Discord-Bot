@@ -28,7 +28,7 @@ class Setting(commands.Cog, name='設定'):
         result = await genshin_app.setCookie(user_id, cookie)
         if ctx.me.guild_permissions.manage_messages:
             await msg.delete()
-        await ctx.send(result)
+        await ctx.send(f'<@{user_id}> {result}')
 
     # 設定原神UID，當帳號內有多名角色時，保存指定的UID
     @commands.command(
@@ -41,9 +41,9 @@ class Setting(commands.Cog, name='設定'):
         user_id = ctx.author.id
         uid = arg
         if genshin_app.setUID(user_id, uid):
-            await ctx.send(f'角色UID: {uid} 已設定完成')
+            await ctx.reply(f'角色UID: {uid} 已設定完成')
         else:
-            await ctx.send(f'角色UID: {uid} 設定失敗，請先設定Cookie(輸入 `{config.bot_prefix}help cookie` 取得詳情)')
+            await ctx.reply(f'角色UID: {uid} 設定失敗，請先設定Cookie(輸入 `{config.bot_prefix}help cookie` 取得詳情)')
 
 def setup(client):
     client.add_cog(Setting(client))
