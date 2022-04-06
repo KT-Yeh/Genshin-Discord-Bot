@@ -32,7 +32,7 @@ class Setting(commands.Cog, name='設定'):
 
     # 設定原神UID，當帳號內有多名角色時，保存指定的UID
     @commands.command(
-        brief='設定Cookie後，指定要保存的UID',
+        brief='指定要保存的UID(帳號內多角色才需用本指令)',
         description='指定自己帳號內要保存的UID',
         usage='<UID>',
         help='在設定cookie之後，如果自己帳號內有多個角色時，需指定一個要保存使用的角色UID'
