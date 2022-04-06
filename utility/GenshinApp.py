@@ -4,7 +4,7 @@ import discord
 import genshin
 from datetime import datetime
 from typing import Union, Tuple
-from .utils import log, getCharacterName
+from .utils import log, getCharacterName, trimCookie
 from .config import config
 
 class GenshinApp:
@@ -27,7 +27,7 @@ class GenshinApp:
         # 從Cookie確認是否有ltuid, ltoken, cookie_token, account_id
         if any(key not in cookie for key in ('cookie_token', 'ltuid', 'ltoken', 'account_id')):
             return '無效的Cookie，請重新輸入正確的Cookie'
-        
+        cookie = trimCookie(cookie)
         client = genshin.GenshinClient()
         client.set_cookies(cookie)
         try:
