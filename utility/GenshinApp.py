@@ -1,4 +1,3 @@
-import asyncio
 import json
 import discord
 import genshin
@@ -73,11 +72,12 @@ class GenshinApp:
             log.error(f'{user_id}角色UID:{uid}保存失敗')
             return False
 
-    async def getRealtimeNote(self, user_id: str) -> str:
+    async def getRealtimeNote(self, user_id: str, check_resin_excess = False) -> str:
         """取得使用者即時便箋(樹脂、洞天寶錢、派遣、每日、週本)
         :param user_id: 使用者Discord ID
+        :param check_resin_excess: 設為True時，只有當樹脂超過設定標準時才會回傳即時便箋結果，用於自動檢查樹脂
         """
-        log.info(f'getRealtimeNote(user_id={user_id})')
+        log.info(f'getRealtimeNote(user_id={user_id}, check_resin_excess={check_resin_excess})')
         user_id = str(user_id)
         check, msg = self.checkUserData(user_id)
         if check == False:
@@ -85,11 +85,8 @@ class GenshinApp:
    
         uid = self.__user_data[user_id]['uid']
         client = self.__getGenshinClient(user_id)
-        task1 = asyncio.create_task(client.get_diary(uid))
-        task2 = asyncio.create_task(client.get_notes(uid))
         try:
-            account = await task1
-            notes = await task2
+            notes = await client.get_notes(uid)
         except genshin.errors.DataNotPublic as e:
             log.error(e.msg)
             result = '即時便箋功能未開啟\n請從HOYOLAB網頁或App開啟即時便箋功能'
@@ -97,9 +94,16 @@ class GenshinApp:
             log.error(e.msg)
             result = e.msg
         else:
-            result = f'{account.nickname} {self.__server_dict[account.region]} {uid.replace(uid[3:-3], "***", 1)}\n'
-            result += f'--------------------\n'
-            result += self.__parseNotes(notes)
+            if check_resin_excess == True and notes.current_resin < config.auto_check_resin_threshold:
+                result = None
+            else:
+                try:
+                    account = await client.get_diary(uid)
+                    result = f'{account.nickname} {self.__server_dict[account.region]} {uid.replace(uid[3:-3], "***", 1)}\n'
+                except:
+                    result = f'{uid.replace(uid[3:-3], "***", 1)}\n'
+                result += f'--------------------\n'
+                result += self.__parseNotes(notes)
         finally:
             await client.close()
             return result

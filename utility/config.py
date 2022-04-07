@@ -12,5 +12,6 @@ class Config:
         self.bot_prefix = data['bot_prefix']
         self.bot_cooldown = data['bot_cooldown']
         self.auto_daily_reward_time = data['auto_daily_reward_time']
+        self.auto_check_resin_threshold = data['auto_check_resin_threshold']
 
 config = Config()
