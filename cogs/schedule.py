@@ -30,8 +30,11 @@ class Schedule(commands.Cog, name='自動排程(BETA)'):
         log.info(f'set(user_id={ctx.author.id}, cmd={cmd} , switch={switch})')
         if cmd == 'daily':
             if switch == 'on':
-                self.__add_user(str(ctx.author.id), str(ctx.channel.id), self.__daily_dict)
-                await ctx.reply('每日自動簽到已開啟')
+                check, msg = genshin_app.checkUserData(str(ctx.author.id))
+                if check:
+                    self.__add_user(str(ctx.author.id), str(ctx.channel.id), self.__daily_dict)
+                    msg = '每日自動簽到已開啟'
+                await ctx.reply(msg)
             elif switch == 'off':
                 self.__remove_user(str(ctx.author.id), self.__daily_dict)
                 await ctx.reply('每日自動簽到已關閉')

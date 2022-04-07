@@ -79,7 +79,7 @@ class GenshinApp:
         """
         log.info(f'getRealtimeNote(user_id={user_id})')
         user_id = str(user_id)
-        check, msg = self.__checkUserData(user_id)
+        check, msg = self.checkUserData(user_id)
         if check == False:
             return msg
    
@@ -111,7 +111,7 @@ class GenshinApp:
         """
         log.info(f'redeemCode(uesr_id={user_id}, code={code})')
         user_id = str(user_id)
-        check, msg = self.__checkUserData(user_id)
+        check, msg = self.checkUserData(user_id)
         if check == False:
             return msg
         client = self.__getGenshinClient(user_id)
@@ -132,7 +132,7 @@ class GenshinApp:
         """
         log.info(f'claimDailyReward(uesr_id={user_id})')
         user_id = str(user_id)
-        check, msg = self.__checkUserData(user_id)
+        check, msg = self.checkUserData(user_id)
         if check == False:
             return msg
         client = self.__getGenshinClient(user_id)
@@ -158,7 +158,7 @@ class GenshinApp:
         """
         log.info(f'getSpiralAbyss(user_id={user_id}, uid={uid})')
         user_id = str(user_id)
-        check, msg = self.__checkUserData(user_id)
+        check, msg = self.checkUserData(user_id)
         if check == False:
             return msg
         if uid is None:
@@ -200,7 +200,7 @@ class GenshinApp:
         """
         log.info(f'getTravelerDiary(user_id={user_id}, month={month})')
         user_id = str(user_id)
-        check, msg = self.__checkUserData(user_id)
+        check, msg = self.checkUserData(user_id)
         if check == False:
             return msg
         client = self.__getGenshinClient(user_id)
@@ -233,7 +233,7 @@ class GenshinApp:
             await client.close()
             return result
     
-    def __checkUserData(self, user_id: str, *,checkUserID = True, checkCookie = True, checkUID = True) -> Tuple[bool, str]:
+    def checkUserData(self, user_id: str, *,checkUserID = True, checkCookie = True, checkUID = True) -> Tuple[bool, str]:
         if checkUserID and user_id not in self.__user_data.keys():
             log.info('找不到使用者，請先設定Cookie(輸入 `%h` 顯示說明)')
             return False, f'找不到使用者，請先設定Cookie(輸入 `{config.bot_prefix}help cookie` 顯示說明)'
