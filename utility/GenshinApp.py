@@ -138,8 +138,11 @@ class GenshinApp:
         client = self.__getGenshinClient(user_id)
         try:
             reward = await client.claim_daily_reward()
-        except genshin.AlreadyClaimed:
+        except genshin.errors.AlreadyClaimed:
             result = '今日獎勵已經領過了！'
+        except genshin.errors.GenshinException as e:
+            log.error(e.msg)
+            result = e.msg
         else:
             result = f'Hoyolab今日簽到成功！獲得 {reward.amount}x {reward.name}'
         finally:
