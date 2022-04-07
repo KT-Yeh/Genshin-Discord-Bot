@@ -22,7 +22,7 @@ class GenshinApp:
         :param user_id: 使用者Discord ID
         :cookie: Hoyolab cookie
         """
-        log.info(f'setCookie(user_id={user_id}, cookie={cookie}') 
+        log.info(f'setCookie(user_id={user_id}, cookie={cookie})') 
         user_id = str(user_id)
         # 從Cookie確認是否有ltuid, ltoken, cookie_token, account_id
         if any(key not in cookie for key in ('cookie_token', 'ltuid', 'ltoken', 'account_id')):
@@ -73,11 +73,11 @@ class GenshinApp:
             log.error(f'{user_id}角色UID:{uid}保存失敗')
             return False
 
-    async def getDailyNote(self, user_id: str) -> str:
+    async def getRealtimeNote(self, user_id: str) -> str:
         """取得使用者即時便箋(樹脂、洞天寶錢、派遣、每日、週本)
         :param user_id: 使用者Discord ID
         """
-        log.info(f'getDailyNote(user_id={user_id})')
+        log.info(f'getRealtimeNote(user_id={user_id})')
         user_id = str(user_id)
         check, msg = self.__checkUserData(user_id)
         if check == False:
@@ -109,7 +109,7 @@ class GenshinApp:
         :param user_id: 使用者Discord ID
         :param code: Hoyolab兌換碼
         """
-        log.info(f'redeemCode(uesr_id={user_id}, code={code}')
+        log.info(f'redeemCode(uesr_id={user_id}, code={code})')
         user_id = str(user_id)
         check, msg = self.__checkUserData(user_id)
         if check == False:

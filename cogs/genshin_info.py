@@ -19,7 +19,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
     async def g(self, ctx, *args):
         msg = await ctx.send('讀取中...')
         user_id = ctx.author.id if len(args) == 0 else filter(str.isdigit, args[0])
-        result = await genshin_app.getDailyNote(user_id)
+        result = await genshin_app.getRealtimeNote(user_id)
         embed = discord.Embed(title='', description=result, color=0xFF5733)
         if ctx.me.guild_permissions.manage_messages:
             await msg.delete()
