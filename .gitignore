@@ -5,8 +5,9 @@ __pycache__
 # Config
 config.json
 
-# User data
+# Data
 data/*.json
+data/*.log
 
 # VS Code
 .vscode
