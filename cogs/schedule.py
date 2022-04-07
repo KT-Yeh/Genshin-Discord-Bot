@@ -27,6 +27,7 @@ class Schedule(commands.Cog, name='自動排程(BETA)'):
             f'　{config.bot_prefix}set daily off 　　關閉每日自動簽到'
     )
     async def set(self, ctx, cmd: str, switch: str):
+        log.info(f'set(user_id={ctx.author.id}, cmd={cmd} , switch={switch})')
         if cmd == 'daily':
             if switch == 'on':
                 self.__add_user(str(ctx.author.id), str(ctx.channel.id), self.__daily_dict)
@@ -50,7 +51,7 @@ class Schedule(commands.Cog, name='自動排程(BETA)'):
                     self.__remove_user(str(user_id), self.__daily_dict)
                     continue
                 result = await genshin_app.claimDailyReward(user_id)
-                await channel.send(f'<@{user_id}> [自動簽到] {result}')
+                await channel.send(f'[自動簽到] <@{user_id}> {result}')
                 await asyncio.sleep(3)
             log.info('每日自動簽到結束')
 
@@ -62,8 +63,7 @@ class Schedule(commands.Cog, name='自動排程(BETA)'):
         if data is self.__daily_dict:
             self.__daily_dict[user_id] = { }
             self.__daily_dict[user_id]['channel'] = channel
-            with open(self.__daily_reward_filename, 'w', encoding='utf-8') as f:
-                json.dump(self.__daily_dict, f)
+            self.__saveScheduleData(self.__daily_dict, self.__daily_reward_filename)
 
     def __remove_user(self, user_id: str, data: dict) -> None:
         if data is self.__daily_dict:
@@ -72,8 +72,14 @@ class Schedule(commands.Cog, name='自動排程(BETA)'):
             except:
                 log.error(f'__remove_user(self, user_id={user_id}, data: dict)')
             else:
-                with open(self.__daily_reward_filename, 'w', encoding='utf-8') as f:
-                    json.dump(self.__daily_dict, f)
+                self.__saveScheduleData(self.__daily_dict, self.__daily_reward_filename)
+    
+    def __saveScheduleData(self, data: dict, filename: str):
+        try:
+            with open(filename, 'w', encoding='utf-8') as f:
+                json.dump(data, f)
+        except:
+            log.error(f'__saveScheduleData(data: dict, filename: {filename})')
 
 def setup(client):
     client.add_cog(Schedule(client))

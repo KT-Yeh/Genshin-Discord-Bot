@@ -13,7 +13,7 @@ class GenshinApp:
         self.__weekday_dict = {0: '週一', 1: '週二', 2: '週三', 3: '週四', 4: '週五', 5: '週六', 6: '週日'}
         try:
             with open('data/user_data.json', 'r', encoding="utf-8") as f:
-                self.__user_data = json.loads(f.read())
+                self.__user_data = json.load(f)
         except:
             self.__user_data = { }
 
@@ -275,8 +275,11 @@ class GenshinApp:
         return result
         
     def __saveUserData(self) -> None:
-        with open('data/user_data.json', 'w') as f:
-            f.write(json.dumps(self.__user_data))
+        try:
+            with open('data/user_data.json', 'w', encoding='utf-8') as f:
+                json.dump(self.__user_data, f)
+        except:
+            log.error('__saveUserData(self)')
 
     def __getGenshinClient(self, user_id: str) -> genshin.GenshinClient:
         uid = str(self.__user_data[user_id]['uid'])
