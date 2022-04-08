@@ -18,7 +18,11 @@
 邀請到自己伺服器後使用 `%help` 查看各項指令
 
 連結：https://discord.com/api/oauth2/authorize?client_id=943351827758460948&permissions=10240&scope=bot
+#### 權限說明：
+管理訊息權限是為了刪除機器人本身的訊息，以及當使用者輸入敏感資料(Cookie)，機器人讀取後會刪除該訊息
 
+### Cookie使用說明
+使用本機器人時會保存你的Cookie，在第一次使用前需要你到Hoyolab網頁取得Cookie(用 `%help cookie` 查看詳情)，Cookie內容包含你個人的識別代碼(**不包含帳號與密碼**)用來取得Hoyolab資料，若對Cookie保存有疑慮(目前機器人獨立運行在AWS上)，可以看下方如何自己架設機器人。
 
 ## 自己架設機器人
 
