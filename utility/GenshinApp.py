@@ -23,17 +23,16 @@ class GenshinApp:
         """
         log.info(f'setCookie(user_id={user_id}, cookie={cookie})') 
         user_id = str(user_id)
-        # 從Cookie確認是否有ltuid, ltoken, cookie_token, account_id
-        if any(key not in cookie for key in ('cookie_token', 'ltuid', 'ltoken', 'account_id')):
-            return '無效的Cookie，請重新輸入正確的Cookie'
         cookie = trimCookie(cookie)
+        if cookie == None:
+            return f'無效的Cookie，請重新輸入(使用 `{config.bot_prefix}help cookie` 查看教學)'
         client = genshin.GenshinClient()
         client.set_cookies(cookie)
         try:
             accounts = await client.genshin_accounts()
         except genshin.errors.GenshinException as e:
-            log.error(e.msg)
-            result = '無效的Cookie，請重新輸入正確的Cookie'
+            log.error(f'{user_id}: [{e.retcode}] {e.msg}')
+            result = e.msg
         else:
             if len(accounts) == 0:
                 log.info('帳號內沒有任何角色')

@@ -20,10 +20,13 @@ def getCharacterName(character: genshin.models.BaseCharacter) -> str:
     return chinese_name if chinese_name != None else character.name
 
 def trimCookie(cookie: str) -> str:
-    new_cookie = ' '.join([
-        re.search('ltoken=[\w]*', cookie).group(),
-        re.search('ltuid=[\d]*', cookie).group(),
-        re.search('cookie_token=[\w]*', cookie).group(),
-        re.search('account_id=[\d]*', cookie).group()
-    ])
+    try:
+        new_cookie = ' '.join([
+            re.search('ltoken=[0-9A-Za-z]{20,}', cookie).group(),
+            re.search('ltuid=[0-9]{3,}', cookie).group(),
+            re.search('cookie_token=[0-9A-Za-z]{20,}', cookie).group(),
+            re.search('account_id=[0-9]{3,}', cookie).group()
+        ])
+    except:
+        new_cookie = None
     return new_cookie
