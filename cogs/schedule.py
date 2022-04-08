@@ -57,12 +57,13 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
                 self.__remove_user(str(ctx.author.id), self.__resin_dict, self.__resin_notifi_filename)
                 await ctx.reply('樹脂額滿提醒已關閉')
 
-    @tasks.loop(minutes=10)
+    loop_interval = 10
+    @tasks.loop(minutes=loop_interval)
     async def schedule(self):
-        log.info(f'schedule() is called')
+        log.debug(f'schedule() is called')
         now = datetime.now()
         # 每日 X 點自動簽到
-        if now.hour == config.auto_daily_reward_time and now.minute < 10:
+        if now.hour == config.auto_daily_reward_time and now.minute < self.loop_interval:
             log.info('每日自動簽到開始')
             # 複製一份避免衝突
             daily_dict = dict(self.__daily_dict)
@@ -76,7 +77,7 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
                 await asyncio.sleep(3)
             log.info('每日自動簽到結束')
         # 每小時檢查樹脂
-        if 30 <= now.minute < 40:
+        if 30 <= now.minute < 30 + self.loop_interval:
             log.info('自動檢查樹脂開始')
             resin_dict = dict(self.__resin_dict)
             for user_id, value in resin_dict.items():
@@ -90,7 +91,6 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
                     await channel.send(f'<@{user_id}>，樹脂快要溢出啦！', embed=embed)
                 await asyncio.sleep(3)
             log.info('自動檢查樹脂結束')
-
 
     @schedule.before_loop
     async def before_schedule(self):
