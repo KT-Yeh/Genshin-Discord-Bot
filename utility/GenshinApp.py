@@ -84,6 +84,7 @@ class GenshinApp:
    
         uid = self.__user_data[user_id]['uid']
         client = self.__getGenshinClient(user_id)
+        result = None
         try:
             notes = await client.get_notes(uid)
         except genshin.errors.DataNotPublic as e:
@@ -92,6 +93,8 @@ class GenshinApp:
         except genshin.errors.GenshinException as e:
             log.error(e.msg)
             result = e.msg
+        except Exception as e:
+            log.error(e)
         else:
             if check_resin_excess == True and notes.current_resin < config.auto_check_resin_threshold:
                 result = None

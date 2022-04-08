@@ -32,7 +32,7 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
         help=f'每日 {config.auto_daily_reward_time} 點左右自動論壇簽到，使用範例：\n'
             f'{config.bot_prefix}set daily on　　　開啟每日自動簽到\n'
             f'{config.bot_prefix}set daily off 　　關閉每日自動簽到\n\n'
-            f'每小時檢查，當樹脂超過 {config.auto_check_resin_threshold} 時會發送提醒，使用範例：\n'
+            f'每小時檢查一次，當樹脂超過 {config.auto_check_resin_threshold} 時會發送提醒，使用範例：\n'
             f'{config.bot_prefix}set resin on　　　開啟樹脂提醒\n'
             f'{config.bot_prefix}set resin off 　　關閉樹脂提醒\n'
     )
