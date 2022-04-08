@@ -10,7 +10,7 @@ class Setting(commands.Cog, name='設定'):
     # 設定使用者Cookie
     @commands.command(
         brief=f'設置Cookie(必需)',
-        description='設置Cookie，請依照底下步驟取得你個人的Cookie然後貼在這裡',
+        description='設置Cookie，請依照底下步驟取得你個人的Cookie然後貼在這裡（機器人需要保存你的Cookie以後使用，若無法接受請勿使用）',
         usage='你取得的Cookie',
         help='```https://i.imgur.com/XuQisa7.jpg \n```'
             f'1.電腦瀏覽器打開Hoyolab登入帳號 https://www.hoyolab.com/\n'
@@ -33,7 +33,7 @@ class Setting(commands.Cog, name='設定'):
     # 設定原神UID，當帳號內有多名角色時，保存指定的UID
     @commands.command(
         brief='指定要保存的UID(帳號內多角色才需用本指令)',
-        description='指定自己帳號內要保存的UID',
+        description='指定自己帳號內要保存的UID，帳號只有一個角色的話設定Cookie時已自動保存，不需再使用本指令',
         usage='<UID>',
         help='在設定cookie之後，如果自己帳號內有多個角色時，需指定一個要保存使用的角色UID'
     )

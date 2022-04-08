@@ -32,7 +32,7 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
         help=f'每日 {config.auto_daily_reward_time} 點左右自動論壇簽到，使用範例：\n'
             f'{config.bot_prefix}set daily on　　　開啟每日自動簽到\n'
             f'{config.bot_prefix}set daily off 　　關閉每日自動簽到\n\n'
-            f'每小時檢查一次，當樹脂超過 {config.auto_check_resin_threshold} 時會發送提醒，使用範例：\n'
+            f'每小時檢查一次，當樹脂超過 {config.auto_check_resin_threshold} 時會發送提醒（使用前請先用 {config.bot_prefix}g 指令確認機器人能讀到你的樹脂資訊），使用範例：\n'
             f'{config.bot_prefix}set resin on　　　開啟樹脂提醒\n'
             f'{config.bot_prefix}set resin off 　　關閉樹脂提醒\n'
     )
@@ -74,7 +74,7 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
                     continue
                 result = await genshin_app.claimDailyReward(user_id)
                 await channel.send(f'[自動簽到] <@{user_id}> {result}')
-                await asyncio.sleep(3)
+                await asyncio.sleep(5)
             log.info('每日自動簽到結束')
         # 每小時檢查樹脂
         if 30 <= now.minute < 30 + self.loop_interval:
@@ -88,8 +88,8 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
                 result = await genshin_app.getRealtimeNote(user_id, True)
                 if result != None:
                     embed = discord.Embed(title='', description=result, color=0xff2424)
-                    await channel.send(f'<@{user_id}>，樹脂快要溢出啦！', embed=embed)
-                await asyncio.sleep(3)
+                    await channel.send(f'<@{user_id}>，樹脂(快要)溢出啦！', embed=embed)
+                await asyncio.sleep(5)
             log.info('自動檢查樹脂結束')
 
     @schedule.before_loop
