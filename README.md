@@ -1,14 +1,14 @@
-# 原神Discord Bot
+# 原神 Discord Bot
 
 
 ## 簡介
-使用Discord機器人直接查詢原神內各項資訊，包含：
+使用 Discord 機器人直接查詢原神內各項資訊，包含：
 - 查詢即時便箋，包含樹脂、洞天寶錢、探索派遣...等
 - 樹脂溢出提醒
 - 查詢深境螺旋紀錄
 - 查詢旅行者札記
-- Hoyolab自動每日簽到
-- Hoyolab使用兌換碼
+- Hoyolab 自動每日簽到
+- Hoyolab 使用兌換碼
 
 ## 範例
 ![](https://i.imgur.com/N4O4LJI.png)
@@ -19,15 +19,15 @@
 
 連結：https://discord.com/api/oauth2/authorize?client_id=943351827758460948&permissions=10240&scope=bot
 #### 權限說明：
-管理訊息權限是為了刪除機器人本身的訊息，以及當使用者輸入敏感資料(Cookie)，機器人讀取後會刪除該訊息
+管理訊息權限是為了刪除機器人本身的訊息，以及當使用者輸入敏感資料 (Cookie)，機器人讀取後會刪除該訊息
 
 ### Cookie使用說明
-使用本機器人時會保存你的Cookie，在第一次使用前需要你到Hoyolab網頁取得Cookie(用 `%help cookie` 查看詳情)，Cookie內容包含你個人的識別代碼(**不包含帳號與密碼**)用來取得Hoyolab資料，若對Cookie保存有疑慮(目前機器人獨立運行在AWS上)，可以看下方如何自己架設機器人。
+使用本機器人時會保存你的 Cookie，在第一次使用前需要你到 Hoyolab 網頁取得 Cookie（用 `%help cookie` 查看詳情），Cookie 內容包含你個人的識別代碼（**不包含帳號與密碼**）用來取得 Hoyolab 的資料，若對 Cookie 保存有疑慮（目前機器人獨立運行在AWS上），可以看下方如何自己架設機器人。
 
 ## 自己架設機器人
 
 ### 網頁端
-1. 到 [Discord Developer](https://discord.com/developers/applications "Discord Developer") 登入Discord帳號
+1. 到 [Discord Developer](https://discord.com/developers/applications "Discord Developer") 登入 Discord 帳號
 
 ![](https://i.imgur.com/dbDHEM3.png)
 
@@ -56,7 +56,7 @@
 ```
 pip3 install -r requirements.txt
 ```
-5. 開始運行機器人
+5. 輸入底下命令或是直接滑鼠雙擊開啟 main.py 檔案，開始運行機器人
 ```
 python .\main.py
 ```
@@ -75,4 +75,4 @@ python .\main.py
 ## 結尾
 構想啟發自: https://github.com/Xm798/Genshin-Dailynote-Helper
 
-API使用自: https://github.com/thesadru/genshin.py
+API 使用自: https://github.com/thesadru/genshin.py
