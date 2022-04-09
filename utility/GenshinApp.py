@@ -251,6 +251,15 @@ class GenshinApp:
                 log.info('找不到角色UID，請先設定UID(輸入 `%h` 顯示說明)')
                 return False, f'找不到角色UID，請先設定UID(輸入 `{config.bot_prefix}help` 顯示說明)'
         return True, None
+    
+    def clearUserData(self, user_id: str) -> str:
+        try:
+            del self.__user_data[user_id]
+        except:
+            return '刪除失敗，找不到使用者資料'
+        else:
+            self.__saveUserData()
+            return '使用者資料已全部刪除'
 
     def __parseNotes(self, notes: genshin.models.Notes) -> str:
         result = ''

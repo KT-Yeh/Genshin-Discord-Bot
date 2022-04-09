@@ -45,5 +45,16 @@ class Setting(commands.Cog, name='設定'):
         else:
             await ctx.reply(f'角色UID: {uid} 設定失敗，請先設定Cookie(輸入 `{config.bot_prefix}help cookie` 取得詳情)')
 
+    @commands.command(
+        brief='刪除已保存的個人資料',
+        description='使用本指令後，刪除該使用者所有保存在機器人內的個人資料',
+        usage='yes',
+        help=f'使用範例：\n{config.bot_prefix}clear yes'
+    )
+    async def clear(self, ctx, cmd):
+        if cmd == 'yes':
+            result = genshin_app.clearUserData(str(ctx.author.id))
+            await ctx.reply(f'{result}')
+
 def setup(client):
     client.add_cog(Setting(client))
