@@ -43,7 +43,7 @@ class GenshinApp:
                 log.info(f'{user_id}的Cookie設置成功')
                 
                 if len(accounts) == 1:
-                    self.setUID(user_id, accounts[0].uid)
+                    self.setUID(user_id, str(accounts[0].uid))
                     result = 'Cookie設定完成！'
                 else:
                     result = f'```帳號內共有{len(accounts)}個角色\n'
@@ -55,21 +55,21 @@ class GenshinApp:
             await client.close()
             return result
     
-    def setUID(self, user_id: str, uid: str) -> bool:
+    def setUID(self, user_id: str, uid: str) -> str:
         """設定原神UID，當帳號內有多名角色時，保存指定的UID
         :param user_id: 使用者Discord ID
         :param uid: 欲保存的原神UID
         """
+        if all(char.isdigit() for char in uid) == False:
+            return 'UID格式錯誤，只能包含數字，請重新輸入'
         try:
-            user_id = str(user_id)
-            uid = str(uid)
             self.__user_data[user_id]['uid'] = uid
             self.__saveUserData()
             log.info(f'{user_id}角色UID:{uid}已保存')
-            return True
+            return f'角色UID: {uid} 已設定完成'
         except:
             log.error(f'{user_id}角色UID:{uid}保存失敗')
-            return False
+            return f'角色UID: {uid} 設定失敗，請先設定Cookie(輸入 `{config.bot_prefix}help cookie` 取得詳情)'
 
     async def getRealtimeNote(self, user_id: str, check_resin_excess = False) -> str:
         """取得使用者即時便箋(樹脂、洞天寶錢、派遣、每日、週本)

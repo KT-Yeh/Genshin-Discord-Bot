@@ -36,15 +36,12 @@ class Setting(commands.Cog, name='設定'):
         brief='指定要保存的UID(帳號內多角色才需用本指令)',
         description='指定自己帳號內要保存的UID，帳號只有一個角色的話設定Cookie時已自動保存，不需再使用本指令',
         usage='<UID>',
-        help='在設定cookie之後，如果自己帳號內有多個角色時，需指定一個要保存使用的角色UID'
+        help='在設定cookie之後，如果自己帳號內有多個角色時，需指定一個要保存使用的角色UID，使用範例：\n'
+            f'{config.bot_prefix}uid 81234567'
     )
-    async def uid(self, ctx, arg):
-        user_id = ctx.author.id
-        uid = arg
-        if genshin_app.setUID(user_id, uid):
-            await ctx.reply(f'角色UID: {uid} 已設定完成')
-        else:
-            await ctx.reply(f'角色UID: {uid} 設定失敗，請先設定Cookie(輸入 `{config.bot_prefix}help cookie` 取得詳情)')
+    async def uid(self, ctx, uid):
+        result = genshin_app.setUID(str(ctx.author.id), uid)
+        await ctx.reply(result)
 
     @commands.command(
         brief='刪除已保存的個人資料',
