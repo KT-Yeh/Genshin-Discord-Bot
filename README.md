@@ -11,20 +11,11 @@
 - Hoyolab 使用兌換碼
 
 ## 範例
-![](https://i.imgur.com/N4O4LJI.png)
+![](https://i.imgur.com/Ye0HA0G.png)
 ![](https://i.imgur.com/qHzbvH0.png)
+![](https://i.imgur.com/bNY19NW.png)
 
-## 機器人邀請連結
-邀請到自己伺服器後使用 `%help` 查看各項指令
-
-連結：https://discord.com/api/oauth2/authorize?client_id=943351827758460948&permissions=10240&scope=bot
-#### 權限說明：
-管理訊息權限是為了刪除機器人本身的訊息，以及當使用者輸入敏感資料 (Cookie)，機器人讀取後會刪除該訊息
-
-### Cookie使用說明
-使用本機器人時會保存你的 Cookie，在第一次使用前需要你到 Hoyolab 網頁取得 Cookie（用 `%help cookie` 查看詳情），Cookie 內容包含你個人的識別代碼（**不包含帳號與密碼**）用來取得 Hoyolab 的資料，若對 Cookie 保存有疑慮（目前機器人獨立運行在AWS上），可以看下方如何自己架設機器人。
-
-## 自己架設機器人
+## 安裝 & 架設機器人
 
 ### 網頁端
 1. 到 [Discord Developer](https://discord.com/developers/applications "Discord Developer") 登入 Discord 帳號
@@ -50,8 +41,8 @@
 
 ### 本地端
 1. 下載 [本專案](https://github.com/KT-Yeh/Genshin-Discord-Bot/archive/refs/heads/master.zip)
-2. 下載並安裝Python(版本3.8以上): https://www.python.org/downloads/
-3. 在專案資料夾 (Genshin-Discord-Bot) 內，用文字編輯器開啟 `config.example.json` 檔案，把剛才取得的 Token 貼在 `bot_token` 欄位，並將檔案另存為 `config.json`
+2. 下載並安裝 Python（版本 3.8 以上）: https://www.python.org/downloads/
+3. 在專案資料夾（Genshin-Discord-Bot）內，用文字編輯器開啟 `config.example.json` 檔案，把剛才取得的 Token 貼在 `bot_token` 欄位，並將檔案另存為 `config.json`
 4. 在專案資料夾內開啟 cmd 或 powershell，輸入底下命令安裝相關套件：
 ```
 pip3 install -r requirements.txt
