@@ -11,6 +11,7 @@
 - Hoyolab 使用兌換碼
 
 ## 範例
+![](https://i.imgur.com/QQLBbUn.png)
 ![](https://i.imgur.com/Ye0HA0G.png)
 ![](https://i.imgur.com/qHzbvH0.png)
 ![](https://i.imgur.com/bNY19NW.png)
@@ -63,7 +64,7 @@ python .\main.py
 }
 ```
 
-## 結尾
+## 致謝
 構想啟發自: https://github.com/Xm798/Genshin-Dailynote-Helper
 
 API 使用自: https://github.com/thesadru/genshin.py
