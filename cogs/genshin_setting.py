@@ -10,7 +10,8 @@ class Setting(commands.Cog, name='設定'):
     # 設定使用者Cookie
     @commands.command(
         brief=f'設置Cookie(必需)',
-        description='設置Cookie，請依照底下步驟取得你個人的Cookie然後貼在這裡（機器人需要保存你的Cookie以後使用，若無法接受請勿使用）',
+        description='設置Cookie，請依照底下步驟取得你個人的Cookie然後貼在這裡\n\n'
+                    f'註：機器人需要保存你的Cookie供以後使用，Cookie的內容包含你個人的識別代碼（不包含帳號與密碼，也無法用來登入遊戲），是為了用來取得Hoyolab網站上你的原神資料。提供Cookie給別人是有風險的行為，若有疑慮請勿使用，想要隨時清除已保存的Cookie，請使用 {config.bot_prefix}clear 指令',
         usage='你取得的Cookie',
         help='```https://i.imgur.com/XuQisa7.jpg \n```'
             f'1.電腦瀏覽器打開Hoyolab登入帳號 https://www.hoyolab.com/\n'
