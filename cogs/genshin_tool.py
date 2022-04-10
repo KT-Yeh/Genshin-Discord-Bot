@@ -31,5 +31,5 @@ class GenshinTool(commands.Cog, name='原神工具'):
         result = await genshin_app.claimDailyReward(ctx.author.id)
         await ctx.reply(result)
 
-def setup(client):
-    client.add_cog(GenshinTool(client))
+async def setup(client: commands.Bot):
+    await client.add_cog(GenshinTool(client))

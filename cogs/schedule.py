@@ -125,5 +125,5 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
         except:
             log.error(f'__saveScheduleData(data: dict, filename: {filename})')
 
-def setup(client):
-    client.add_cog(Schedule(client))
+async def setup(client: commands.Bot):
+    await client.add_cog(Schedule(client))

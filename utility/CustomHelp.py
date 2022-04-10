@@ -22,7 +22,7 @@ class CustomHelpCommand(commands.DefaultHelpCommand):
 
     def get_ending_note(self):
         command_name = self.invoked_with
-        return f'輸入 "{self.clean_prefix}{command_name} 指令名稱" 來獲取該指令的詳細資訊'
+        return f'輸入 "{self.context.clean_prefix}{command_name} 指令名稱" 來獲取該指令的詳細資訊'
 
 cmd_attr = {
     'aliases': ["h"],

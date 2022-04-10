@@ -74,5 +74,5 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
         else:
             await ctx.reply(result)
 
-def setup(client):
-    client.add_cog(GenshinInfo(client))
+async def setup(client: commands.Bot):
+    await client.add_cog(GenshinInfo(client))

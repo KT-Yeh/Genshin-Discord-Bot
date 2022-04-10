@@ -54,5 +54,5 @@ class Setting(commands.Cog, name='設定'):
             result = genshin_app.clearUserData(str(ctx.author.id))
             await ctx.reply(f'{result}')
 
-def setup(client):
-    client.add_cog(Setting(client))
+async def setup(client: commands.Bot):
+    await client.add_cog(Setting(client))
