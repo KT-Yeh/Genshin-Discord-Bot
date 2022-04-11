@@ -9,6 +9,7 @@ class Config:
             data = json.loads(file.read())
         
         self.application_id = data['application_id']
+        self.test_server_id = data['test_server_id']
         self.bot_token = data['bot_token']
         self.bot_prefix = data['bot_prefix']
         self.bot_cooldown = data['bot_cooldown']
