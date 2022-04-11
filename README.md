@@ -1,5 +1,5 @@
 # 原神 Discord Bot
-
+本分支使用 Discord.py v2.0 開發版本
 
 ## 簡介
 使用 Discord 機器人直接查詢原神內各項資訊，包含：
@@ -47,6 +47,7 @@
 4. 在專案資料夾內開啟 cmd 或 powershell，輸入底下命令安裝相關套件：
 ```
 pip3 install -r requirements.txt
+pip3 install -U git+https://github.com/Rapptz/discord.py
 ```
 5. 輸入底下命令或是直接滑鼠雙擊開啟 main.py 檔案，開始運行機器人
 ```
@@ -56,11 +57,13 @@ python .\main.py
 ## 配置檔案說明 (config.json)
 ```python
 {
-    "bot_token": "ABCDEFG",  # 機器人Token，需從 Discord 網頁取得
-    "bot_prefix": "%",       # 機器人指令前綴
-    "bot_cooldown": "3",     # 機器人對同一使用者接收指令的冷卻時間 (單位：秒)
-    "auto_daily_reward_time": 8,        # 每日Hoyolab自動簽到時間 (單位：時)
-    "auto_check_resin_threshold": 150   # 每小時檢查，當超過多少樹脂發送提醒
+    "application_id": 123456789123456789,   # 機器人 Application ID，從 Discord Developer 網頁上取得
+    "test_server_id": 212340008888812345,   # 測試用伺服器 ID，用來測試 Slash commands
+    "bot_token": "ABCDEFG",                 # 機器人 Token，從 Discord Developer 網頁取得
+    "bot_prefix": "%",                      # 機器人指令前綴
+    "bot_cooldown": "3",                    # 機器人對同一使用者接收指令的冷卻時間 (單位：秒)
+    "auto_daily_reward_time": 8,            # 每日 Hoyolab 自動簽到時間 (單位：時)
+    "auto_check_resin_threshold": 150       # 每小時檢查，當超過多少樹脂發送提醒
 }
 ```
 
