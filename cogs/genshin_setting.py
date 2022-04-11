@@ -1,5 +1,8 @@
 import discord
+from discord import app_commands
+from discord.app_commands import Choice
 from discord.ext import commands
+from typing import Optional
 from utility.config import config
 from utility.GenshinApp import genshin_app
 
@@ -11,7 +14,7 @@ class Setting(commands.Cog, name='設定'):
     @commands.command(
         brief=f'設置Cookie(必需)',
         description='設置Cookie，請依照底下步驟取得你個人的Cookie然後貼在這裡\n\n'
-                    f'註：機器人需要保存你的Cookie供以後使用，Cookie的內容包含你個人的識別代碼（不包含帳號與密碼，也無法用來登入遊戲），是為了用來取得Hoyolab網站上你的原神資料。提供Cookie給別人是有風險的行為，若有疑慮請勿使用，想要隨時清除已保存的Cookie，請使用 {config.bot_prefix}clear 指令',
+                    f'聲明：機器人需要保存你的Cookie供以後使用，Cookie的內容包含你個人的識別代碼（不包含帳號與密碼，也無法用來登入遊戲），是為了用來取得Hoyolab網站上你的原神資料。提供Cookie給別人是有風險的行為，若有疑慮請勿使用，想要隨時清除已保存的Cookie，請使用 {config.bot_prefix}clear 指令',
         usage='你取得的Cookie',
         help='```https://i.imgur.com/XuQisa7.jpg \n```'
             f'1.電腦瀏覽器打開Hoyolab登入帳號 https://www.hoyolab.com/\n'
@@ -30,6 +33,20 @@ class Setting(commands.Cog, name='設定'):
         if ctx.me.guild_permissions.manage_messages:
             await msg.delete()
         await ctx.send(f'<@{user_id}> {result}')
+    
+    @app_commands.command(
+        name='cookie', 
+        description='設定Cookie，第一次使用前必須先使用本指令設定Cookie')
+    async def slash_cookie(self, interaction: discord.Interaction, cookie: Optional[str] = None):
+        if cookie is None:
+            help_msg = "1.電腦瀏覽器打開Hoyolab登入帳號 <https://www.hoyolab.com/>\n2.按F12打開開發者工具\n3.切換至主控台(Console)頁面\n4.複製底下整段程式碼，貼在主控台中按下Enter取得Cookie，然後將結果輸入在這裡(範例: `/cookie 你取得的Cookie`)\n```javascript:(()=>{_=(n)=>{for(i in(r=document.cookie.split(';'))){var a=r[i].split('=');if(a[0].trim()==n)return a[1]}};c=_('account_id')||alert('無效或過期的Cookie,請先登出後再重新登入!');c&&confirm('將Cookie複製到剪貼簿?')&&copy(document.cookie)})();```https://i.imgur.com/XuQisa7.jpg"
+            await interaction.response.send_message(help_msg)
+        else:
+            result = await genshin_app.setCookie(str(interaction.user.id), cookie)
+            if result.startswith('無效的Cookie'):
+                await interaction.response.send_message('無效的Cookie，請重新輸入(使用 `/cookie` 查看教學)')
+            else:
+                await interaction.response.send_message(result)
 
     # 設定原神UID，當帳號內有多名角色時，保存指定的UID
     @commands.command(
@@ -42,6 +59,15 @@ class Setting(commands.Cog, name='設定'):
     async def uid(self, ctx, uid):
         result = genshin_app.setUID(str(ctx.author.id), uid)
         await ctx.reply(result)
+    
+    @app_commands.command(
+        name='uid',
+        description='指定要保存的UID(帳號內多角色才需用本指令，只有單一角色不需要)')
+    @app_commands.describe(
+        uid='請輸入你角色的UID(數字)')
+    async def slash_uid(self, interaction: discord.Interaction, uid: int):
+        result = genshin_app.setUID(str(interaction.user.id), str(uid))
+        await interaction.response.send_message(result)
 
     @commands.command(
         brief='刪除已保存的個人資料',
@@ -53,6 +79,19 @@ class Setting(commands.Cog, name='設定'):
         if cmd == 'yes':
             result = genshin_app.clearUserData(str(ctx.author.id))
             await ctx.reply(f'{result}')
+    
+    @app_commands.command(
+        name='clear',
+        description='刪除使用者所有保存在機器人內的個人資料')
+    @app_commands.describe(yes='確認刪除？')
+    @app_commands.choices(
+        yes=[Choice(name='確認刪除', value=1), Choice(name='取消', value=0)])
+    async def slash_clear(self, interaction: discord.Interaction, yes: int = 0):
+        if yes == 1:
+            result = genshin_app.clearUserData(str(interaction.user.id))
+            await interaction.response.send_message(result)
+        else:
+            await interaction.response.send_message('取消指令')
 
 async def setup(client: commands.Bot):
     await client.add_cog(Setting(client))

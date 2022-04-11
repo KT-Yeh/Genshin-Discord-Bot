@@ -3,6 +3,8 @@ import asyncio
 import discord
 from datetime import datetime
 from utility.GenshinApp import genshin_app
+from discord import app_commands
+from discord.app_commands import Choice
 from discord.ext import commands, tasks
 from utility.config import config
 from utility.utils import log
@@ -56,6 +58,40 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
             elif switch == 'off':
                 self.__remove_user(str(ctx.author.id), self.__resin_dict, self.__resin_notifi_filename)
                 await ctx.reply('樹脂額滿提醒已關閉')
+    
+    @app_commands.command(
+        name='set',
+        description='設定自動化功能(論壇簽到、樹脂額滿提醒)')
+    @app_commands.describe(
+        function='選擇要執行自動化的功能',
+        switch='選擇開啟或關閉功能')
+    @app_commands.choices(
+        function=[
+            Choice(name='每日自動簽到', value='daily'),
+            Choice(name='樹脂額滿提醒', value='resin')],
+        switch=[
+            Choice(name='開啟功能', value=1),
+            Choice(name='關閉功能', value=0)])
+    async def slash_set(self, interaction: discord.Interaction, function: str, switch: int):
+        log.info(f'set(user_id={interaction.user.id}, cmd={function} , switch={switch})')
+        check, msg = genshin_app.checkUserData(str(interaction.user.id))
+        if check == False:
+            await interaction.response.send_message(msg)
+            return
+        if function == 'daily':
+            if switch == 1:
+                self.__add_user(str(interaction.user.id), str(interaction.channel_id), self.__daily_dict, self.__daily_reward_filename)
+                await interaction.response.send_message('每日自動簽到已開啟')
+            elif switch == 0:
+                self.__remove_user(str(interaction.user.id), self.__daily_dict, self.__daily_reward_filename)
+                await interaction.response.send_message('每日自動簽到已關閉')
+        elif function == 'resin':
+            if switch == 1:
+                self.__add_user(str(interaction.user.id), str(interaction.channel_id), self.__resin_dict, self.__resin_notifi_filename)
+                await interaction.response.send_message('樹脂額滿提醒已開啟')
+            elif switch == 0:
+                self.__remove_user(str(interaction.user.id), self.__resin_dict, self.__resin_notifi_filename)
+                await interaction.response.send_message('樹脂額滿提醒已關閉')
 
     loop_interval = 10
     @tasks.loop(minutes=loop_interval)
