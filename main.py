@@ -1,7 +1,6 @@
 import discord
 from discord.ext import commands
 from pathlib import Path
-
 from utility.CustomHelp import custom_help
 from utility.config import config
 from utility.utils import log
@@ -16,6 +15,7 @@ class GenshinDiscordBot(commands.Bot):
             command_prefix=config.bot_prefix,
             intents=intents,
             help_command=custom_help,
+            application_id=config.application_id,
             description=f'Hello，原神小幫手的指令前綴為"{config.bot_prefix}"\n'
                         f'第一次使用原神指令前必需先設置Cookie(請參閱 {config.bot_prefix}help cookie)\n'
                         f'小幫手全部指令如下：'
