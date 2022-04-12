@@ -35,8 +35,9 @@ class Setting(commands.Cog, name='設定'):
         await ctx.send(f'<@{user_id}> {result}')
     
     @app_commands.command(
-        name='cookie', 
+        name='cookie設定', 
         description='設定Cookie，第一次使用前必須先使用本指令設定Cookie')
+    @app_commands.describe(cookie='請輸入從網頁上取得的Cookie')
     async def slash_cookie(self, interaction: discord.Interaction, cookie: Optional[str] = None):
         if cookie is None:
             help_msg = "1.電腦瀏覽器打開Hoyolab登入帳號 <https://www.hoyolab.com/>\n2.按F12打開開發者工具\n3.切換至主控台(Console)頁面\n4.複製底下整段程式碼，貼在主控台中按下Enter取得Cookie，然後將結果輸入在這裡(範例: `/cookie 你取得的Cookie`)\n```javascript:(()=>{_=(n)=>{for(i in(r=document.cookie.split(';'))){var a=r[i].split('=');if(a[0].trim()==n)return a[1]}};c=_('account_id')||alert('無效或過期的Cookie,請先登出後再重新登入!');c&&confirm('將Cookie複製到剪貼簿?')&&copy(document.cookie)})();```https://i.imgur.com/XuQisa7.jpg"
@@ -61,10 +62,9 @@ class Setting(commands.Cog, name='設定'):
         await ctx.reply(result)
     
     @app_commands.command(
-        name='uid',
-        description='指定要保存的UID(帳號內多角色才需用本指令，只有單一角色不需要)')
-    @app_commands.describe(
-        uid='請輸入你角色的UID(數字)')
+        name='uid設定',
+        description='帳號內多角色時需保存指定的UID，只有單一角色不需要使用本指令')
+    @app_commands.describe(uid='請輸入原神角色的UID')
     async def slash_uid(self, interaction: discord.Interaction, uid: int):
         result = genshin_app.setUID(str(interaction.user.id), str(uid))
         await interaction.response.send_message(result)
@@ -81,13 +81,13 @@ class Setting(commands.Cog, name='設定'):
             await ctx.reply(f'{result}')
     
     @app_commands.command(
-        name='clear',
-        description='刪除使用者所有保存在機器人內的個人資料')
-    @app_commands.describe(yes='確認刪除？')
-    @app_commands.choices(
-        yes=[Choice(name='確認刪除', value=1), Choice(name='取消', value=0)])
-    async def slash_clear(self, interaction: discord.Interaction, yes: int = 0):
-        if yes == 1:
+        name='清除資料',
+        description='刪除使用者所有保存在小幫手內的個人資料')
+    @app_commands.rename(confirm='確認刪除')
+    @app_commands.describe(confirm='確認刪除保存的資料？')
+    @app_commands.choices(confirm=[Choice(name='確認', value=1), Choice(name='取消', value=0)])
+    async def slash_clear(self, interaction: discord.Interaction, confirm: int):
+        if confirm:
             result = genshin_app.clearUserData(str(interaction.user.id))
             await interaction.response.send_message(result)
         else:

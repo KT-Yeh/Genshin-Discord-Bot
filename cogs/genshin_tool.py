@@ -21,9 +21,10 @@ class GenshinTool(commands.Cog, name='原神工具'):
         await ctx.reply(result)
 
     @app_commands.command(
-        name='redeem',
+        name='redeem兌換',
         description='使用Hoyolab兌換碼')
-    @app_commands.describe(code='兌換碼')
+    @app_commands.rename(code='兌換碼')
+    @app_commands.describe(code='請輸入要使用的兌換碼')
     async def slash_redeem(self, interaction: discord.Interaction, code: str):
         result = await genshin_app.redeemCode(str(interaction.user.id), code)
         await interaction.response.send_message(result)
@@ -41,7 +42,7 @@ class GenshinTool(commands.Cog, name='原神工具'):
         await ctx.reply(result)
     
     @app_commands.command(
-        name='daily',
+        name='daily每日簽到',
         description='領取Hoyolab每日簽到獎勵')
     async def slash_daily(self, interaction: discord.Interaction):
         result = await genshin_app.claimDailyReward(str(interaction.user.id))

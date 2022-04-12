@@ -60,19 +60,18 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
                 await ctx.reply('樹脂額滿提醒已關閉')
     
     @app_commands.command(
-        name='set',
+        name='schedule排程',
         description='設定自動化功能(論壇簽到、樹脂額滿提醒)')
+    @app_commands.rename(function='功能', switch='開關')
     @app_commands.describe(
         function='選擇要執行自動化的功能',
-        switch='選擇開啟或關閉功能')
+        switch='選擇開啟或關閉此功能')
     @app_commands.choices(
-        function=[
-            Choice(name='每日自動簽到', value='daily'),
-            Choice(name='樹脂額滿提醒', value='resin')],
-        switch=[
-            Choice(name='開啟功能', value=1),
-            Choice(name='關閉功能', value=0)])
-    async def slash_set(self, interaction: discord.Interaction, function: str, switch: int):
+        function=[Choice(name='每日自動簽到', value='daily'),
+                  Choice(name='樹脂額滿提醒', value='resin')],
+        switch=[Choice(name='開啟功能', value=1),
+                Choice(name='關閉功能', value=0)])
+    async def slash_schedule(self, interaction: discord.Interaction, function: str, switch: int):
         log.info(f'set(user_id={interaction.user.id}, cmd={function} , switch={switch})')
         check, msg = genshin_app.checkUserData(str(interaction.user.id))
         if check == False:
