@@ -44,9 +44,9 @@ class Setting(commands.Cog, name='設定'):
         else:
             result = await genshin_app.setCookie(str(interaction.user.id), cookie)
             if result.startswith('無效的Cookie'):
-                await interaction.response.send_message('無效的Cookie，請重新輸入(使用 `/cookie` 查看教學)')
+                await interaction.response.send_message('無效的Cookie，請重新輸入(使用 `/cookie` 查看教學)', ephemeral=True)
             else:
-                await interaction.response.send_message(result)
+                await interaction.response.send_message(result, ephemeral=True)
 
     # 設定原神UID，當帳號內有多名角色時，保存指定的UID
     @commands.command(
