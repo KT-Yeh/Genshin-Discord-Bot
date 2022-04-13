@@ -40,7 +40,7 @@ class Setting(commands.Cog, name='設定'):
     @app_commands.describe(cookie='請輸入從網頁上取得的Cookie')
     async def slash_cookie(self, interaction: discord.Interaction, cookie: Optional[str] = None):
         if cookie is None:
-            help_msg = "1.電腦瀏覽器打開Hoyolab登入帳號 <https://www.hoyolab.com/>\n2.按F12打開開發者工具\n3.切換至主控台(Console)頁面\n4.複製底下整段程式碼，貼在主控台中按下Enter取得Cookie，然後將結果輸入在這裡(範例: `/cookie 你取得的Cookie`)\n```javascript:(()=>{_=(n)=>{for(i in(r=document.cookie.split(';'))){var a=r[i].split('=');if(a[0].trim()==n)return a[1]}};c=_('account_id')||alert('無效或過期的Cookie,請先登出後再重新登入!');c&&confirm('將Cookie複製到剪貼簿?')&&copy(document.cookie)})();```https://i.imgur.com/XuQisa7.jpg"
+            help_msg = "1.電腦開啟Hoyolab登入帳號 <https://www.hoyolab.com>\n2.按F12打開開發者工具，切換至主控台(Console)頁面\n3.複製底下程式碼，貼在主控台中按Enter取得Cookie\n4.在這輸入結果，範例：`/cookie設定 XXXXX(從網頁取得的Cookie)`\n```js\nd=document.cookie; c=d.includes('account_id') || alert('過期或無效的Cookie,請先登出帳號再重新登入!'); c && confirm('將Cookie複製到剪貼簿?') && copy(d)```https://i.imgur.com/dP4RKsb.png"
             await interaction.response.send_message(help_msg)
         else:
             result = await genshin_app.setCookie(str(interaction.user.id), cookie)
