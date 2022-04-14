@@ -8,12 +8,12 @@ class Config:
         with open(config_path, encoding='utf-8') as file:
             data: dict = json.loads(file.read())
         
-        self.application_id = data.get('application_id')
-        self.test_server_id = data.get('test_server_id')
-        self.bot_token = data.get('bot_token')
-        self.bot_prefix = data.get('bot_prefix')
-        self.bot_cooldown = data.get('bot_cooldown')
-        self.auto_daily_reward_time = data.get('auto_daily_reward_time')
-        self.auto_check_resin_threshold = data.get('auto_check_resin_threshold')
+        self.application_id: int = data.get('application_id')
+        self.test_server_id: int = data.get('test_server_id')
+        self.bot_token: str = data.get('bot_token')
+        self.bot_prefix: str = data.get('bot_prefix')
+        self.bot_cooldown: str = data.get('bot_cooldown')
+        self.auto_daily_reward_time: int = data.get('auto_daily_reward_time')
+        self.auto_check_resin_threshold: int = data.get('auto_check_resin_threshold')
 
 config = Config()
