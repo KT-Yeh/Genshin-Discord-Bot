@@ -19,6 +19,7 @@ client = commands.Bot(
 @client.event
 async def on_ready():
     log.info(f'You have logged in as {client}')
+    log.info(f'Total {len(client.guilds)} servers connected')
     for command in client.commands:
         command._buckets._cooldown = default_cooldown
     await client.change_presence(activity=discord.Game(name='Genshin Impact'))

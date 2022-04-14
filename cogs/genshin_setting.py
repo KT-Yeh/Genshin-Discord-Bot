@@ -13,12 +13,12 @@ class Setting(commands.Cog, name='設定'):
         description='設置Cookie，請依照底下步驟取得你個人的Cookie然後貼在這裡\n\n'
                     f'註：機器人需要保存你的Cookie供以後使用，Cookie的內容包含你個人的識別代碼（不包含帳號與密碼，也無法用來登入遊戲），是為了用來取得Hoyolab網站上你的原神資料。提供Cookie給別人是有風險的行為，若有疑慮請勿使用，想要隨時清除已保存的Cookie，請使用 {config.bot_prefix}clear 指令',
         usage='你取得的Cookie',
-        help='```https://i.imgur.com/XuQisa7.jpg \n```'
-            f'1.電腦瀏覽器打開Hoyolab登入帳號 https://www.hoyolab.com/\n'
-            f'2.按F12打開開發者工具\n'
-            f'3.切換至主控台(Console)頁面\n'
-            f'4.複製底下整段程式碼，貼在主控台中按下Enter取得Cookie，然後將結果輸入在這裡(範例: {config.bot_prefix}cookie 你複製的Cookie)\n\n``````'
-            "javascript:(()=>{_=(n)=>{for(i in(r=document.cookie.split(';'))){var a=r[i].split('=');if(a[0].trim()==n)return a[1]}};c=_('account_id')||alert('無效或過期的Cookie,請先登出後再重新登入!');c&&confirm('將Cookie複製到剪貼簿?')&&copy(document.cookie)})();"
+        help='```https://i.imgur.com/XuQisa7.jpg \n'
+            f'1.電腦打開Hoyolab登入帳號 <https://www.hoyolab.com>\n'
+            f'2.按F12打開開發者工具，切換至主控台(Console)頁面\n'
+            f'3.複製底下程式碼，貼在主控台中按Enter取得Cookie\n'
+            f'4.在這輸入結果，範例：`{config.bot_prefix}cookie XXXXX(從網頁取得的Cookie)\n'
+            "```js\nd=document.cookie; c=d.includes('account_id') || alert('過期或無效的Cookie,請先登出帳號再重新登入!'); c && confirm('將Cookie複製到剪貼簿?') && copy(d)"
     )
     async def cookie(self, ctx, *args):
         if ctx.me.guild_permissions.manage_messages:
