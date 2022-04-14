@@ -2,12 +2,12 @@ import json
 import asyncio
 import discord
 from datetime import datetime
-from utility.GenshinApp import genshin_app
 from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands, tasks
 from utility.config import config
 from utility.utils import log
+from utility.GenshinApp import genshin_app
 
 class Schedule(commands.Cog, name='自動化(BETA)'):
     def __init__(self, bot: commands.Bot):
@@ -27,38 +27,7 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
         
         self.schedule.start()
 
-    @commands.command(
-        brief='設定自動化功能(論壇簽到、樹脂溢出提醒)',
-        description='設定自動化功能，會在特定時間執行功能，執行結果會在當初設定指令的頻道推送，若要更改頻道，請在新的頻道重新設定指令一次',
-        usage='<daily|resin> <on|off>',
-        help=f'每日 {config.auto_daily_reward_time} 點左右自動論壇簽到（使用前請先用 {config.bot_prefix}d 指令確認機器人能簽到你的每日），使用範例：\n'
-            f'{config.bot_prefix}set daily on　　　開啟每日自動簽到\n'
-            f'{config.bot_prefix}set daily off 　　關閉每日自動簽到\n\n'
-            f'每小時檢查一次，當樹脂超過 {config.auto_check_resin_threshold} 時會發送提醒（使用前請先用 {config.bot_prefix}g 指令確認機器人能讀到你的樹脂資訊），使用範例：\n'
-            f'{config.bot_prefix}set resin on　　　開啟樹脂提醒\n'
-            f'{config.bot_prefix}set resin off 　　關閉樹脂提醒\n'
-    )
-    async def set(self, ctx, cmd: str, switch: str):
-        log.info(f'set(user_id={ctx.author.id}, cmd={cmd} , switch={switch})')
-        check, msg = genshin_app.checkUserData(str(ctx.author.id))
-        if check == False:
-            await ctx.reply(msg)
-            return
-        if cmd == 'daily':
-            if switch == 'on':
-                self.__add_user(str(ctx.author.id), str(ctx.channel.id), self.__daily_dict, self.__daily_reward_filename)
-                await ctx.reply('每日自動簽到已開啟')
-            elif switch == 'off':
-                self.__remove_user(str(ctx.author.id), self.__daily_dict, self.__daily_reward_filename)
-                await ctx.reply('每日自動簽到已關閉')
-        if cmd == 'resin':
-            if switch == 'on':
-                self.__add_user(str(ctx.author.id), str(ctx.channel.id), self.__resin_dict, self.__resin_notifi_filename)
-                await ctx.reply('樹脂額滿提醒已開啟')
-            elif switch == 'off':
-                self.__remove_user(str(ctx.author.id), self.__resin_dict, self.__resin_notifi_filename)
-                await ctx.reply('樹脂額滿提醒已關閉')
-    
+    # 設定自動排程功能
     @app_commands.command(
         name='schedule排程',
         description='設定自動化功能(論壇簽到、樹脂額滿提醒)')

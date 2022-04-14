@@ -1,37 +1,39 @@
 import discord
+from discord import app_commands
+from discord.app_commands import Choice
 from discord.ext import commands
-from typing import Optional, Literal
 from utility.utils import log
+from utility.config import config
 
 class Admin(commands.Cog):
     def __init__(self, bot):
         self.bot: commands.Bot = bot
     
     # 同步 Slash commands 到全域或是當前伺服器
-    @commands.command(hidden=True)
-    @commands.is_owner()
-    async def sync(self, ctx: commands.Context, spec: Optional[Literal['~']] = None):
-        if spec == '~': # 同步到全域，需等待一小時
-            result = await ctx.bot.tree.sync()
-        else: # 複製全域指令，同步到當前伺服器，不需等待
-            ctx.bot.tree.copy_global_to(guild=ctx.guild)
-            result = await ctx.bot.tree.sync(guild=ctx.guild)
-
-        msg = f'已同步以下指令到{"全部" if spec == "~" else "當前"}伺服器\n{" ".join(cmd.name for cmd in result)}'
+    @app_commands.command(name='sync', description='同步Slash commands到全域或是當前伺服器')
+    @app_commands.rename(area='範圍')
+    @app_commands.choices(area=[Choice(name='當前伺服器', value=0), Choice(name='全域伺服器', value=1)])
+    async def sync(self, interaction: discord.Interaction, area: int = 0):
+        if area == 0: # 複製全域指令，同步到當前伺服器，不需等待
+            self.bot.tree.copy_global_to(guild=interaction.guild)
+            result = await self.bot.tree.sync(guild=interaction.guild)
+        else: # 同步到全域，需等待一小時
+            result = await self.bot.tree.sync()
+        
+        msg = f'已同步以下指令到{"全部" if area == 1 else "當前"}伺服器\n{" ".join(cmd.name for cmd in result)}'
         log.info(msg)
-        await ctx.send(msg)
-    
+        await interaction.response.send_message(msg)
+
     # 廣播訊息到所有的伺服器
-    @commands.command(hidden=True)
-    @commands.is_owner()
-    async def broadcast(self, ctx: commands.Context, *msg):
-        msg = ' '.join(msg)
+    @app_commands.command(name='broadcast', description='廣播訊息到所有的伺服器')
+    @app_commands.rename(message='訊息')
+    async def broadcast(self, interaction: discord.Interaction, message: str):
         for guild in self.bot.guilds:
             # 找出第一個可用的頻道發出訊息
             for channel in guild.text_channels:
                 if channel.permissions_for(guild.me).send_messages:
                     try:
-                        await channel.send(msg)
+                        await channel.send(message)
                     except Exception as e:
                         log.error(f'{guild}: {e}')
                         continue
@@ -51,4 +53,4 @@ class Admin(commands.Cog):
             return True
 
 async def setup(client: commands.Bot):
-    await client.add_cog(Admin(client))
+    await client.add_cog(Admin(client), guild=discord.Object(id=config.test_server_id))

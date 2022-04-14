@@ -8,7 +8,6 @@ from utility.utils import log
 # 設定使用者呼叫指定的冷卻時間(秒數)
 default_cooldown = commands.Cooldown(1, config.bot_cooldown)
 intents = discord.Intents.default()
-intents.message_content = True
 class GenshinDiscordBot(commands.Bot):
     def __init__(self):
         super().__init__(
@@ -26,7 +25,7 @@ class GenshinDiscordBot(commands.Bot):
         for filepath in Path('./cogs').glob('**/*.py'):
             cog_name = Path(filepath).stem
             await self.load_extension(f'cogs.{cog_name}')
-        # 同步Slash commands到測試伺服器，全域伺服器用 %sync ~ 指令
+        # 同步Slash commands到測試伺服器，全域伺服器用 /sync 指令
         if config.test_server_id != None:
             test_guild = discord.Object(id=config.test_server_id)
             self.tree.copy_global_to(guild=test_guild)
