@@ -273,7 +273,13 @@ class GenshinApp:
         result += f'樹脂全部恢復時間：{recover_time}\n'
         result += f'每日委託任務：{notes.completed_commissions} 已完成\n'
         result += f'當前洞天寶錢/上限：{notes.current_realm_currency}/{notes.max_realm_currency}\n'
-        result += f'寶錢全部恢復時間：{self.__weekday_dict[notes.realm_currency_recovered_at.weekday()]} {notes.realm_currency_recovered_at.strftime("%H:%M")}\n'
+        
+        if notes.current_realm_currency == notes.max_realm_currency:
+            recover_time = '已額滿！'
+        else:
+            weakday_msg = self.__weekday_dict[notes.realm_currency_recovered_at.weekday()]
+            recover_time = f'{weakday_msg} {notes.realm_currency_recovered_at.strftime("%H:%M")}'
+        result += f'寶錢全部恢復時間：{recover_time}\n'
         result += f'週本樹脂減半：剩餘 {notes.remaining_resin_discounts} 次\n'
         result += f'--------------------\n'
 
