@@ -34,7 +34,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
     async def slash_abyss(self, interaction: discord.Interaction, season: int = 1, floor: int = 1):
         previous = True if season == 0 else False
         full_data = True if floor == 0 else False
-        result = await genshin_app.getSpiralAbyss(str(interaction.user.id), None, previous, full_data)
+        result = await genshin_app.getSpiralAbyss(str(interaction.user.id), previous, full_data)
         if type(result) == discord.Embed:
             await interaction.response.send_message(embed=result)
         else:

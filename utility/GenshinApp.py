@@ -9,12 +9,13 @@ from .config import config
 class GenshinApp:
     def __init__(self) -> None:
         self.__server_dict = {'os_usa': '美服', 'os_euro': '歐服', 'os_asia': '亞服', 'os_cht': '台港澳服'}
+        self.__uid_server_dict = {'6': '美服', '7': '歐服', '8': '亞服', '9': '台港澳服'}
         self.__weekday_dict = {0: '週一', 1: '週二', 2: '週三', 3: '週四', 4: '週五', 5: '週六', 6: '週日'}
         try:
             with open('data/user_data.json', 'r', encoding="utf-8") as f:
-                self.__user_data = json.load(f)
+                self.__user_data: dict[str, dict[str, str]] = json.load(f)
         except:
-            self.__user_data = { }
+            self.__user_data: dict[str, dict[str, str]] = { }
 
     async def setCookie(self, user_id: str, cookie: str) -> str:
         """設定使用者Cookie
@@ -26,17 +27,17 @@ class GenshinApp:
         cookie = trimCookie(cookie)
         if cookie == None:
             return f'無效的Cookie，請重新輸入(輸入 `/cookie設定` 顯示說明)'
-        client = genshin.GenshinClient()
+        client = genshin.Client(lang='zh-tw')
         client.set_cookies(cookie)
         try:
-            accounts = await client.genshin_accounts()
+            accounts = await client.get_game_accounts()
         except genshin.errors.GenshinException as e:
             log.error(f'{user_id}: [{e.retcode}] {e.msg}')
             result = e.msg
         else:
             if len(accounts) == 0:
                 log.info('帳號內沒有任何角色')
-                result = '發生錯誤，該帳號內沒有任何角色'
+                result = '帳號內沒有任何角色，取消設定Cookie'
             else:
                 self.__user_data[user_id] = {}
                 self.__user_data[user_id]['cookie'] = cookie
@@ -44,15 +45,14 @@ class GenshinApp:
                 
                 if len(accounts) == 1:
                     self.setUID(user_id, str(accounts[0].uid))
-                    result = 'Cookie設定完成！'
+                    result = f'Cookie已設定完成，UID:{accounts[0].uid}已保存！'
                 else:
-                    result = f'```帳號內共有{len(accounts)}個角色\n'
+                    result = f'帳號內共有{len(accounts)}個角色\n```'
                     for account in accounts:
                         result += f'UID:{account.uid} 等級:{account.level} 角色名字:{account.nickname}\n'
                     result += f'```\n請用 `/uid設定` 指定要保存的角色(例: `/uid設定 812345678`)'
                     self.__saveUserData()
         finally:
-            await client.close()
             return result
     
     def setUID(self, user_id: str, uid: str) -> str:
@@ -60,8 +60,6 @@ class GenshinApp:
         :param user_id: 使用者Discord ID
         :param uid: 欲保存的原神UID
         """
-        if all(char.isdigit() for char in uid) == False:
-            return 'UID格式錯誤，只能包含數字，請重新輸入'
         try:
             self.__user_data[user_id]['uid'] = uid
             self.__saveUserData()
@@ -77,7 +75,6 @@ class GenshinApp:
         :param check_resin_excess: 設為True時，只有當樹脂超過設定標準時才會回傳即時便箋結果，用於自動檢查樹脂
         """
         log.info(f'getRealtimeNote(user_id={user_id}, check_resin_excess={check_resin_excess})')
-        user_id = str(user_id)
         check, msg = self.checkUserData(user_id)
         if check == False:
             return msg
@@ -86,7 +83,7 @@ class GenshinApp:
         client = self.__getGenshinClient(user_id)
         result = None
         try:
-            notes = await client.get_notes(uid)
+            notes = await client.get_genshin_notes(int(uid))
         except genshin.errors.DataNotPublic as e:
             log.error(e.msg)
             result = '即時便箋功能未開啟\n請從HOYOLAB網頁或App開啟即時便箋功能'
@@ -99,15 +96,10 @@ class GenshinApp:
             if check_resin_excess == True and notes.current_resin < config.auto_check_resin_threshold:
                 result = None
             else:
-                try:
-                    account = await client.get_diary(uid)
-                    result = f'{account.nickname} {self.__server_dict[account.region]} {uid.replace(uid[3:-3], "***", 1)}\n'
-                except:
-                    result = f'{uid.replace(uid[3:-3], "***", 1)}\n'
+                result = f'{self.__uid_server_dict[uid[0]]} {uid.replace(uid[3:-3], "***", 1)}\n'
                 result += f'--------------------\n'
                 result += self.__parseNotes(notes)
         finally:
-            await client.close()
             return result
     
     async def redeemCode(self, user_id: str, code: str) -> str:
@@ -116,20 +108,18 @@ class GenshinApp:
         :param code: Hoyolab兌換碼
         """
         log.info(f'redeemCode(uesr_id={user_id}, code={code})')
-        user_id = str(user_id)
         check, msg = self.checkUserData(user_id)
         if check == False:
             return msg
         client = self.__getGenshinClient(user_id)
         try:
-            await client.redeem_code(code, self.__user_data[user_id]['uid'])
+            await client.redeem_code(code, int(self.__user_data[user_id]['uid']))
         except genshin.errors.GenshinException as e:
             log.error(f'{e.msg}')
             result = e.msg
         else:
             result = '兌換碼使用成功！'
         finally:
-            await client.close()
             return result
     
     async def claimDailyReward(self, user_id: str) -> str:
@@ -137,7 +127,6 @@ class GenshinApp:
         :param user_id: 使用者Discord ID
         """
         log.info(f'claimDailyReward(uesr_id={user_id})')
-        user_id = str(user_id)
         check, msg = self.checkUserData(user_id)
         if check == False:
             return msg
@@ -152,26 +141,21 @@ class GenshinApp:
         else:
             result = f'Hoyolab今日簽到成功！獲得 {reward.amount}x {reward.name}'
         finally:
-            await client.close()
             return result
 
-    async def getSpiralAbyss(self, user_id: str, uid: str = None, previous: bool = False, full_data: bool = False) -> Union[str, discord.Embed]:
+    async def getSpiralAbyss(self, user_id: str, previous: bool = False, full_data: bool = False) -> Union[str, discord.Embed]:
         """取得深境螺旋資訊
         :param user_id: 欲登入的使用者Discord ID
-        :param uid: 欲查詢的原神UID，若為None，則查詢使用者自己已保存的UID
         :param previous: 是否查詢前一期的資訊
         :param full_data: 若為True，結果完整顯示9~12層資訊；若為False，結果只顯示最後一層資訊
         """
-        log.info(f'getSpiralAbyss(user_id={user_id}, uid={uid})')
-        user_id = str(user_id)
+        log.info(f'getSpiralAbyss(user_id={user_id})')
         check, msg = self.checkUserData(user_id)
         if check == False:
             return msg
-        if uid is None:
-            uid = self.__user_data[user_id]['uid']
         client = self.__getGenshinClient(user_id)
         try:
-            abyss = await client.get_spiral_abyss(uid, previous=previous)
+            abyss = await client.get_genshin_spiral_abyss(int(self.__user_data[user_id]['uid']), previous=previous)
         except genshin.errors.GenshinException as e:
             log.error(e.msg)
             result = e.msg
@@ -196,7 +180,6 @@ class GenshinApp:
                     value = f'[{".".join(chara_list[0])}]／[{".".join(chara_list[1])}]'
                     result.add_field(name=name, value=value)
         finally:
-            await client.close()
             return result
     
     async def getTravelerDiary(self, user_id: str, month: str) -> Union[str, discord.Embed]:
@@ -205,13 +188,12 @@ class GenshinApp:
         :param month: 欲查詢的月份
         """
         log.info(f'getTravelerDiary(user_id={user_id}, month={month})')
-        user_id = str(user_id)
         check, msg = self.checkUserData(user_id)
         if check == False:
             return msg
         client = self.__getGenshinClient(user_id)
         try:
-            diary = await client.get_diary(self.__user_data[user_id]['uid'], month=month)
+            diary = await client.get_diary(month=month)
         except genshin.errors.GenshinException as e:
             log.error(e.msg)
             result = e.msg
@@ -236,7 +218,6 @@ class GenshinApp:
                     msg += f'{d.categories[j].name[0:2]}：{d.categories[j].percentage}%\n'
                 result.add_field(name=f'原石收入組成 {i+1}', value=msg, inline=True)
         finally:
-            await client.close()
             return result
     
     def checkUserData(self, user_id: str, *,checkUserID = True, checkCookie = True, checkUID = True) -> Tuple[bool, str]:
@@ -268,8 +249,8 @@ class GenshinApp:
         if notes.current_resin == notes.max_resin:
             recover_time = '已額滿！'  
         else:
-            day_msg = '今天' if notes.resin_recovered_at.day == datetime.now().day else '明天'
-            recover_time = f'{day_msg} {notes.resin_recovered_at.strftime("%H:%M")}'
+            day_msg = '今天' if notes.resin_recovery_time.day == datetime.now().day else '明天'
+            recover_time = f'{day_msg} {notes.resin_recovery_time.strftime("%H:%M")}'
         result += f'樹脂全部恢復時間：{recover_time}\n'
         result += f'每日委託任務：{notes.completed_commissions} 已完成\n'
         result += f'當前洞天寶錢/上限：{notes.current_realm_currency}/{notes.max_realm_currency}\n'
@@ -277,8 +258,8 @@ class GenshinApp:
         if notes.current_realm_currency == notes.max_realm_currency:
             recover_time = '已額滿！'
         else:
-            weakday_msg = self.__weekday_dict[notes.realm_currency_recovered_at.weekday()]
-            recover_time = f'{weakday_msg} {notes.realm_currency_recovered_at.strftime("%H:%M")}'
+            weakday_msg = self.__weekday_dict[notes.realm_currency_recovery_time.weekday()]
+            recover_time = f'{weakday_msg} {notes.realm_currency_recovery_time.strftime("%H:%M")}'
         result += f'寶錢全部恢復時間：{recover_time}\n'
         result += f'週本樹脂減半：剩餘 {notes.remaining_resin_discounts} 次\n'
         result += f'--------------------\n'
@@ -291,8 +272,8 @@ class GenshinApp:
                 exped_finished += 1
                 exped_msg += '：已完成\n'
             else:
-                day_msg = '今天' if expedition.completed_at.day == datetime.now().day else '明天'
-                exped_msg += f' 完成時間：{day_msg} {expedition.completed_at.strftime("%H:%M")}\n'
+                day_msg = '今天' if expedition.completion_time.day == datetime.now().day else '明天'
+                exped_msg += f' 完成時間：{day_msg} {expedition.completion_time.strftime("%H:%M")}\n'
         result += f'探索派遣已完成/總數量：{exped_finished}/{len(notes.expeditions)}\n'
         result += exped_msg
         
@@ -305,10 +286,10 @@ class GenshinApp:
         except:
             log.error('__saveUserData(self)')
 
-    def __getGenshinClient(self, user_id: str) -> genshin.GenshinClient:
-        uid = str(self.__user_data[user_id]['uid'])
-        client = genshin.ChineseClient() if uid.startswith('1') else genshin.GenshinClient(lang='zh-tw')
+    def __getGenshinClient(self, user_id: str) -> genshin.Client:
+        client = genshin.Client(lang='zh-tw')
         client.set_cookies(self.__user_data[user_id]['cookie'])
+        client.default_game = genshin.Game.GENSHIN
         return client
 
 genshin_app = GenshinApp()

@@ -16,14 +16,14 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
         self.__resin_notifi_filename = 'data/schedule_resin_notification.json'
         try:
             with open(self.__daily_reward_filename, 'r', encoding='utf-8') as f:
-                self.__daily_dict = json.load(f)
+                self.__daily_dict: dict[str, str] = json.load(f)
         except:
-            self.__daily_dict = { }
+            self.__daily_dict: dict[str, str] = { }
         try:
             with open(self.__resin_notifi_filename, 'r', encoding='utf-8') as f:
-                self.__resin_dict = json.load(f)
+                self.__resin_dict: dict[str, str] = json.load(f)
         except:
-            self.__resin_dict = { }
+            self.__resin_dict: dict[str, str] = { }
         
         self.schedule.start()
 
@@ -73,15 +73,15 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
             daily_dict = dict(self.__daily_dict)
             for user_id, value in daily_dict.items():
                 channel = self.bot.get_channel(int(value['channel']))
-                check, msg = genshin_app.checkUserData(str(user_id))
+                check, msg = genshin_app.checkUserData(user_id)
                 if channel == None or check == False:
-                    self.__remove_user(str(user_id), self.__daily_dict, self.__daily_reward_filename)
+                    self.__remove_user(user_id, self.__daily_dict, self.__daily_reward_filename)
                     continue
                 result = await genshin_app.claimDailyReward(user_id)
                 try:
                     await channel.send(f'[自動簽到] <@{user_id}> {result}')
                 except:
-                    self.__remove_user(str(user_id), self.__daily_dict, self.__daily_reward_filename)
+                    self.__remove_user(user_id, self.__daily_dict, self.__daily_reward_filename)
                 await asyncio.sleep(5)
             log.info('每日自動簽到結束')
         
@@ -91,9 +91,9 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
             resin_dict = dict(self.__resin_dict)
             for user_id, value in resin_dict.items():
                 channel = self.bot.get_channel(int(value['channel']))
-                check, msg = genshin_app.checkUserData(str(user_id))
+                check, msg = genshin_app.checkUserData(user_id)
                 if channel == None or check == False:
-                    self.__remove_user(str(user_id), self.__resin_dict, self.__resin_notifi_filename)
+                    self.__remove_user(user_id, self.__resin_dict, self.__resin_notifi_filename)
                     continue
                 result = await genshin_app.getRealtimeNote(user_id, True)
                 if result != None:
@@ -101,7 +101,7 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
                     try:
                         await channel.send(f'<@{user_id}>，樹脂(快要)溢出啦！', embed=embed)
                     except:
-                        self.__remove_user(str(user_id), self.__resin_dict, self.__resin_notifi_filename)
+                        self.__remove_user(user_id, self.__resin_dict, self.__resin_notifi_filename)
                 await asyncio.sleep(5)
             log.info('自動檢查樹脂結束')
 

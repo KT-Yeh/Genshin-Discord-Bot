@@ -1,2 +1,2 @@
-discord
-genshin
+git+https://github.com/Rapptz/discord.py
+genshin >= 1.0.0
