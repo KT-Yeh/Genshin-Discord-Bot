@@ -44,8 +44,8 @@ class GenshinApp:
                 log.info(f'{user_id}的Cookie設置成功')
                 
                 if len(accounts) == 1:
-                    self.setUID(user_id, str(accounts[0].uid))
-                    result = f'Cookie已設定完成，UID:{accounts[0].uid}已保存！'
+                    await self.setUID(user_id, str(accounts[0].uid))
+                    result = f'Cookie已設定完成，角色UID: {accounts[0].uid} 已保存！'
                 else:
                     result = f'帳號內共有{len(accounts)}個角色\n```'
                     for account in accounts:
@@ -55,19 +55,33 @@ class GenshinApp:
         finally:
             return result
     
-    def setUID(self, user_id: str, uid: str) -> str:
+    async def setUID(self, user_id: str, uid: str, *, check_uid: bool = False) -> str:
         """設定原神UID，當帳號內有多名角色時，保存指定的UID
         :param user_id: 使用者Discord ID
         :param uid: 欲保存的原神UID
         """
-        try:
+        log.info(f'setUID(user_id={user_id}, uid={uid}, check_uid={check_uid})')
+        if not check_uid:
             self.__user_data[user_id]['uid'] = uid
             self.__saveUserData()
-            log.info(f'{user_id}角色UID:{uid}已保存')
             return f'角色UID: {uid} 已設定完成'
+            
+        check, msg = self.checkUserData(user_id, checkUID=False)
+        if check == False:
+            return msg
+        client = self.__getGenshinClient(user_id)
+        # 確認UID是否存在
+        try:
+            accounts = await client.get_game_accounts()
         except:
-            log.error(f'{user_id}角色UID:{uid}保存失敗')
-            return f'角色UID: {uid} 設定失敗，請先設定Cookie(輸入 `/cookie設定` 顯示說明)'
+            return '確認帳號資料失敗，請重新設定Cookie或是稍後再試'
+        else:
+            if int(uid) in [account.uid for account in accounts]:
+                self.__user_data[user_id]['uid'] = uid
+                self.__saveUserData()
+                return f'角色UID: {uid} 已設定完成'
+            else:
+                return f'找不到該UID的角色資料，請確認是否輸入正確'
 
     async def getRealtimeNote(self, user_id: str, check_resin_excess = False) -> str:
         """取得使用者即時便箋(樹脂、洞天寶錢、派遣、每日、週本)
