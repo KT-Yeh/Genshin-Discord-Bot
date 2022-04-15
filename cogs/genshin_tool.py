@@ -1,5 +1,6 @@
 import discord
 from discord import app_commands
+from discord.app_commands import Choice
 from discord.ext import commands
 from utility.GenshinApp import genshin_app
 
@@ -21,8 +22,12 @@ class GenshinTool(commands.Cog, name='原神工具'):
     @app_commands.command(
         name='daily每日簽到',
         description='領取Hoyolab每日簽到獎勵')
-    async def slash_daily(self, interaction: discord.Interaction):
-        result = await genshin_app.claimDailyReward(str(interaction.user.id))
+    @app_commands.rename(game='遊戲')
+    @app_commands.choices(game=[
+        Choice(name='原神', value=0), 
+        Choice(name='原神 + 崩壞3', value=1)])
+    async def slash_daily(self, interaction: discord.Interaction, game: int = 0):
+        result = await genshin_app.claimDailyReward(str(interaction.user.id), honkai=bool(game))
         await interaction.response.send_message(result)
 
 async def setup(client: commands.Bot):

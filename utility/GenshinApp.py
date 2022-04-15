@@ -32,7 +32,7 @@ class GenshinApp:
         try:
             accounts = await client.get_game_accounts()
         except genshin.errors.GenshinException as e:
-            log.error(f'{user_id}: [{e.retcode}] {e.msg}')
+            log.info(f'{user_id}: [{e.retcode}] {e.msg}')
             result = e.msg
         else:
             if len(accounts) == 0:
@@ -99,10 +99,10 @@ class GenshinApp:
         try:
             notes = await client.get_genshin_notes(int(uid))
         except genshin.errors.DataNotPublic as e:
-            log.error(e.msg)
+            log.info(e.msg)
             result = '即時便箋功能未開啟\n請從HOYOLAB網頁或App開啟即時便箋功能'
         except genshin.errors.GenshinException as e:
-            log.error(e.msg)
+            log.info(e.msg)
             result = e.msg
         except Exception as e:
             log.error(e)
@@ -110,7 +110,7 @@ class GenshinApp:
             if check_resin_excess == True and notes.current_resin < config.auto_check_resin_threshold:
                 result = None
             else:
-                result = f'{self.__uid_server_dict[uid[0]]} {uid.replace(uid[3:-3], "***", 1)}\n'
+                result = f'{self.__uid_server_dict.get(uid[0])} {uid.replace(uid[3:-3], "***", 1)}\n'
                 result += f'--------------------\n'
                 result += self.__parseNotes(notes)
         finally:
@@ -129,16 +129,17 @@ class GenshinApp:
         try:
             await client.redeem_code(code, int(self.__user_data[user_id]['uid']))
         except genshin.errors.GenshinException as e:
-            log.error(f'{e.msg}')
+            log.info(f'{e.msg}')
             result = e.msg
         else:
             result = '兌換碼使用成功！'
         finally:
             return result
     
-    async def claimDailyReward(self, user_id: str) -> str:
+    async def claimDailyReward(self, user_id: str, *, honkai: bool = False) -> str:
         """為使用者在Hoyolab簽到
         :param user_id: 使用者Discord ID
+        :param honkai: 是否也簽到崩壞3
         """
         log.info(f'claimDailyReward(uesr_id={user_id})')
         check, msg = self.checkUserData(user_id)
@@ -148,14 +149,25 @@ class GenshinApp:
         try:
             reward = await client.claim_daily_reward()
         except genshin.errors.AlreadyClaimed:
-            result = '今日獎勵已經領過了！'
+            result = '原神今日獎勵已經領過了！'
         except genshin.errors.GenshinException as e:
             log.error(e.msg)
             result = e.msg
         else:
-            result = f'Hoyolab今日簽到成功！獲得 {reward.amount}x {reward.name}'
-        finally:
-            return result
+            result = f'原神今日簽到成功！獲得 {reward.amount}x {reward.name}'
+        
+        # 崩壞3
+        if honkai:
+            result += '\n'
+            try:
+                reward = await client.claim_daily_reward(game=genshin.Game.HONKAI)
+            except genshin.errors.AlreadyClaimed:
+                result += '崩壞3今日獎勵已經領過了！'
+            except genshin.errors.GenshinException as e:
+                result += f'崩壞3：{e.msg}'
+            else:
+                result += f'崩壞3今日簽到成功！獲得 {reward.amount}x {reward.name}'
+        return result
 
     async def getSpiralAbyss(self, user_id: str, previous: bool = False, full_data: bool = False) -> Union[str, discord.Embed]:
         """取得深境螺旋資訊
