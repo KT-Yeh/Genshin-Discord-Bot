@@ -220,6 +220,7 @@ class GenshinApp:
             return msg
         client = self.__getGenshinClient(user_id)
         try:
+            client.uids[genshin.Game.GENSHIN] = int(self.__user_data[user_id]['uid'])
             diary = await client.get_diary(month=month)
         except genshin.errors.GenshinException as e:
             log.error(e.msg)
