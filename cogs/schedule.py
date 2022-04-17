@@ -96,13 +96,13 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
     loop_interval = 10
     @tasks.loop(minutes=loop_interval)
     async def schedule(self):
-        log.debug(f'schedule() is called')
         now = datetime.now()
         # 每日 X 點自動簽到
         if now.hour == config.auto_daily_reward_time and now.minute < self.loop_interval:
             log.info('每日自動簽到開始')
             # 複製一份避免衝突
             daily_dict = dict(self.__daily_dict)
+            count = 0
             for user_id, value in daily_dict.items():
                 channel = self.bot.get_channel(int(value['channel']))
                 has_honkai = False if value.get('honkai') == None else True
@@ -111,17 +111,19 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
                     self.__remove_user(user_id, self.__daily_dict, self.__daily_reward_filename)
                     continue
                 result = await genshin_app.claimDailyReward(user_id, honkai=has_honkai)
+                count += 1
                 try:
                     await channel.send(f'[自動簽到] <@{user_id}> {result}')
                 except:
                     self.__remove_user(user_id, self.__daily_dict, self.__daily_reward_filename)
                 await asyncio.sleep(5)
-            log.info('每日自動簽到結束')
+            log.info(f'每日自動簽到結束，{count} 人已簽到')
         
         # 每小時檢查樹脂
         if 30 <= now.minute < 30 + self.loop_interval:
             log.info('自動檢查樹脂開始')
             resin_dict = dict(self.__resin_dict)
+            count = 0
             for user_id, value in resin_dict.items():
                 channel = self.bot.get_channel(int(value['channel']))
                 check, msg = genshin_app.checkUserData(user_id)
@@ -129,6 +131,7 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
                     self.__remove_user(user_id, self.__resin_dict, self.__resin_notifi_filename)
                     continue
                 result = await genshin_app.getRealtimeNote(user_id, True)
+                count += 1
                 if result != None:
                     embed = discord.Embed(title='', description=result, color=0xff2424)
                     try:
@@ -136,7 +139,7 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
                     except:
                         self.__remove_user(user_id, self.__resin_dict, self.__resin_notifi_filename)
                 await asyncio.sleep(5)
-            log.info('自動檢查樹脂結束')
+            log.info(f'自動檢查樹脂結束，{count} 人已檢查')
 
     @schedule.before_loop
     async def before_schedule(self):
