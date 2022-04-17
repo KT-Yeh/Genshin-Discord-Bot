@@ -10,10 +10,10 @@ class Setting(commands.Cog, name='設定'):
         self.bot = bot
 
     # 提交Cookie的表單
-    class SubmitCookie(discord.ui.Modal, title='提交Cookie'):
+    class CookieModal(discord.ui.Modal, title='提交Cookie'):
         cookie = discord.ui.TextInput(
             label='Cookie',
-            placeholder='請貼上從網頁上取得的Cookie',
+            placeholder='請貼上從網頁上取得的Cookie，取得方式請使用指令 "/cookie設定 顯示說明如何取得Cookie"',
             style=discord.TextStyle.long,
             required=True,
             min_length=100,
@@ -32,14 +32,30 @@ class Setting(commands.Cog, name='設定'):
         description='設定Cookie，第一次使用前必須先使用本指令設定Cookie')
     @app_commands.rename(option='選項')
     @app_commands.choices(option=[
-        Choice(name='說明如何取得Cookie', value=0),
-        Choice(name='提交已取得的Cookie', value=1)])
+        Choice(name='① 顯示說明如何取得Cookie', value=0),
+        Choice(name='② 提交已取得的Cookie給小幫手', value=1),
+        Choice(name='③ 顯示小幫手Cookie使用與保存告知', value=2)])
     async def slash_cookie(self, interaction: discord.Interaction, option: int):
         if option == 0:
-            help_msg = "1.電腦開啟Hoyolab登入帳號 <https://www.hoyolab.com>\n2.按F12打開開發者工具，切換至主控台(Console)頁面\n3.複製底下程式碼，貼在主控台中按Enter取得Cookie\n4.在這輸入結果，範例：`/cookie設定 提交已取得的Cookie`\n```js\nd=document.cookie; c=d.includes('account_id') || alert('過期或無效的Cookie,請先登出帳號再重新登入!'); c && confirm('將Cookie複製到剪貼簿?') && copy(d)```https://i.imgur.com/dP4RKsb.png"
-            await interaction.response.send_message(help_msg)
+            msg = ("1.電腦開啟Hoyolab登入帳號 <https://www.hoyolab.com>\n"
+                "2.按F12打開開發者工具，切換至主控台(Console)頁面\n"
+                "3.複製底下程式碼，貼在主控台中按Enter取得Cookie\n"
+                "4.在這輸入結果，範例：`/cookie設定 提交已取得的Cookie`\n"
+                "```js\nd=document.cookie; c=d.includes('account_id') || alert('過期或無效的Cookie,請先登出帳號再重新登入!'); c && confirm('將Cookie複製到剪貼簿?') && copy(d)```https://i.imgur.com/dP4RKsb.png")
+            await interaction.response.send_message(msg)
         elif option == 1:
-            await interaction.response.send_modal(self.SubmitCookie())
+            await interaction.response.send_modal(self.CookieModal())
+        elif option == 2:
+            msg = ('· Cookie的內容包含你個人的識別代碼，不包含帳號與密碼\n'
+                '· 因此無法用來登入遊戲，也無法更改帳密，Cookie內容大概長這樣：'
+                '`ltoken=xxxx ltuid=1234 cookie_token=yyyy account_id=1122`\n'
+                '· 小幫手保存並使用Cookie是為了在Hoyolab網站上取得你的原神資料並提供服務\n'
+                '· 小幫手將資料保存於雲端主機獨立環境，只與Discord、Hoyolab伺服器連線\n'
+                '· 更詳細說明可以點擊小幫手個人檔案到巴哈說明文查看，若仍有疑慮請不要使用小幫手\n'
+                '· 當提交Cookie給小幫手時，表示你已同意小幫手保存並使用你的資料\n'
+                '· 你可以隨時刪除保存在小幫手的資料，請使用 `/清除資料` 指令\n')
+            embed = discord.Embed(title='小幫手Cookie使用與保存告知', description=msg)
+            await interaction.response.send_message(embed=embed)
 
     # 設定原神UID，當帳號內有多名角色時，保存指定的UID
     @app_commands.command(
@@ -51,12 +67,12 @@ class Setting(commands.Cog, name='設定'):
         await interaction.response.send_message(result, ephemeral=True)
 
     # 清除資料確認按紐
-    class Confirm(discord.ui.View):
-        def __init__(self, *, timeout: Optional[float] = 60):
+    class ConfirmButton(discord.ui.View):
+        def __init__(self, *, timeout: Optional[float] = 30):
             super().__init__(timeout=timeout)
             self.value = None
         
-        @discord.ui.button(label='取消', style=discord.ButtonStyle.green)
+        @discord.ui.button(label='取消', style=discord.ButtonStyle.grey)
         async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
             await interaction.response.defer()
             self.value = False
@@ -73,7 +89,7 @@ class Setting(commands.Cog, name='設定'):
         name='清除資料',
         description='刪除使用者所有保存在小幫手內的個人資料')
     async def slash_clear(self, interaction: discord.Interaction):
-        view = self.Confirm()
+        view = self.ConfirmButton()
         await interaction.response.send_message('是否確定刪除？', view=view, ephemeral=True)
         
         await view.wait()
