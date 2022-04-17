@@ -88,7 +88,8 @@ class GenshinApp:
         :param user_id: 使用者Discord ID
         :param check_resin_excess: 設為True時，只有當樹脂超過設定標準時才會回傳即時便箋結果，用於自動檢查樹脂
         """
-        log.info(f'getRealtimeNote(user_id={user_id}, check_resin_excess={check_resin_excess})')
+        if not check_resin_excess:
+            log.info(f'getRealtimeNote(user_id={user_id}, check_resin_excess={check_resin_excess})')
         check, msg = self.checkUserData(user_id)
         if check == False:
             return msg
@@ -152,21 +153,21 @@ class GenshinApp:
             result = '原神今日獎勵已經領過了！'
         except genshin.errors.GenshinException as e:
             log.error(e.msg)
-            result = e.msg
+            result = f'原神簽到失敗：{e.msg}'
         else:
-            result = f'原神今日簽到成功！獲得 {reward.amount}x {reward.name}'
+            result = f'原神今日簽到成功，獲得 {reward.amount}x {reward.name}！'
         
         # 崩壞3
         if honkai:
-            result += '\n'
+            result += ' '
             try:
                 reward = await client.claim_daily_reward(game=genshin.Game.HONKAI)
             except genshin.errors.AlreadyClaimed:
                 result += '崩壞3今日獎勵已經領過了！'
             except genshin.errors.GenshinException as e:
-                result += f'崩壞3：{e.msg}'
+                result += '崩壞3簽到失敗，找不到相關的崩壞3帳號' if e.retcode == -10002 else f'崩壞3簽到失敗：{e.msg}'
             else:
-                result += f'崩壞3今日簽到成功！獲得 {reward.amount}x {reward.name}'
+                result += f'崩壞3今日簽到成功，獲得 {reward.amount}x {reward.name}！'
         return result
 
     async def getSpiralAbyss(self, user_id: str, previous: bool = False, full_data: bool = False) -> Union[str, discord.Embed]:
