@@ -20,7 +20,7 @@ class Admin(commands.Cog):
         else: # 同步到全域，需等待一小時
             result = await self.bot.tree.sync()
         
-        msg = f'已同步以下指令到{"全部" if area == 1 else "當前"}伺服器\n{" ".join(cmd.name for cmd in result)}'
+        msg = f'已同步以下指令到{"全部" if area == 1 else "當前"}伺服器\n{"、".join(cmd.name for cmd in result)}'
         log.info(msg)
         await interaction.response.send_message(msg)
 
@@ -39,6 +39,22 @@ class Admin(commands.Cog):
                         continue
                     else:
                         break
+    
+    # 顯示機器人相關狀態
+    @app_commands.command(name='status', description='顯示小幫手狀態')
+    @app_commands.choices(option=[
+        Choice(name='延遲', value=0),
+        Choice(name='已連接伺服器數量', value=1),
+        Choice(name='已連接伺服器名稱', value=2)])
+    async def status(self, interaction: discord.Interaction, option: int):
+        if option == 0:
+            await interaction.response.send_message(f'延遲：{round(self.bot.latency*1000)} 毫秒')
+        elif option == 1:
+            await interaction.response.send_message(f'已連接 {len(self.bot.guilds)} 個伺服器')
+        elif option == 2:
+            msg = '、'.join([guild.name for guild in self.bot.guilds])
+            embed = discord.Embed(title='已連接伺服器名稱', description=msg)
+            await interaction.response.send_message(embed=embed)
     
     # 測試伺服器是否有 applications.commands 的 scope
     async def __hasAppCmdScope(self, guild: discord.Guild) -> bool:
