@@ -34,9 +34,9 @@
 
 ![](https://i.imgur.com/lsIgGCi.png)
 
-4. 在 OAuth2/URL Generator，分別勾選「Bot」「Send Messages」「Manage Messages」，最底下產生的 URL 連結就是機器人的邀請連結，開啟連結將機器人邀請至自己的伺服器
+4. 在 OAuth2/URL Generator，分別勾選「bot」「applications.commands」「Send Messages」，最底下產生的 URL 連結就是機器人的邀請連結，開啟連結將機器人邀請至自己的伺服器
 
-![](https://i.imgur.com/08fcHs0.png)
+![](https://i.imgur.com/y1Ml43u.png)
 
 ### 取得配置檔案所需 ID
 
