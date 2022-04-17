@@ -16,16 +16,38 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
         self.__resin_notifi_filename = 'data/schedule_resin_notification.json'
         try:
             with open(self.__daily_reward_filename, 'r', encoding='utf-8') as f:
-                self.__daily_dict: dict[str, str] = json.load(f)
+                self.__daily_dict: dict[str, dict[str, str]] = json.load(f)
         except:
-            self.__daily_dict: dict[str, str] = { }
+            self.__daily_dict: dict[str, dict[str, str]] = { }
         try:
             with open(self.__resin_notifi_filename, 'r', encoding='utf-8') as f:
-                self.__resin_dict: dict[str, str] = json.load(f)
+                self.__resin_dict: dict[str, dict[str, str]] = json.load(f)
         except:
-            self.__resin_dict: dict[str, str] = { }
+            self.__resin_dict: dict[str, dict[str, str]] = { }
         
         self.schedule.start()
+    
+    class ChooseGameButton(discord.ui.View):
+        """選擇自動簽到遊戲的按鈕"""
+        def __init__(self, author: discord.Member, *, timeout: float = 30):
+            super().__init__(timeout=timeout)
+            self.value = None
+            self.author = author
+        
+        async def interaction_check(self, interaction: discord.Interaction) -> bool:
+            return interaction.user.id == self.author.id
+        
+        @discord.ui.button(label='原神', style=discord.ButtonStyle.blurple)
+        async def option1(self, interaction: discord.Interaction, button: discord.ui.Button):
+            await interaction.response.defer()
+            self.value = '原神'
+            self.stop()
+        
+        @discord.ui.button(label='原神+崩3', style=discord.ButtonStyle.blurple)
+        async def option2(self, interaction: discord.Interaction, button: discord.ui.Button):
+            await interaction.response.defer()
+            self.value = '原神+崩3'
+            self.stop()
 
     # 設定自動排程功能
     @app_commands.command(
@@ -47,17 +69,27 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
             await interaction.response.send_message(msg)
             return
         if function == 'daily':
-            if switch == 1:
+            if switch == 1: # 開啟簽到功能
+                view = self.ChooseGameButton(interaction.user)
+                await interaction.response.send_message('請選擇要自動簽到的遊戲：', view=view)
+                await view.wait()
+                if view.value == None: 
+                    await interaction.edit_original_message(content='已取消', view=None)
+                    return
+                # 新增使用者
                 self.__add_user(str(interaction.user.id), str(interaction.channel_id), self.__daily_dict, self.__daily_reward_filename)
-                await interaction.response.send_message('每日自動簽到已開啟')
-            elif switch == 0:
+                if view.value == '原神+崩3':
+                    self.__add_honkai_user(str(interaction.user.id), self.__daily_dict, self.__daily_reward_filename)
+                await interaction.edit_original_message(content='已選擇', view=None)
+                await interaction.followup.send(f'{view.value}每日自動簽到已開啟')
+            elif switch == 0: # 關閉簽到功能
                 self.__remove_user(str(interaction.user.id), self.__daily_dict, self.__daily_reward_filename)
                 await interaction.response.send_message('每日自動簽到已關閉')
         elif function == 'resin':
-            if switch == 1:
+            if switch == 1: # 開啟檢查樹脂功能
                 self.__add_user(str(interaction.user.id), str(interaction.channel_id), self.__resin_dict, self.__resin_notifi_filename)
                 await interaction.response.send_message('樹脂額滿提醒已開啟')
-            elif switch == 0:
+            elif switch == 0: # 關閉檢查樹脂功能
                 self.__remove_user(str(interaction.user.id), self.__resin_dict, self.__resin_notifi_filename)
                 await interaction.response.send_message('樹脂額滿提醒已關閉')
 
@@ -73,11 +105,12 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
             daily_dict = dict(self.__daily_dict)
             for user_id, value in daily_dict.items():
                 channel = self.bot.get_channel(int(value['channel']))
+                has_honkai = False if value.get('honkai') == None else True
                 check, msg = genshin_app.checkUserData(user_id)
                 if channel == None or check == False:
                     self.__remove_user(user_id, self.__daily_dict, self.__daily_reward_filename)
                     continue
-                result = await genshin_app.claimDailyReward(user_id)
+                result = await genshin_app.claimDailyReward(user_id, honkai=has_honkai)
                 try:
                     await channel.send(f'[自動簽到] <@{user_id}> {result}')
                 except:
@@ -113,12 +146,18 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
         data[user_id] = { }
         data[user_id]['channel'] = channel
         self.__saveScheduleData(data, filename)
+    
+    def __add_honkai_user(self, user_id: str, data: dict, filename: str) -> None:
+        """加入崩壞3簽到到現有的使用者，使用前請先確認已有該使用者資料"""
+        if data.get(user_id) != None:
+            data[user_id]['honkai'] = 'True'
+            self.__saveScheduleData(data, filename)
 
     def __remove_user(self, user_id: str, data: dict, filename: str) -> None:
         try:
             del data[user_id]
         except:
-            log.error(f'__remove_user(self, user_id={user_id}, data: dict)')
+            log.info(f'__remove_user(self, user_id={user_id}, data: dict)')
         else:
             self.__saveScheduleData(data, filename)
     
