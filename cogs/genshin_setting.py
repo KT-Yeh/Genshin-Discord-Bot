@@ -37,12 +37,14 @@ class Setting(commands.Cog, name='設定'):
         Choice(name='③ 顯示小幫手Cookie使用與保存告知', value=2)])
     async def slash_cookie(self, interaction: discord.Interaction, option: int):
         if option == 0:
-            msg = ("1.電腦開啟Hoyolab登入帳號 <https://www.hoyolab.com>\n"
-                "2.按F12打開開發者工具，切換至主控台(Console)頁面\n"
-                "3.複製底下程式碼，貼在主控台中按Enter取得Cookie\n"
-                "4.在這輸入結果，範例：`/cookie設定 提交已取得的Cookie`\n"
-                "```js\nd=document.cookie; c=d.includes('account_id') || alert('過期或無效的Cookie,請先登出帳號再重新登入!'); c && confirm('將Cookie複製到剪貼簿?') && copy(d)```https://i.imgur.com/dP4RKsb.png")
-            await interaction.response.send_message(msg)
+            help_msg = ("1.PC或手機瀏覽器開啟Hoyolab登入帳號 <https://www.hoyolab.com>\n"
+            "2.複製底下程式碼，在網址列輸入 `java` 後貼上程式碼按Enter輸入\n"
+            "3.網頁會變成顯示你的Cookie，全選然後複製\n"
+            "4.在這裡提交結果，使用：`/cookie設定 提交已取得的Cookie`\n"
+            "https://i.imgur.com/GZRRSn3.png")
+            code_msg = "```script:d=document.cookie; c=d.includes('account_id') || alert('過期或無效的Cookie,請先登出帳號再重新登入!'); c && document.write(d)```"
+            await interaction.response.send_message(content=help_msg)
+            await interaction.followup.send(content=code_msg)
         elif option == 1:
             await interaction.response.send_modal(self.CookieModal())
         elif option == 2:
