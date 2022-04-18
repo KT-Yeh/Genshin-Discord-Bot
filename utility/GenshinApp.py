@@ -294,15 +294,25 @@ class GenshinApp:
             recover_time = f'{day_msg} {notes.resin_recovery_time.strftime("%H:%M")}'
         result += f'樹脂全部恢復時間：{recover_time}\n'
         result += f'每日委託任務：{notes.completed_commissions} 已完成\n'
-        result += f'當前洞天寶錢/上限：{notes.current_realm_currency}/{notes.max_realm_currency}\n'
+        result += f'週本樹脂減半：剩餘 {notes.remaining_resin_discounts} 次\n'
+        result += f'--------------------\n'
         
+        result += f'當前洞天寶錢/上限：{notes.current_realm_currency}/{notes.max_realm_currency}\n'
+        # 洞天寶錢恢復時間
         if notes.current_realm_currency == notes.max_realm_currency:
             recover_time = '已額滿！'
         else:
-            weakday_msg = self.__weekday_dict[notes.realm_currency_recovery_time.weekday()]
-            recover_time = f'{weakday_msg} {notes.realm_currency_recovery_time.strftime("%H:%M")}'
+            weekday_msg = self.__weekday_dict[notes.realm_currency_recovery_time.weekday()]
+            recover_time = f'{weekday_msg} {notes.realm_currency_recovery_time.strftime("%H:%M")}'
         result += f'寶錢全部恢復時間：{recover_time}\n'
-        result += f'週本樹脂減半：剩餘 {notes.remaining_resin_discounts} 次\n'
+        # 參數質變儀完成時間
+        if notes.remaining_transformer_recovery_time < 10:
+            recover_time = '已完成！'
+        else:
+            weekday_msg = self.__weekday_dict[notes.transformer_recovery_time.weekday()]
+            recover_time = f'{weekday_msg} {notes.transformer_recovery_time.strftime("%H:%M")}'
+        result += f'參數質變儀完成時間：{recover_time}\n'
+
         result += f'--------------------\n'
 
         exped_finished = 0
