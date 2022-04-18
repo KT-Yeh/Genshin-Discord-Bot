@@ -3,7 +3,7 @@ import discord
 import genshin
 from datetime import datetime
 from typing import Union, Tuple
-from .utils import log, getCharacterName, trimCookie
+from .utils import log, getCharacterName, trimCookie, user_last_use_time
 from .config import config
 
 class GenshinApp:
@@ -259,16 +259,29 @@ class GenshinApp:
             if checkUID and 'uid' not in self.__user_data[user_id].keys():
                 log.info('找不到角色UID，請先設定UID(使用 /uid設定 來設定UID)')
                 return False, f'找不到角色UID，請先設定UID(使用 `/uid設定` 來設定UID)'
+        user_last_use_time.update(user_id)
         return True, None
     
     def clearUserData(self, user_id: str) -> str:
         try:
             del self.__user_data[user_id]
+            user_last_use_time.deleteUser(user_id)
         except:
             return '刪除失敗，找不到使用者資料'
         else:
             self.__saveUserData()
             return '使用者資料已全部刪除'
+    
+    def deleteExpiredUserData(self) -> None:
+        """將超過30天未使用的使用者刪除"""
+        now = datetime.now()
+        count = 0
+        user_data = dict(self.__user_data)
+        for user_id in user_data.keys():
+            if user_last_use_time.checkExpiry(user_id, now, 30) == True:
+                self.clearUserData(user_id)
+                count += 1
+        log.info(f'過期使用者已檢查，已刪除 {count} 位使用者')
 
     def __parseNotes(self, notes: genshin.models.Notes) -> str:
         result = ''

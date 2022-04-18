@@ -6,7 +6,7 @@ from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands, tasks
 from utility.config import config
-from utility.utils import log
+from utility.utils import log, user_last_use_time
 from utility.GenshinApp import genshin_app
 
 class Schedule(commands.Cog, name='自動化(BETA)'):
@@ -150,6 +150,11 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
                         self.__remove_user(user_id, self.__resin_dict, self.__resin_notifi_filename)
                 await asyncio.sleep(5)
             log.info(f'自動檢查樹脂結束，{count} 人已檢查')
+        
+        user_last_use_time.save() # 定時儲存使用者最後使用時間資料
+        # 每日刪除過期使用者資料
+        if now.hour == 1 and now.minute < self.loop_interval:
+            genshin_app.deleteExpiredUserData()
 
     @schedule.before_loop
     async def before_schedule(self):
