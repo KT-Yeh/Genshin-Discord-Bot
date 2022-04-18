@@ -52,23 +52,33 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
     # 設定自動排程功能
     @app_commands.command(
         name='schedule排程',
-        description='設定自動化功能(論壇簽到、樹脂額滿提醒)')
+        description='設定自動化功能(Hoyolab每日簽到、樹脂額滿提醒)')
     @app_commands.rename(function='功能', switch='開關')
     @app_commands.describe(
         function='選擇要執行自動化的功能',
         switch='選擇開啟或關閉此功能')
     @app_commands.choices(
-        function=[Choice(name='每日自動簽到', value='daily'),
+        function=[Choice(name='顯示排程功能使用說明', value='help'),
+                  Choice(name='每日自動簽到', value='daily'),
                   Choice(name='樹脂額滿提醒', value='resin')],
         switch=[Choice(name='開啟功能', value=1),
                 Choice(name='關閉功能', value=0)])
     async def slash_schedule(self, interaction: discord.Interaction, function: str, switch: int):
         log.info(f'set(user_id={interaction.user.id}, cmd={function} , switch={switch})')
+        if function == 'help': # 排程功能使用說明
+            msg = ('· 排程會在特定時間執行功能，執行結果會在設定指令的頻道推送\n'
+            '· 設定前請先確認小幫手有在該頻道發言的權限，如果推送訊息失敗，小幫手會自動移除排程設定\n'
+            '· 若要更改推送頻道，請在新的頻道重新設定指令一次\n\n'
+            f'· 每日簽到：每日 {config.auto_daily_reward_time}~{config.auto_daily_reward_time+1} 點之間自動論壇簽到，設定前請先使用 /daily每日簽到 指令確認小幫手能正確幫你簽到\n'
+            f'· 樹脂提醒：每小時檢查一次，當樹脂超過 {config.auto_check_resin_threshold} 時會發送提醒，設定前請先用 /notes即時便箋 指令確認小幫手能讀到你的樹脂資訊\n')
+            await interaction.response.send_message(embed=discord.Embed(title='排程功能使用說明', description=msg))
+            return
+        # 確認使用者Cookie資料
         check, msg = genshin_app.checkUserData(str(interaction.user.id))
         if check == False:
             await interaction.response.send_message(msg)
             return
-        if function == 'daily':
+        if function == 'daily': # 每日自動簽到
             if switch == 1: # 開啟簽到功能
                 view = self.ChooseGameButton(interaction.user)
                 await interaction.response.send_message('請選擇要自動簽到的遊戲：', view=view)
@@ -78,14 +88,14 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
                     return
                 # 新增使用者
                 self.__add_user(str(interaction.user.id), str(interaction.channel_id), self.__daily_dict, self.__daily_reward_filename)
-                if view.value == '原神+崩3':
+                if view.value == '原神+崩3': # 新增崩壞3使用者
                     self.__add_honkai_user(str(interaction.user.id), self.__daily_dict, self.__daily_reward_filename)
                 await interaction.edit_original_message(content='已選擇', view=None)
                 await interaction.followup.send(f'{view.value}每日自動簽到已開啟')
             elif switch == 0: # 關閉簽到功能
                 self.__remove_user(str(interaction.user.id), self.__daily_dict, self.__daily_reward_filename)
                 await interaction.response.send_message('每日自動簽到已關閉')
-        elif function == 'resin':
+        elif function == 'resin': # 樹脂額滿提醒
             if switch == 1: # 開啟檢查樹脂功能
                 self.__add_user(str(interaction.user.id), str(interaction.channel_id), self.__resin_dict, self.__resin_notifi_filename)
                 await interaction.response.send_message('樹脂額滿提醒已開啟')
