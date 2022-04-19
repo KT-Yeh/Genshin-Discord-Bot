@@ -1,7 +1,7 @@
 import json
 import discord
 import genshin
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Union, Tuple
 from .utils import log, getCharacterName, trimCookie, user_last_use_time
 from .config import config
@@ -305,13 +305,18 @@ class GenshinApp:
             weekday_msg = self.__weekday_dict[notes.realm_currency_recovery_time.weekday()]
             recover_time = f'{weekday_msg} {notes.realm_currency_recovery_time.strftime("%H:%M")}'
         result += f'寶錢全部恢復時間：{recover_time}\n'
-        # 參數質變儀完成時間
+        # 參數質變儀剩餘時間
         if notes.remaining_transformer_recovery_time < 10:
             recover_time = '已完成！'
         else:
-            weekday_msg = self.__weekday_dict[notes.transformer_recovery_time.weekday()]
-            recover_time = f'{weekday_msg} {notes.transformer_recovery_time.strftime("%H:%M")}'
-        result += f'參數質變儀完成時間：{recover_time}\n'
+            t = timedelta(seconds=notes.remaining_transformer_recovery_time+10)
+            if t.days > 0:
+                recover_time = f'{t.days} 天'
+            elif t.seconds > 3600:
+                recover_time = f'{round(t.seconds/3600)} 小時'
+            else:
+                recover_time = f'{round(t.seconds/60)} 分'
+        result += f'參數質變儀剩餘時間：{recover_time}\n'
 
         result += f'--------------------\n'
 
