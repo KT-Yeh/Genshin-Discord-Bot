@@ -66,6 +66,6 @@ class UserLastUseTime:
             with open('data/last_use_time.json', 'w', encoding="utf-8") as f:
                 json.dump(self.data, f)
         except Exception as e:
-            log.error(e)
+            log.error(f'[例外][System]UserLastUseTime > save: {e}')
 
 user_last_use_time = UserLastUseTime()

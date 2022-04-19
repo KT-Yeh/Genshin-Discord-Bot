@@ -21,7 +21,7 @@ class Admin(commands.Cog):
             result = await self.bot.tree.sync()
         
         msg = f'已同步以下指令到{"全部" if area == 1 else "當前"}伺服器\n{"、".join(cmd.name for cmd in result)}'
-        log.info(msg)
+        log.info(f'[指令][Admin]sync(area={area}): msg')
         await interaction.response.send_message(msg)
 
     # 廣播訊息到所有的伺服器
@@ -37,7 +37,7 @@ class Admin(commands.Cog):
                     try:
                         await channel.send(message)
                     except Exception as e:
-                        log.error(f'{guild}: {e}')
+                        log.error(f'[例外][Admin]broadcast: 頻道發送訊息失敗 [伺服器]{guild} [例外內容]{e}')
                         continue
                     else:
                         count += 1
@@ -67,7 +67,7 @@ class Admin(commands.Cog):
         except discord.Forbidden:
             return False
         except Exception as e:
-            log.error(f'{guild}: {e}')
+            log.error(f'[例外][Admin]Admin > __hasAppCmdScope: [伺服器]{guild} [例外內容]{e}')
             return False
         else:
             return True

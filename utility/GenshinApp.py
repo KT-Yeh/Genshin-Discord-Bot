@@ -22,7 +22,7 @@ class GenshinApp:
         :param user_id: 使用者Discord ID
         :cookie: Hoyolab cookie
         """
-        log.info(f'setCookie(user_id={user_id}, cookie={cookie})') 
+        log.info(f'[指令][{user_id}]setCookie: cookie={cookie}')
         user_id = str(user_id)
         cookie = trimCookie(cookie)
         if cookie == None:
@@ -32,16 +32,16 @@ class GenshinApp:
         try:
             accounts = await client.get_game_accounts()
         except genshin.errors.GenshinException as e:
-            log.info(f'{user_id}: [{e.retcode}] {e.msg}')
+            log.info(f'[例外][{user_id}]setCookie: [retcode]{e.retcode} [例外內容]{e.msg}')
             result = e.msg
         else:
             if len(accounts) == 0:
-                log.info('帳號內沒有任何角色')
+                log.info(f'[資訊][{user_id}]setCookie: 帳號內沒有任何角色')
                 result = '帳號內沒有任何角色，取消設定Cookie'
             else:
                 self.__user_data[user_id] = {}
                 self.__user_data[user_id]['cookie'] = cookie
-                log.info(f'{user_id}的Cookie設置成功')
+                log.info(f'[資訊][{user_id}]setCookie: Cookie設置成功')
                 
                 if len(accounts) == 1:
                     await self.setUID(user_id, str(accounts[0].uid))
@@ -60,7 +60,7 @@ class GenshinApp:
         :param user_id: 使用者Discord ID
         :param uid: 欲保存的原神UID
         """
-        log.info(f'setUID(user_id={user_id}, uid={uid}, check_uid={check_uid})')
+        log.info(f'[指令][{user_id}]setUID: uid={uid}, check_uid={check_uid}')
         if not check_uid:
             self.__user_data[user_id]['uid'] = uid
             self.__saveUserData()
@@ -89,7 +89,7 @@ class GenshinApp:
         :param check_resin_excess: 設為True時，只有當樹脂超過設定標準時才會回傳即時便箋結果，用於自動檢查樹脂
         """
         if not check_resin_excess:
-            log.info(f'getRealtimeNote(user_id={user_id}, check_resin_excess={check_resin_excess})')
+            log.info(f'[指令][{user_id}]getRealtimeNote')
         check, msg = self.checkUserData(user_id)
         if check == False:
             return msg
@@ -100,13 +100,13 @@ class GenshinApp:
         try:
             notes = await client.get_genshin_notes(int(uid))
         except genshin.errors.DataNotPublic as e:
-            log.info(e.msg)
+            log.info(f'[例外][{user_id}]getRealtimeNote: {e.msg}')
             result = '即時便箋功能未開啟\n請從HOYOLAB網頁或App開啟即時便箋功能'
         except genshin.errors.GenshinException as e:
-            log.info(e.msg)
+            log.info(f'[例外][{user_id}]getRealtimeNote: [retcode]{e.retcode} [例外內容]{e.msg}')
             result = e.msg
         except Exception as e:
-            log.error(e)
+            log.error(f'[例外][{user_id}]getRealtimeNote: {e}')
         else:
             if check_resin_excess == True and notes.current_resin < config.auto_check_resin_threshold:
                 result = None
@@ -122,7 +122,7 @@ class GenshinApp:
         :param user_id: 使用者Discord ID
         :param code: Hoyolab兌換碼
         """
-        log.info(f'redeemCode(uesr_id={user_id}, code={code})')
+        log.info(f'[指令][{user_id}]redeemCode: code={code}')
         check, msg = self.checkUserData(user_id)
         if check == False:
             return msg
@@ -130,7 +130,7 @@ class GenshinApp:
         try:
             await client.redeem_code(code, int(self.__user_data[user_id]['uid']))
         except genshin.errors.GenshinException as e:
-            log.info(f'{e.msg}')
+            log.info(f'[例外][{user_id}]redeemCode: [retcode]{e.retcode} [例外內容]{e.msg}')
             result = e.msg
         else:
             result = '兌換碼使用成功！'
@@ -142,7 +142,7 @@ class GenshinApp:
         :param user_id: 使用者Discord ID
         :param honkai: 是否也簽到崩壞3
         """
-        log.info(f'claimDailyReward(uesr_id={user_id})')
+        log.info(f'[指令][{user_id}]claimDailyReward: honkai={honkai}')
         check, msg = self.checkUserData(user_id)
         if check == False:
             return msg
@@ -152,7 +152,7 @@ class GenshinApp:
         except genshin.errors.AlreadyClaimed:
             result = '原神今日獎勵已經領過了！'
         except genshin.errors.GenshinException as e:
-            log.error(e.msg)
+            log.error(f'[例外][{user_id}]claimDailyReward: [retcode]{e.retcode} [例外內容]{e.msg}')
             result = f'原神簽到失敗：{e.msg}'
         else:
             result = f'原神今日簽到成功，獲得 {reward.amount}x {reward.name}！'
@@ -176,7 +176,7 @@ class GenshinApp:
         :param previous: 是否查詢前一期的資訊
         :param full_data: 若為True，結果完整顯示9~12層資訊；若為False，結果只顯示最後一層資訊
         """
-        log.info(f'getSpiralAbyss(user_id={user_id})')
+        log.info(f'[指令][{user_id}]getSpiralAbyss: previous={previous} full_data={full_data}')
         check, msg = self.checkUserData(user_id)
         if check == False:
             return msg
@@ -184,7 +184,7 @@ class GenshinApp:
         try:
             abyss = await client.get_genshin_spiral_abyss(int(self.__user_data[user_id]['uid']), previous=previous)
         except genshin.errors.GenshinException as e:
-            log.error(e.msg)
+            log.error(f'[例外][{user_id}]getSpiralAbyss: [retcode]{e.retcode} [例外內容]{e.msg}')
             result = e.msg
         else:
             result = discord.Embed(title=f'深境螺旋第 {abyss.season} 期戰績', color=0x7fbcf5)
@@ -214,7 +214,7 @@ class GenshinApp:
         :param user_id: 使用者Discord ID
         :param month: 欲查詢的月份
         """
-        log.info(f'getTravelerDiary(user_id={user_id}, month={month})')
+        log.info(f'[指令][{user_id}]getTravelerDiary: month={month}')
         check, msg = self.checkUserData(user_id)
         if check == False:
             return msg
@@ -223,7 +223,7 @@ class GenshinApp:
             client.uids[genshin.Game.GENSHIN] = int(self.__user_data[user_id]['uid'])
             diary = await client.get_diary(month=month)
         except genshin.errors.GenshinException as e:
-            log.error(e.msg)
+            log.error(f'[例外][{user_id}]getTravelerDiary: [retcode]{e.retcode} [例外內容]{e.msg}')
             result = e.msg
         else:    
             d = diary.data
@@ -250,19 +250,20 @@ class GenshinApp:
     
     def checkUserData(self, user_id: str, *,checkUserID = True, checkCookie = True, checkUID = True) -> Tuple[bool, str]:
         if checkUserID and user_id not in self.__user_data.keys():
-            log.info('找不到使用者，請先設定Cookie(輸入 /cookie設定 顯示說明)')
+            log.info(f'[資訊][{user_id}]checkUserData: 找不到使用者')
             return False, f'找不到使用者，請先設定Cookie(輸入 `/cookie設定` 顯示說明)'
         else:
             if checkCookie and 'cookie' not in self.__user_data[user_id].keys():
-                log.info('找不到Cookie，請先設定Cookie(輸入 /cookie設定 顯示說明)')
+                log.info(f'[資訊][{user_id}]checkUserData: 找不到Cookie')
                 return False, f'找不到Cookie，請先設定Cookie(輸入 `/cookie設定` 顯示說明)'
             if checkUID and 'uid' not in self.__user_data[user_id].keys():
-                log.info('找不到角色UID，請先設定UID(使用 /uid設定 來設定UID)')
+                log.info(f'[資訊][{user_id}]checkUserData: 找不到角色UID')
                 return False, f'找不到角色UID，請先設定UID(使用 `/uid設定` 來設定UID)'
         user_last_use_time.update(user_id)
         return True, None
     
     def clearUserData(self, user_id: str) -> str:
+        log.info(f'[指令][{user_id}]clearUserData')
         try:
             del self.__user_data[user_id]
             user_last_use_time.deleteUser(user_id)
@@ -281,7 +282,7 @@ class GenshinApp:
             if user_last_use_time.checkExpiry(user_id, now, 30) == True:
                 self.clearUserData(user_id)
                 count += 1
-        log.info(f'過期使用者已檢查，已刪除 {count} 位使用者')
+        log.info(f'[資訊][System]deleteExpiredUserData: 過期使用者已檢查，已刪除 {count} 位使用者')
 
     def __parseNotes(self, notes: genshin.models.Notes) -> str:
         result = ''
@@ -340,7 +341,7 @@ class GenshinApp:
             with open('data/user_data.json', 'w', encoding='utf-8') as f:
                 json.dump(self.__user_data, f)
         except:
-            log.error('__saveUserData(self)')
+            log.error('[例外][System]GenshinApp > __saveUserData: 存檔寫入失敗')
 
     def __getGenshinClient(self, user_id: str) -> genshin.Client:
         client = genshin.Client(lang='zh-tw')

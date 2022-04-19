@@ -64,7 +64,7 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
         switch=[Choice(name='開啟功能', value=1),
                 Choice(name='關閉功能', value=0)])
     async def slash_schedule(self, interaction: discord.Interaction, function: str, switch: int):
-        log.info(f'set(user_id={interaction.user.id}, cmd={function} , switch={switch})')
+        log.info(f'[指令][{interaction.user.id}]schedule(function={function} , switch={switch})')
         if function == 'help': # 排程功能使用說明
             msg = ('· 排程會在特定時間執行功能，執行結果會在設定指令的頻道推送\n'
             '· 設定前請先確認小幫手有在該頻道發言的權限，如果推送訊息失敗，小幫手會自動移除排程設定\n'
@@ -109,7 +109,7 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
         now = datetime.now()
         # 每日 X 點自動簽到
         if now.hour == config.auto_daily_reward_time and now.minute < self.loop_interval:
-            log.info('每日自動簽到開始')
+            log.info('[排程][System]schedule: 每日自動簽到開始')
             # 複製一份避免衝突
             daily_dict = dict(self.__daily_dict)
             count = 0
@@ -127,11 +127,11 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
                 except:
                     self.__remove_user(user_id, self.__daily_dict, self.__daily_reward_filename)
                 await asyncio.sleep(5)
-            log.info(f'每日自動簽到結束，{count} 人已簽到')
+            log.info(f'[排程][System]schedule: 每日自動簽到結束，{count} 人已簽到')
         
         # 每小時檢查樹脂
         if 30 <= now.minute < 30 + self.loop_interval:
-            log.info('自動檢查樹脂開始')
+            log.info('[排程][System]schedule: 自動檢查樹脂開始')
             resin_dict = dict(self.__resin_dict)
             count = 0
             for user_id, value in resin_dict.items():
@@ -149,7 +149,7 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
                     except:
                         self.__remove_user(user_id, self.__resin_dict, self.__resin_notifi_filename)
                 await asyncio.sleep(5)
-            log.info(f'自動檢查樹脂結束，{count} 人已檢查')
+            log.info(f'[排程][System]schedule: 自動檢查樹脂結束，{count} 人已檢查')
         
         user_last_use_time.save() # 定時儲存使用者最後使用時間資料
         # 每日刪除過期使用者資料
@@ -175,7 +175,7 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
         try:
             del data[user_id]
         except:
-            log.info(f'__remove_user(self, user_id={user_id}, data: dict)')
+            log.info(f'[例外][System]Schedule > __remove_user(user_id={user_id}): 使用者不存在')
         else:
             self.__saveScheduleData(data, filename)
     
@@ -184,7 +184,7 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
             with open(filename, 'w', encoding='utf-8') as f:
                 json.dump(data, f)
         except:
-            log.error(f'__saveScheduleData(data: dict, filename: {filename})')
+            log.error(f'[例外][System]Schedule > __saveScheduleData(filename={filename}): 存檔寫入失敗')
 
 async def setup(client: commands.Bot):
     await client.add_cog(Schedule(client))
