@@ -65,12 +65,13 @@ class GenshinApp:
             self.__user_data[user_id]['uid'] = uid
             self.__saveUserData()
             return f'角色UID: {uid} 已設定完成'
-            
         check, msg = self.checkUserData(user_id, checkUID=False)
         if check == False:
             return msg
-        client = self.__getGenshinClient(user_id)
+        if len(uid) < 9:
+            return f'UID錯誤，請輸入正確的原神UID'
         # 確認UID是否存在
+        client = self.__getGenshinClient(user_id)
         try:
             accounts = await client.get_game_accounts()
         except Exception as e:
