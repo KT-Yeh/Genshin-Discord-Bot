@@ -63,7 +63,7 @@ class Setting(commands.Cog, name='設定'):
     @app_commands.command(
         name='uid設定',
         description='帳號內多角色時需保存指定的UID，只有單一角色不需要使用本指令')
-    @app_commands.describe(uid='請輸入要保存的原神主要角色UID')
+    @app_commands.describe(uid='請輸入要保存的「原神」主要角色UID')
     async def slash_uid(self, interaction: discord.Interaction, uid: int):
         result = await genshin_app.setUID(str(interaction.user.id), str(uid), check_uid=True)
         await interaction.response.send_message(result, ephemeral=True)
