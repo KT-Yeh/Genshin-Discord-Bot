@@ -28,6 +28,8 @@ class Admin(commands.Cog):
     @app_commands.command(name='broadcast', description='廣播訊息到所有的伺服器')
     @app_commands.rename(message='訊息')
     async def broadcast(self, interaction: discord.Interaction, message: str):
+        await interaction.response.defer()
+        count = 0
         for guild in self.bot.guilds:
             # 找出第一個可用的頻道發出訊息
             for channel in guild.text_channels:
@@ -38,7 +40,9 @@ class Admin(commands.Cog):
                         log.error(f'{guild}: {e}')
                         continue
                     else:
+                        count += 1
                         break
+        await interaction.edit_original_message(content=f'已廣播訊息到 {count} / {len(self.bot.guilds)} 伺服器')
     
     # 顯示機器人相關狀態
     @app_commands.command(name='status', description='顯示小幫手狀態')
