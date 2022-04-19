@@ -136,6 +136,9 @@ class GenshinApp:
         except genshin.errors.GenshinException as e:
             log.info(f'[例外][{user_id}]redeemCode: [retcode]{e.retcode} [例外內容]{e.msg}')
             result = e.msg
+        except Exception as e:
+            log.error(f'[例外][{user_id}]redeemCode: [例外內容]{e}')
+            result = f'{e}'
         else:
             result = '兌換碼使用成功！'
         finally:
@@ -156,8 +159,11 @@ class GenshinApp:
         except genshin.errors.AlreadyClaimed:
             result = '原神今日獎勵已經領過了！'
         except genshin.errors.GenshinException as e:
-            log.error(f'[例外][{user_id}]claimDailyReward: [retcode]{e.retcode} [例外內容]{e.msg}')
+            log.info(f'[例外][{user_id}]claimDailyReward: 原神[retcode]{e.retcode} [例外內容]{e.msg}')
             result = f'原神簽到失敗：{e.msg}'
+        except Exception as e:
+            log.error(f'[例外][{user_id}]claimDailyReward: 原神[例外內容]{e}')
+            result = f'原神簽到失敗：{e}'
         else:
             result = f'原神今日簽到成功，獲得 {reward.amount}x {reward.name}！'
         
@@ -169,7 +175,11 @@ class GenshinApp:
             except genshin.errors.AlreadyClaimed:
                 result += '崩壞3今日獎勵已經領過了！'
             except genshin.errors.GenshinException as e:
+                log.info(f'[例外][{user_id}]claimDailyReward: 崩3[retcode]{e.retcode} [例外內容]{e.msg}')
                 result += '崩壞3簽到失敗，找不到相關的崩壞3帳號' if e.retcode == -10002 else f'崩壞3簽到失敗：{e.msg}'
+            except Exception as e:
+                log.error(f'[例外][{user_id}]claimDailyReward: 崩3[例外內容]{e}')
+                result = f'崩壞3簽到失敗：{e}'
             else:
                 result += f'崩壞3今日簽到成功，獲得 {reward.amount}x {reward.name}！'
         return result
@@ -190,6 +200,9 @@ class GenshinApp:
         except genshin.errors.GenshinException as e:
             log.error(f'[例外][{user_id}]getSpiralAbyss: [retcode]{e.retcode} [例外內容]{e.msg}')
             result = e.msg
+        except Exception as e:
+            log.error(f'[例外][{user_id}]getSpiralAbyss: [例外內容]{e}')
+            result = f'{e}'
         else:
             result = discord.Embed(title=f'深境螺旋第 {abyss.season} 期戰績', color=0x7fbcf5)
             result.add_field(
@@ -229,6 +242,9 @@ class GenshinApp:
         except genshin.errors.GenshinException as e:
             log.error(f'[例外][{user_id}]getTravelerDiary: [retcode]{e.retcode} [例外內容]{e.msg}')
             result = e.msg
+        except Exception as e:
+            log.error(f'[例外][{user_id}]getTravelerDiary: [例外內容]{e}')
+            result = f'{e}'
         else:    
             d = diary.data
             result = discord.Embed(
@@ -311,17 +327,18 @@ class GenshinApp:
             recover_time = f'{weekday_msg} {notes.realm_currency_recovery_time.strftime("%H:%M")}'
         result += f'寶錢全部恢復時間：{recover_time}\n'
         # 參數質變儀剩餘時間
-        if notes.remaining_transformer_recovery_time < 10:
-            recover_time = '已完成！'
-        else:
-            t = timedelta(seconds=notes.remaining_transformer_recovery_time+10)
-            if t.days > 0:
-                recover_time = f'{t.days} 天'
-            elif t.seconds > 3600:
-                recover_time = f'{round(t.seconds/3600)} 小時'
+        if notes.transformer_recovery_time != None:
+            if notes.remaining_transformer_recovery_time < 10:
+                recover_time = '已完成！'
             else:
-                recover_time = f'{round(t.seconds/60)} 分'
-        result += f'參數質變儀剩餘時間：{recover_time}\n'
+                t = timedelta(seconds=notes.remaining_transformer_recovery_time+10)
+                if t.days > 0:
+                    recover_time = f'{t.days} 天'
+                elif t.seconds > 3600:
+                    recover_time = f'{round(t.seconds/3600)} 小時'
+                else:
+                    recover_time = f'{round(t.seconds/60)} 分'
+            result += f'參數質變儀剩餘時間：{recover_time}\n'
 
         result += f'--------------------\n'
 
