@@ -21,7 +21,7 @@ class Admin(commands.Cog):
             result = await self.bot.tree.sync()
         
         msg = f'已同步以下指令到{"全部" if area == 1 else "當前"}伺服器\n{"、".join(cmd.name for cmd in result)}'
-        log.info(f'[指令][Admin]sync(area={area}): msg')
+        log.info(f'[指令][Admin]sync(area={area}): {msg}')
         await interaction.response.send_message(msg)
 
     # 廣播訊息到所有的伺服器

@@ -9,7 +9,7 @@ from .config import config
 class GenshinApp:
     def __init__(self) -> None:
         self.__server_dict = {'os_usa': '美服', 'os_euro': '歐服', 'os_asia': '亞服', 'os_cht': '台港澳服'}
-        self.__uid_server_dict = {'6': '美服', '7': '歐服', '8': '亞服', '9': '台港澳服'}
+        self.__uid_server_dict = {'1': '天空島', '2': '天空島', '5': '世界樹', '6': '美服', '7': '歐服', '8': '亞服', '9': '台港澳服'}
         self.__weekday_dict = {0: '週一', 1: '週二', 2: '週三', 3: '週四', 4: '週五', 5: '週六', 6: '週日'}
         try:
             with open('data/user_data.json', 'r', encoding="utf-8") as f:
@@ -73,14 +73,17 @@ class GenshinApp:
         # 確認UID是否存在
         try:
             accounts = await client.get_game_accounts()
-        except:
+        except Exception as e:
+            log.error(f'[例外][{user_id}]setUID: {e}')
             return '確認帳號資料失敗，請重新設定Cookie或是稍後再試'
         else:
             if int(uid) in [account.uid for account in accounts]:
                 self.__user_data[user_id]['uid'] = uid
                 self.__saveUserData()
+                log.info(f'[資訊][{user_id}]setUID: {uid} 已設定完成')
                 return f'角色UID: {uid} 已設定完成'
             else:
+                log.info(f'[資訊][{user_id}]setUID: 找不到該UID的角色資料')
                 return f'找不到該UID的角色資料，請確認是否輸入正確'
 
     async def getRealtimeNote(self, user_id: str, check_resin_excess = False) -> str:
@@ -104,9 +107,10 @@ class GenshinApp:
             result = '即時便箋功能未開啟\n請從HOYOLAB網頁或App開啟即時便箋功能'
         except genshin.errors.GenshinException as e:
             log.info(f'[例外][{user_id}]getRealtimeNote: [retcode]{e.retcode} [例外內容]{e.msg}')
-            result = e.msg
+            result = f'發生錯誤: [retcode]{e.retcode} [內容]{e.msg}'
         except Exception as e:
             log.error(f'[例外][{user_id}]getRealtimeNote: {e}')
+            result = f'發生錯誤: {e}'
         else:
             if check_resin_excess == True and notes.current_resin < config.auto_check_resin_threshold:
                 result = None
@@ -344,7 +348,11 @@ class GenshinApp:
             log.error('[例外][System]GenshinApp > __saveUserData: 存檔寫入失敗')
 
     def __getGenshinClient(self, user_id: str) -> genshin.Client:
-        client = genshin.Client(lang='zh-tw')
+        uid = self.__user_data[user_id].get('uid')
+        if uid != None and uid[0] in ['1', '2', '5']:
+            client = genshin.Client(region=genshin.Region.CHINESE, lang='zh-cn')
+        else:
+            client = genshin.Client(lang='zh-tw')
         client.set_cookies(self.__user_data[user_id]['cookie'])
         client.default_game = genshin.Game.GENSHIN
         return client
