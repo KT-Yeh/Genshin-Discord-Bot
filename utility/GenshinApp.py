@@ -32,8 +32,8 @@ class GenshinApp:
         try:
             accounts = await client.get_game_accounts()
         except genshin.errors.GenshinException as e:
-            log.info(f'[例外][{user_id}]setCookie: [retcode]{e.retcode} [例外內容]{e.msg}')
-            result = e.msg
+            log.info(f'[例外][{user_id}]setCookie: [retcode]{e.retcode} [例外內容]{e.original}')
+            result = e.original
         else:
             if len(accounts) == 0:
                 log.info(f'[資訊][{user_id}]setCookie: 帳號內沒有任何角色')
@@ -104,11 +104,11 @@ class GenshinApp:
         try:
             notes = await client.get_genshin_notes(int(uid))
         except genshin.errors.DataNotPublic as e:
-            log.info(f'[例外][{user_id}]getRealtimeNote: {e.msg}')
+            log.info(f'[例外][{user_id}]getRealtimeNote: {e.original}')
             result = '即時便箋功能未開啟\n請從HOYOLAB網頁或App開啟即時便箋功能'
         except genshin.errors.GenshinException as e:
-            log.info(f'[例外][{user_id}]getRealtimeNote: [retcode]{e.retcode} [例外內容]{e.msg}')
-            result = f'發生錯誤: [retcode]{e.retcode} [內容]{e.msg}'
+            log.info(f'[例外][{user_id}]getRealtimeNote: [retcode]{e.retcode} [例外內容]{e.original}')
+            result = f'發生錯誤: [retcode]{e.retcode} [內容]{e.original}'
         except Exception as e:
             log.error(f'[例外][{user_id}]getRealtimeNote: {e}')
             result = f'發生錯誤: {e}'
@@ -135,13 +135,13 @@ class GenshinApp:
         try:
             await client.redeem_code(code, int(self.__user_data[user_id]['uid']))
         except genshin.errors.GenshinException as e:
-            log.info(f'[例外][{user_id}]redeemCode: [retcode]{e.retcode} [例外內容]{e.msg}')
-            result = e.msg
+            log.info(f'[例外][{user_id}]redeemCode: [retcode]{e.retcode} [例外內容]{e.original}')
+            result = e.original
         except Exception as e:
             log.error(f'[例外][{user_id}]redeemCode: [例外內容]{e}')
             result = f'{e}'
         else:
-            result = '兌換碼使用成功！'
+            result = f'兌換碼 {code} 使用成功！'
         finally:
             return result
     
@@ -160,8 +160,8 @@ class GenshinApp:
         except genshin.errors.AlreadyClaimed:
             result = '原神今日獎勵已經領過了！'
         except genshin.errors.GenshinException as e:
-            log.info(f'[例外][{user_id}]claimDailyReward: 原神[retcode]{e.retcode} [例外內容]{e.msg}')
-            result = f'原神簽到失敗：{e.msg}'
+            log.info(f'[例外][{user_id}]claimDailyReward: 原神[retcode]{e.retcode} [例外內容]{e.original}')
+            result = f'原神簽到失敗：{e.original}'
         except Exception as e:
             log.error(f'[例外][{user_id}]claimDailyReward: 原神[例外內容]{e}')
             result = f'原神簽到失敗：{e}'
@@ -176,8 +176,8 @@ class GenshinApp:
             except genshin.errors.AlreadyClaimed:
                 result += '崩壞3今日獎勵已經領過了！'
             except genshin.errors.GenshinException as e:
-                log.info(f'[例外][{user_id}]claimDailyReward: 崩3[retcode]{e.retcode} [例外內容]{e.msg}')
-                result += '崩壞3簽到失敗，找不到相關的崩壞3帳號' if e.retcode == -10002 else f'崩壞3簽到失敗：{e.msg}'
+                log.info(f'[例外][{user_id}]claimDailyReward: 崩3[retcode]{e.retcode} [例外內容]{e.original}')
+                result += '崩壞3簽到失敗，未查詢到角色資訊，請確認艦長是否已綁定新HoYoverse通行證' if e.retcode == -10002 else f'崩壞3簽到失敗：{e.original}'
             except Exception as e:
                 log.error(f'[例外][{user_id}]claimDailyReward: 崩3[例外內容]{e}')
                 result = f'崩壞3簽到失敗：{e}'
@@ -199,8 +199,8 @@ class GenshinApp:
         try:
             abyss = await client.get_genshin_spiral_abyss(int(self.__user_data[user_id]['uid']), previous=previous)
         except genshin.errors.GenshinException as e:
-            log.error(f'[例外][{user_id}]getSpiralAbyss: [retcode]{e.retcode} [例外內容]{e.msg}')
-            result = e.msg
+            log.error(f'[例外][{user_id}]getSpiralAbyss: [retcode]{e.retcode} [例外內容]{e.original}')
+            result = e.original
         except Exception as e:
             log.error(f'[例外][{user_id}]getSpiralAbyss: [例外內容]{e}')
             result = f'{e}'
@@ -241,8 +241,8 @@ class GenshinApp:
             client.uids[genshin.Game.GENSHIN] = int(self.__user_data[user_id]['uid'])
             diary = await client.get_diary(month=month)
         except genshin.errors.GenshinException as e:
-            log.error(f'[例外][{user_id}]getTravelerDiary: [retcode]{e.retcode} [例外內容]{e.msg}')
-            result = e.msg
+            log.error(f'[例外][{user_id}]getTravelerDiary: [retcode]{e.retcode} [例外內容]{e.original}')
+            result = e.original
         except Exception as e:
             log.error(f'[例外][{user_id}]getTravelerDiary: [例外內容]{e}')
             result = f'{e}'
