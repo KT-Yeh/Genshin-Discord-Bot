@@ -43,14 +43,14 @@ class GenshinApp:
                 self.__user_data[user_id]['cookie'] = cookie
                 log.info(f'[資訊][{user_id}]setCookie: Cookie設置成功')
                 
-                if len(accounts) == 1:
+                if len(accounts) == 1 and len(str(accounts[0].uid)) == 9:
                     await self.setUID(user_id, str(accounts[0].uid))
                     result = f'Cookie已設定完成，角色UID: {accounts[0].uid} 已保存！'
                 else:
                     result = f'帳號內共有{len(accounts)}個角色\n```'
                     for account in accounts:
                         result += f'UID:{account.uid} 等級:{account.level} 角色名字:{account.nickname}\n'
-                    result += f'```\n請用 `/uid設定` 指定要保存的角色(例: `/uid設定 812345678`)'
+                    result += f'```\n請用 `/uid設定` 指定要保存原神的角色(例: `/uid設定 812345678`)'
                     self.__saveUserData()
         finally:
             return result
@@ -68,8 +68,8 @@ class GenshinApp:
         check, msg = self.checkUserData(user_id, checkUID=False)
         if check == False:
             return msg
-        if len(uid) < 9:
-            return f'UID錯誤，請輸入正確的原神UID'
+        if len(uid) != 9:
+            return f'UID長度錯誤，請輸入正確的原神UID'
         # 確認UID是否存在
         client = self.__getGenshinClient(user_id)
         try:
