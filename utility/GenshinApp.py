@@ -87,7 +87,7 @@ class GenshinApp:
                 log.info(f'[資訊][{user_id}]setUID: 找不到該UID的角色資料')
                 return f'找不到該UID的角色資料，請確認是否輸入正確'
 
-    async def getRealtimeNote(self, user_id: str, check_resin_excess = False) -> str:
+    async def getRealtimeNote(self, user_id: str, check_resin_excess = False) -> Tuple[bool, str]:
         """取得使用者即時便箋(樹脂、洞天寶錢、派遣、每日、週本)
         :param user_id: 使用者Discord ID
         :param check_resin_excess: 設為True時，只有當樹脂超過設定標準時才會回傳即時便箋結果，用於自動檢查樹脂
@@ -96,31 +96,29 @@ class GenshinApp:
             log.info(f'[指令][{user_id}]getRealtimeNote')
         check, msg = self.checkUserData(user_id)
         if check == False:
-            return msg
+            return (False, msg)
    
         uid = self.__user_data[user_id]['uid']
         client = self.__getGenshinClient(user_id)
-        result = None
         try:
             notes = await client.get_genshin_notes(int(uid))
         except genshin.errors.DataNotPublic as e:
             log.info(f'[例外][{user_id}]getRealtimeNote: {e.original}')
-            result = '即時便箋功能未開啟\n請從HOYOLAB網頁或App開啟即時便箋功能'
+            return (False, '即時便箋功能未開啟\n請從HOYOLAB網頁或App開啟即時便箋功能')
         except genshin.errors.GenshinException as e:
             log.info(f'[例外][{user_id}]getRealtimeNote: [retcode]{e.retcode} [例外內容]{e.original}')
-            result = f'發生錯誤: [retcode]{e.retcode} [內容]{e.original}'
+            return (False, f'發生錯誤: [retcode]{e.retcode} [內容]{e.original}')
         except Exception as e:
             log.error(f'[例外][{user_id}]getRealtimeNote: {e}')
-            result = f'發生錯誤: {e}'
+            return (False, f'發生錯誤: {e}')
         else:
             if check_resin_excess == True and notes.current_resin < config.auto_check_resin_threshold:
-                result = None
+                msg = None
             else:
-                result = f'{self.__uid_server_dict.get(uid[0])} {uid.replace(uid[3:-3], "***", 1)}\n'
-                result += f'--------------------\n'
-                result += self.__parseNotes(notes)
-        finally:
-            return result
+                msg = f'{self.__uid_server_dict.get(uid[0])} {uid.replace(uid[3:-3], "***", 1)}\n'
+                msg += f'--------------------\n'
+                msg += self.__parseNotes(notes)
+            return (True, msg)
     
     async def redeemCode(self, user_id: str, code: str) -> str:
         """為使用者使用指定的兌換碼
