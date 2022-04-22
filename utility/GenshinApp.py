@@ -19,8 +19,14 @@ class GenshinApp:
 
     async def setCookie(self, user_id: str, cookie: str) -> str:
         """設定使用者Cookie
-        :param user_id: 使用者Discord ID
-        :cookie: Hoyolab cookie
+        
+        ------
+        Parameters
+        user_id `str`: 使用者Discord ID
+        cookie `str`: Hoyolab cookie
+        ------
+        Returns
+        `str`: 回覆給使用者的訊息
         """
         log.info(f'[指令][{user_id}]setCookie: cookie={cookie}')
         user_id = str(user_id)
@@ -57,8 +63,15 @@ class GenshinApp:
     
     async def setUID(self, user_id: str, uid: str, *, check_uid: bool = False) -> str:
         """設定原神UID，當帳號內有多名角色時，保存指定的UID
-        :param user_id: 使用者Discord ID
-        :param uid: 欲保存的原神UID
+
+        ------
+        Parameters
+        user_id `str`: 使用者Discord ID
+        uid `str`: 欲保存的原神UID
+        check_uid `bool`: `True`表示檢查此UID是否有效、`False`表示不檢查直接儲存
+        ------
+        Returns
+        `str`: 回覆給使用者的訊息
         """
         log.info(f'[指令][{user_id}]setUID: uid={uid}, check_uid={check_uid}')
         if not check_uid:
@@ -88,9 +101,16 @@ class GenshinApp:
                 return f'找不到該UID的角色資料，請確認是否輸入正確'
 
     async def getRealtimeNote(self, user_id: str, check_resin_excess = False) -> Tuple[bool, str]:
-        """取得使用者即時便箋(樹脂、洞天寶錢、派遣、每日、週本)
-        :param user_id: 使用者Discord ID
-        :param check_resin_excess: 設為True時，只有當樹脂超過設定標準時才會回傳即時便箋結果，用於自動檢查樹脂
+        """取得使用者即時便箋(樹脂、洞天寶錢、參數質變儀、派遣、每日、週本)
+        
+        ------
+        Parameters
+        user_id `str`: 使用者Discord ID
+        check_resin_excess `bool`: 設為`True`時，只有當樹脂超過設定標準時才會回傳即時便箋結果，用於自動檢查樹脂
+        ------
+        Returns
+        `bool`: 正常情況回傳`True`，發生錯誤或例外回傳`False`
+        `str`: 回覆給使用者的訊息
         """
         if not check_resin_excess:
             log.info(f'[指令][{user_id}]getRealtimeNote')
@@ -122,8 +142,14 @@ class GenshinApp:
     
     async def redeemCode(self, user_id: str, code: str) -> str:
         """為使用者使用指定的兌換碼
-        :param user_id: 使用者Discord ID
-        :param code: Hoyolab兌換碼
+
+        ------
+        Parameters
+        user_id `str`: 使用者Discord ID
+        code `str`: Hoyolab兌換碼
+        ------
+        Returns
+        `str`: 回覆給使用者的訊息
         """
         log.info(f'[指令][{user_id}]redeemCode: code={code}')
         check, msg = self.checkUserData(user_id)
@@ -145,8 +171,14 @@ class GenshinApp:
     
     async def claimDailyReward(self, user_id: str, *, honkai: bool = False) -> str:
         """為使用者在Hoyolab簽到
-        :param user_id: 使用者Discord ID
-        :param honkai: 是否也簽到崩壞3
+
+        ------
+        Parameters
+        user_id `str`: 使用者Discord ID
+        honkai `bool`: 是否也簽到崩壞3
+        ------
+        Returns
+        `str`: 回覆給使用者的訊息
         """
         log.info(f'[指令][{user_id}]claimDailyReward: honkai={honkai}')
         check, msg = self.checkUserData(user_id)
@@ -185,9 +217,15 @@ class GenshinApp:
 
     async def getSpiralAbyss(self, user_id: str, previous: bool = False, full_data: bool = False) -> Union[str, discord.Embed]:
         """取得深境螺旋資訊
-        :param user_id: 欲登入的使用者Discord ID
-        :param previous: 是否查詢前一期的資訊
-        :param full_data: 若為True，結果完整顯示9~12層資訊；若為False，結果只顯示最後一層資訊
+
+        ------
+        Parameters
+        user_id `str`: 使用者Discord ID
+        previous `bool`: `True`查詢前一期的資訊、`False`查詢本期資訊
+        full_data `bool`: `True`結果完整顯示9~12層資訊、`False`結果只顯示最後一層資訊
+        ------
+        Returns
+        `Union[str, discord.Embed]`: 發生例外回傳錯誤訊息`str`、正常情況回傳查詢結果`discord.Embed`
         """
         log.info(f'[指令][{user_id}]getSpiralAbyss: previous={previous} full_data={full_data}')
         check, msg = self.checkUserData(user_id)
@@ -225,10 +263,16 @@ class GenshinApp:
         finally:
             return result
     
-    async def getTravelerDiary(self, user_id: str, month: str) -> Union[str, discord.Embed]:
+    async def getTravelerDiary(self, user_id: str, month: int) -> Union[str, discord.Embed]:
         """取得使用者旅行者札記
-        :param user_id: 使用者Discord ID
-        :param month: 欲查詢的月份
+
+        ------
+        Parameters:
+        user_id `str`: 使用者Discord ID
+        month `int`: 欲查詢的月份
+        ------
+        Returns:
+        `Union[str, discord.Embed]`: 發生例外回傳錯誤訊息`str`、正常情況回傳查詢結果`discord.Embed`
         """
         log.info(f'[指令][{user_id}]getTravelerDiary: month={month}')
         check, msg = self.checkUserData(user_id)
@@ -268,6 +312,19 @@ class GenshinApp:
             return result
     
     def checkUserData(self, user_id: str, *,checkUserID = True, checkCookie = True, checkUID = True) -> Tuple[bool, str]:
+        """檢查使用者相關資料是否已保存在資料庫內
+        
+        ------
+        Parameters
+        user_id `str`: 使用者Discord ID
+        checkUserID `bool`: 是否檢查Discord ID
+        checkCookie `bool`: 是否檢查Cookie
+        checkUID `bool`: 是否檢查UID
+        ------
+        Returns
+        `bool`: `True`檢查成功，資料存在資料庫內；`False`檢查失敗，資料不存在資料庫內
+        `str`: 檢查失敗時，回覆給使用者的訊息
+        """
         if checkUserID and user_id not in self.__user_data.keys():
             log.info(f'[資訊][{user_id}]checkUserData: 找不到使用者')
             return False, f'找不到使用者，請先設定Cookie(輸入 `/cookie設定` 顯示說明)'
@@ -282,6 +339,15 @@ class GenshinApp:
         return True, None
     
     def clearUserData(self, user_id: str) -> str:
+        """從資料庫內永久刪除使用者資料
+
+        ------
+        Parameters
+        user_id `str`: 使用者Discord ID
+        ------
+        Returns:
+        `str`: 回覆給使用者的訊息
+        """
         log.info(f'[指令][{user_id}]clearUserData')
         try:
             del self.__user_data[user_id]

@@ -53,7 +53,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
     async def slash_diary(self, interaction: discord.Interaction, month: int):
         month = datetime.datetime.now().month + month
         month = month + 12 if month < 1 else month
-        result = await genshin_app.getTravelerDiary(str(interaction.user.id), str(month))
+        result = await genshin_app.getTravelerDiary(str(interaction.user.id), month)
         if type(result) == discord.Embed:
             await interaction.response.send_message(embed=result)
         else:
