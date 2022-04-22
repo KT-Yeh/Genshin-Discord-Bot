@@ -3,23 +3,29 @@
 
 ## 簡介
 使用 Discord 機器人直接查詢原神內各項資訊，包含：
-- 查詢即時便箋，包含樹脂、洞天寶錢、探索派遣...等
-- 樹脂溢出提醒
+- 即時便箋，包含樹脂、洞天寶錢、質變儀、探索派遣...等
 - 查詢深境螺旋紀錄
 - 查詢旅行者札記
-- Hoyolab 自動每日簽到（含崩壞3）
-- Hoyolab 使用兌換碼
+- 每日早上 8~9 點 Hoyolab 自動簽到 (包含簽到崩壞3)
+- 每小時自動檢查樹脂，當樹脂超過 150 時推送提醒
 
-## 範例
+## 展示
 
 ![](https://i.imgur.com/LcNJ2as.png)
 
-![](https://i.imgur.com/aFoeVnU.gif)
+![](https://i.imgur.com/2d4Mzmu.png)
 ![](https://i.imgur.com/rGFqQr2.gif)
 
-![](https://i.imgur.com/qHzbvH0.png)
+![](https://i.imgur.com/S52ld6a.png)
 
-## 安裝 & 架設機器人
+## 公共機器人
+![](https://i.imgur.com/ULhx0EP.png)
+
+#### 邀請連結：https://bit.ly/原神小幫手Bot
+- 多人伺服器要請有管理權限的人員邀請機器人
+- 個人使用可以建立一個只有自己的 Discord 伺服器，然後邀請機器人
+
+## 自己安裝 & 架設機器人
 
 ### 網頁端
 1. 到 [Discord Developer](https://discord.com/developers/applications "Discord Developer") 登入 Discord 帳號
@@ -82,3 +88,5 @@ python .\main.py
 構想啟發自: https://github.com/Xm798/Genshin-Dailynote-Helper
 
 原神 API 使用自: https://github.com/thesadru/genshin.py
+
+Discord API 使用自: https://github.com/Rapptz/discord.py
