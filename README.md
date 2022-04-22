@@ -1,5 +1,9 @@
 # 原神 Discord Bot
+本分支使用 discord.py v1.7.3，為舊版 API
 
+目前已將機器人開發轉換至 discord.py v2.0，請參考 [v2.0 分支](https://github.com/KT-Yeh/Genshin-Discord-Bot/tree/discord.py_v2.0)
+
+等到 discord.py v2.0 正式版發佈後，屆時會將分支合併回來 master
 
 ## 簡介
 使用 Discord 機器人直接查詢原神內各項資訊，包含：
@@ -16,7 +20,14 @@
 ![](https://i.imgur.com/qHzbvH0.png)
 ![](https://i.imgur.com/bNY19NW.png)
 
-## 安裝 & 架設機器人
+## 公共機器人
+![](https://i.imgur.com/ULhx0EP.png)
+
+#### 邀請連結：https://bit.ly/原神小幫手Bot
+- 多人伺服器要請有管理權限的人員邀請機器人
+- 個人使用可以建立一個只有自己的 Discord 伺服器，然後邀請機器人
+
+## 自己安裝 & 架設機器人
 
 ### 網頁端
 1. 到 [Discord Developer](https://discord.com/developers/applications "Discord Developer") 登入 Discord 帳號
