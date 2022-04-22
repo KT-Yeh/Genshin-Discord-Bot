@@ -65,8 +65,9 @@ class Setting(commands.Cog, name='設定'):
         description='帳號內多角色時需保存指定的UID，只有單一角色不需要使用本指令')
     @app_commands.describe(uid='請輸入要保存的「原神」主要角色UID')
     async def slash_uid(self, interaction: discord.Interaction, uid: int):
+        await interaction.response.defer(ephemeral=True)
         result = await genshin_app.setUID(str(interaction.user.id), str(uid), check_uid=True)
-        await interaction.response.send_message(result, ephemeral=True)
+        await interaction.edit_original_message(content=result)
 
     # 清除資料確認按紐
     class ConfirmButton(discord.ui.View):
