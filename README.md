@@ -19,7 +19,7 @@
 ![](https://i.imgur.com/S52ld6a.png)
 
 ## 公共機器人
-![](https://i.imgur.com/ULhx0EP.png)
+[![](https://i.imgur.com/ULhx0EP.png)](https://bit.ly/原神小幫手Bot)
 
 #### 邀請連結：https://bit.ly/原神小幫手Bot
 - 多人伺服器要請有管理權限的人員邀請機器人
