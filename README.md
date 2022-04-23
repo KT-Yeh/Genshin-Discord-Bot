@@ -54,7 +54,7 @@
 ### 本地端
 1. 下載 [本專案](https://github.com/KT-Yeh/Genshin-Discord-Bot/archive/refs/heads/master.zip)
 2. 下載並安裝 Python（版本 3.8 以上）: https://www.python.org/downloads/
-3. 在專案資料夾（Genshin-Discord-Bot）內，用文字編輯器開啟 `config.example.json` 檔案，把剛才取得的 Token 貼在 `bot_token` 欄位，並將檔案另存為 `config.json`
+3. 在專案資料夾（Genshin-Discord-Bot）內，用文字編輯器開啟 `.env(example)` 檔案，把剛才取得的 Token 貼在 `BOT_TOKEN = ` 欄位後面，並將檔案另存為 `.env`
 4. 在專案資料夾內開啟 cmd 或 powershell，輸入底下命令安裝相關套件：
 ```
 pip3 install -r requirements.txt
@@ -64,15 +64,13 @@ pip3 install -r requirements.txt
 python .\main.py
 ```
 
-## 配置檔案說明 (config.json)
+## 配置檔案說明 (.env)
 ```python
-{
-    "bot_token": "ABCDEFG",  # 機器人Token，需從 Discord 網頁取得
-    "bot_prefix": "%",       # 機器人指令前綴
-    "bot_cooldown": "3",     # 機器人對同一使用者接收指令的冷卻時間 (單位：秒)
-    "auto_daily_reward_time": 8,        # 每日Hoyolab自動簽到時間 (單位：時)
-    "auto_check_resin_threshold": 150   # 每小時檢查，當超過多少樹脂發送提醒
-}
+BOT_TOKEN = ABCDEFG               # 機器人Token，需從 Discord 網頁取得
+BOT_PREFIX = %                    # 機器人指令前綴
+BOT_COOLDOWN = 3                  # 機器人對同一使用者接收指令的冷卻時間 (單位：秒)
+AUTO_DAILY_REWARD_TIME = 8        # 每日Hoyolab自動簽到時間 (單位：時)
+AUTO_CHECK_RESIN_THRESHOLD = 150  # 每小時檢查，當超過多少樹脂發送提醒
 ```
 
 ## 致謝

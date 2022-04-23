@@ -4,7 +4,9 @@ import genshin
 from datetime import datetime
 from typing import Union, Tuple
 from .utils import log, getCharacterName, trimCookie
-from .config import config
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 class GenshinApp:
     def __init__(self) -> None:
@@ -25,7 +27,7 @@ class GenshinApp:
         user_id = str(user_id)
         cookie = trimCookie(cookie)
         if cookie == None:
-            return f'無效的Cookie，請重新輸入(使用 `{config.bot_prefix}help cookie` 查看教學)'
+            return f'無效的Cookie，請重新輸入(使用 `{os.getenv("BOT_PREFIX")}help cookie` 查看教學)'
         client = genshin.GenshinClient()
         client.set_cookies(cookie)
         try:
@@ -49,7 +51,7 @@ class GenshinApp:
                     result = f'```帳號內共有{len(accounts)}個角色\n'
                     for account in accounts:
                         result += f'UID:{account.uid} 等級:{account.level} 角色名字:{account.nickname}\n'
-                    result += f'```\n請用`{config.bot_prefix}uid`指定要保存的角色(例: `{config.bot_prefix}uid 812345678`)'
+                    result += f'```\n請用`{os.getenv("BOT_PREFIX")}uid`指定要保存的角色(例: `{os.getenv("BOT_PREFIX")}uid 812345678`)'
                     self.__saveUserData()
         finally:
             await client.close()
@@ -69,7 +71,7 @@ class GenshinApp:
             return f'角色UID: {uid} 已設定完成'
         except:
             log.error(f'{user_id}角色UID:{uid}保存失敗')
-            return f'角色UID: {uid} 設定失敗，請先設定Cookie(輸入 `{config.bot_prefix}help cookie` 取得詳情)'
+            return f'角色UID: {uid} 設定失敗，請先設定Cookie(輸入 `{os.getenv("BOT_PREFIX")}help cookie` 取得詳情)'
 
     async def getRealtimeNote(self, user_id: str, check_resin_excess = False) -> str:
         """取得使用者即時便箋(樹脂、洞天寶錢、派遣、每日、週本)
@@ -96,7 +98,7 @@ class GenshinApp:
         except Exception as e:
             log.error(e)
         else:
-            if check_resin_excess == True and notes.current_resin < config.auto_check_resin_threshold:
+            if check_resin_excess == True and notes.current_resin < os.getenv('AUTO_CHECK_RESIN_THRESHOLD'):
                 result = None
             else:
                 try:
@@ -242,14 +244,14 @@ class GenshinApp:
     def checkUserData(self, user_id: str, *,checkUserID = True, checkCookie = True, checkUID = True) -> Tuple[bool, str]:
         if checkUserID and user_id not in self.__user_data.keys():
             log.info('找不到使用者，請先設定Cookie(輸入 `%h` 顯示說明)')
-            return False, f'找不到使用者，請先設定Cookie(輸入 `{config.bot_prefix}help cookie` 顯示說明)'
+            return False, f'找不到使用者，請先設定Cookie(輸入 `{os.getenv("BOT_PREFIX")}help cookie` 顯示說明)'
         else:
             if checkCookie and 'cookie' not in self.__user_data[user_id].keys():
                 log.info('找不到Cookie，請先設定Cookie(輸入 `%h` 顯示說明)')
-                return False, f'找不到Cookie，請先設定Cookie(輸入 `{config.bot_prefix}help cookie` 顯示說明)'
+                return False, f'找不到Cookie，請先設定Cookie(輸入 `{os.getenv("BOT_PREFIX")}help cookie` 顯示說明)'
             if checkUID and 'uid' not in self.__user_data[user_id].keys():
                 log.info('找不到角色UID，請先設定UID(輸入 `%h` 顯示說明)')
-                return False, f'找不到角色UID，請先設定UID(輸入 `{config.bot_prefix}help` 顯示說明)'
+                return False, f'找不到角色UID，請先設定UID(輸入 `{os.getenv("BOT_PREFIX")}help` 顯示說明)'
         return True, None
     
     def clearUserData(self, user_id: str) -> str:

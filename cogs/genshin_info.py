@@ -1,8 +1,10 @@
 import datetime
 import discord
 from discord.ext import commands
-from utility.config import config
 from utility.GenshinApp import genshin_app
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 class GenshinInfo(commands.Cog, name='原神資訊'):
     def __init__(self, bot):
@@ -31,10 +33,10 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
         description='查詢深境螺旋紀錄',
         usage='[p] [f] [UID]',
         help='參數 p 查詢上期紀錄、參數 f 顯示全部樓層人物紀錄(預設只顯示最後一層)，範例：\n\n'
-            f'{config.bot_prefix}abyss　　　　　　　查詢自己本期紀錄\n'
-            f'{config.bot_prefix}abyss p　　　　　　查詢自己上期紀錄\n'
-            f'{config.bot_prefix}abyss f　　　　　　查詢自己本期全部樓層紀錄\n'
-            f'{config.bot_prefix}abyss p f 123456　查詢123456的上期完整深淵紀錄\n'
+            f'{os.getenv("BOT_PREFIX")}abyss　　　　　　　查詢自己本期紀錄\n'
+            f'{os.getenv("BOT_PREFIX")}abyss p　　　　　　查詢自己上期紀錄\n'
+            f'{os.getenv("BOT_PREFIX")}abyss f　　　　　　查詢自己本期全部樓層紀錄\n'
+            f'{os.getenv("BOT_PREFIX")}abyss p f 123456　查詢123456的上期完整深淵紀錄\n'
     )
     async def abyss(self, ctx, *args: str):
         previous = False
@@ -63,8 +65,8 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
         description='查詢旅行者札記',
         usage='[月份]',
         help='月份參數為數字，查詢該月份的旅行者札記，最多只能查到前二個月，範例：\n\n'
-            f'{config.bot_prefix}diary　　查詢當月的旅行者札記\n'
-            f'{config.bot_prefix}diary 5　查詢5月的旅行者札記'
+            f'{os.getenv("BOT_PREFIX")}diary　　查詢當月的旅行者札記\n'
+            f'{os.getenv("BOT_PREFIX")}diary 5　查詢5月的旅行者札記'
     )
     async def diary(self, ctx, *month):
         month = month[0] if len(month) > 0 else datetime.datetime.now().month

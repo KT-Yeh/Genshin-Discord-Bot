@@ -1,7 +1,0 @@
-{
-    "bot_token": "ABCDEFG",
-    "bot_prefix": "%",
-    "bot_cooldown": "3",
-    "auto_daily_reward_time": 8,
-    "auto_check_resin_threshold": 150
-}

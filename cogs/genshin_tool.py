@@ -1,7 +1,9 @@
 import discord
 from discord.ext import commands
-from utility.config import config
 from utility.GenshinApp import genshin_app
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 class GenshinTool(commands.Cog, name='原神工具'):
     def __init__(self, bot):
@@ -13,7 +15,7 @@ class GenshinTool(commands.Cog, name='原神工具'):
         brief='使用兌換碼',
         description='使用兌換碼',
         usage='<兌換碼>',
-        help=f'範例: {config.bot_prefix}R ABCDEFG'
+        help=f'範例: {os.getenv("BOT_PREFIX")}R ABCDEFG'
     )
     async def r(self, ctx, code):
         result = await genshin_app.redeemCode(ctx.author.id, code)

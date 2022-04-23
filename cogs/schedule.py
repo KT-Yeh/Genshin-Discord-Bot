@@ -4,8 +4,10 @@ import discord
 from datetime import datetime
 from utility.GenshinApp import genshin_app
 from discord.ext import commands, tasks
-from utility.config import config
 from utility.utils import log
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 class Schedule(commands.Cog, name='自動化(BETA)'):
     def __init__(self, bot: commands.Bot):
@@ -29,12 +31,12 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
         brief='設定自動化功能(論壇簽到、樹脂溢出提醒)',
         description='設定自動化功能，會在特定時間執行功能，執行結果會在當初設定指令的頻道推送，若要更改頻道，請在新的頻道重新設定指令一次',
         usage='<daily|resin> <on|off>',
-        help=f'每日 {config.auto_daily_reward_time} 點左右自動論壇簽到（使用前請先用 {config.bot_prefix}d 指令確認機器人能簽到你的每日），使用範例：\n'
-            f'{config.bot_prefix}set daily on　　　開啟每日自動簽到\n'
-            f'{config.bot_prefix}set daily off 　　關閉每日自動簽到\n\n'
-            f'每小時檢查一次，當樹脂超過 {config.auto_check_resin_threshold} 時會發送提醒（使用前請先用 {config.bot_prefix}g 指令確認機器人能讀到你的樹脂資訊），使用範例：\n'
-            f'{config.bot_prefix}set resin on　　　開啟樹脂提醒\n'
-            f'{config.bot_prefix}set resin off 　　關閉樹脂提醒\n'
+        help=f'每日 {os.getenv("AUTO_DAILY_REWARD_TIME")} 點左右自動論壇簽到（使用前請先用 {os.getenv("BOT_PREFIX")}d 指令確認機器人能簽到你的每日），使用範例：\n'
+            f'{os.getenv("BOT_PREFIX")}set daily on　　　開啟每日自動簽到\n'
+            f'{os.getenv("BOT_PREFIX")}set daily off 　　關閉每日自動簽到\n\n'
+            f'每小時檢查一次，當樹脂超過 {os.getenv("AUTO_CHECK_RESIN_THRESHOLD")} 時會發送提醒（使用前請先用 {os.getenv("BOT_PREFIX")}g 指令確認機器人能讀到你的樹脂資訊），使用範例：\n'
+            f'{os.getenv("BOT_PREFIX")}set resin on　　　開啟樹脂提醒\n'
+            f'{os.getenv("BOT_PREFIX")}set resin off 　　關閉樹脂提醒\n'
     )
     async def set(self, ctx, cmd: str, switch: str):
         log.info(f'set(user_id={ctx.author.id}, cmd={cmd} , switch={switch})')
@@ -63,7 +65,7 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
         log.debug(f'schedule() is called')
         now = datetime.now()
         # 每日 X 點自動簽到
-        if now.hour == config.auto_daily_reward_time and now.minute < self.loop_interval:
+        if now.hour == os.getenv("AUTO_DAILY_REWARD_TIME") and now.minute < self.loop_interval:
             log.info('每日自動簽到開始')
             # 複製一份避免衝突
             daily_dict = dict(self.__daily_dict)
