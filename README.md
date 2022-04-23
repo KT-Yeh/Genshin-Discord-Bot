@@ -64,6 +64,26 @@ pip3 install -r requirements.txt
 python .\main.py
 ```
 
+### docker方式
+1. 安裝docker
+2. 下載 [本專案](https://github.com/KT-Yeh/Genshin-Discord-Bot/archive/refs/heads/master.zip) 並解壓
+3. 使用cmd或powershell進入該解壓後的專案資料夾
+4. 輸入:`docker build -t {你喜歡的tag名稱}:{版本號} .`
+5. 等待image build完畢
+6. 設定好你的`.env`檔案
+7. 在專案資料夾內使用terminal輸入docker-compose指令運行
+    ```
+    # 在前台運行(關閉terminal=關閉bot)
+    docker-compose up
+    # 在後台運行(關閉docker=關閉bot,可以關閉terminal)
+    docker-compose up -d
+    # 查看bot的輸出
+    docker-compose logs -f
+    # 關閉bot
+    docker-compose down
+    ```
+
+
 ## 配置檔案說明 (.env)
 ```python
 BOT_TOKEN = ABCDEFG               # 機器人Token，需從 Discord 網頁取得
