@@ -1,7 +1,7 @@
 version: '3'
 services:
   web:
-    image: #{ 你的image tag(本地或dockerhub) }
+    image: ghcr.io/KT-Yeh/Genshin-Discord-Bot:latest
     volumes:
       - ./.env:/app/.env:ro
     restart: unless-stopped

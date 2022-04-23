@@ -67,11 +67,8 @@ python .\main.py
 ### docker方式
 1. 安裝docker
 2. 下載 [本專案](https://github.com/KT-Yeh/Genshin-Discord-Bot/archive/refs/heads/master.zip) 並解壓
-3. 使用cmd或powershell進入該解壓後的專案資料夾
-4. 輸入:`docker build -t {你喜歡的tag名稱}:{版本號} .`
-5. 等待image build完畢
-6. 設定好你的`.env`檔案
-7. 在專案資料夾內使用terminal輸入docker-compose指令運行
+3. 設定好你的`.env`檔案(同"本地端"使用方法步驟3)
+4. 在專案資料夾內使用terminal輸入docker-compose指令運行
     ```
     # 在前台運行(關閉terminal=關閉bot)
     docker-compose up
@@ -86,11 +83,11 @@ python .\main.py
 
 ## 配置檔案說明 (.env)
 ```python
-BOT_TOKEN = ABCDEFG               # 機器人Token，需從 Discord 網頁取得
-BOT_PREFIX = %                    # 機器人指令前綴
-BOT_COOLDOWN = 3                  # 機器人對同一使用者接收指令的冷卻時間 (單位：秒)
-AUTO_DAILY_REWARD_TIME = 8        # 每日Hoyolab自動簽到時間 (單位：時)
-AUTO_CHECK_RESIN_THRESHOLD = 150  # 每小時檢查，當超過多少樹脂發送提醒
+BOT_TOKEN=ABCDEFG               # 機器人Token，需從 Discord 網頁取得
+BOT_PREFIX=%                    # 機器人指令前綴
+BOT_COOLDOWN=3                  # 機器人對同一使用者接收指令的冷卻時間 (單位：秒)
+AUTO_DAILY_REWARD_TIME=8        # 每日Hoyolab自動簽到時間 (單位：時)
+AUTO_CHECK_RESIN_THRESHOLD=150  # 每小時檢查，當超過多少樹脂發送提醒
 ```
 
 ## 致謝
