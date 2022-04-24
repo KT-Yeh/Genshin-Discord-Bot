@@ -2,6 +2,7 @@ import discord
 from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands
+from pathlib import Path
 from utility.utils import log
 from utility.config import config
 
@@ -59,6 +60,33 @@ class Admin(commands.Cog):
             msg = '、'.join([guild.name for guild in self.bot.guilds])
             embed = discord.Embed(title='已連接伺服器名稱', description=msg)
             await interaction.response.send_message(embed=embed)
+    
+    # 使用系統命令
+    @app_commands.command(name='system', description='使用系統命令')
+    @app_commands.rename(option='選項', param='參數')
+    @app_commands.choices(option=[Choice(name='reload', value=0)])
+    async def system(self, interaction: discord.Interaction, option: int, param: str = None):
+        # Reload cogs
+        if option == 0:
+            if param != None:
+                try:
+                    await self.bot.reload_extension(f'cogs.{param}')
+                except Exception as e:
+                    log.error(f'[例外][Admin]system reload {param}: {e}')
+                    await interaction.response.send_message(f'[例外][Admin]system reload {param}: {e}')
+                else:
+                    await interaction.response.send_message(f'指令集 {param} 重新載入完成')
+            else:
+                # 從cogs資料夾載入所有cog
+                try:
+                    for filepath in Path('./cogs').glob('**/*.py'):
+                        cog_name = Path(filepath).stem
+                        await self.bot.reload_extension(f'cogs.{cog_name}')
+                except Exception as e:
+                    log.error(f'[例外][Admin]system reload all: {e}')
+                    await interaction.response.send_message(f'[例外][Admin]system reload all: {e}')
+                else:
+                    await interaction.response.send_message('全部指令集重新載入完成')
     
     # 測試伺服器是否有 applications.commands 的 scope
     async def __hasAppCmdScope(self, guild: discord.Guild) -> bool:
