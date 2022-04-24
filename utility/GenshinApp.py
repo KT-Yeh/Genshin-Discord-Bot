@@ -3,14 +3,11 @@ import discord
 import genshin
 from datetime import datetime, timedelta
 from typing import Union, Tuple
-from .utils import log, getCharacterName, trimCookie, user_last_use_time
+from .utils import log, getCharacterName, trimCookie, getServerName, getWeekdayName,user_last_use_time
 from .config import config
 
 class GenshinApp:
     def __init__(self) -> None:
-        self.__server_dict = {'os_usa': '美服', 'os_euro': '歐服', 'os_asia': '亞服', 'os_cht': '台港澳服'}
-        self.__uid_server_dict = {'1': '天空島', '2': '天空島', '5': '世界樹', '6': '美服', '7': '歐服', '8': '亞服', '9': '台港澳服'}
-        self.__weekday_dict = {0: '週一', 1: '週二', 2: '週三', 3: '週四', 4: '週五', 5: '週六', 6: '週日'}
         try:
             with open('data/user_data.json', 'r', encoding="utf-8") as f:
                 self.__user_data: dict[str, dict[str, str]] = json.load(f)
@@ -135,7 +132,7 @@ class GenshinApp:
             if check_resin_excess == True and notes.current_resin < config.auto_check_resin_threshold:
                 msg = None
             else:
-                msg = f'{self.__uid_server_dict.get(uid[0])} {uid.replace(uid[3:-3], "***", 1)}\n'
+                msg = f'{getServerName(uid[0])} {uid.replace(uid[3:-3], "***", 1)}\n'
                 msg += f'--------------------\n'
                 msg += self.__parseNotes(notes)
             return (True, msg)
@@ -311,6 +308,36 @@ class GenshinApp:
         finally:
             return result
     
+    async def getRecordCard(self, user_id: str) -> Union[str, Tuple[genshin.models.RecordCard, genshin.models.PartialGenshinUserStats]]:
+        """取得使用者記錄卡片
+
+        ------
+        Parameters:
+        user_id `str`: 使用者Discord ID
+        ------
+        Returns:
+        `str | (RecordCard, PartialGenshinUserStats)`: 發生例外回傳錯誤訊息`str`、正常情況回傳查詢結果`(RecordCard, PartialGenshinUserStats)`
+        """
+        log.info(f'[指令][{user_id}]getRecordCard')
+        check, msg = self.checkUserData(user_id)
+        if check == False:
+            return msg
+        client = self.__getGenshinClient(user_id)
+        try:
+            cards = await client.get_record_cards()
+            userstats = await client.get_partial_genshin_user(int(self.__user_data[user_id]['uid']))
+        except genshin.errors.GenshinException as e:
+            log.error(f'[例外][{user_id}]getRecordCard: [retcode]{e.retcode} [例外內容]{e.original}')
+            return e.original
+        except Exception as e:
+            log.error(f'[例外][{user_id}]getRecordCard: [例外內容]{e}')
+            return str(e)
+        else:
+            for card in cards:
+                if card.uid == int(self.__user_data[user_id]['uid']):
+                    return (card, userstats)
+            return '找不到原神紀錄卡片'
+    
     def checkUserData(self, user_id: str, *,checkUserID = True, checkCookie = True, checkUID = True) -> Tuple[bool, str]:
         """檢查使用者相關資料是否已保存在資料庫內
         
@@ -388,7 +415,7 @@ class GenshinApp:
         if notes.current_realm_currency == notes.max_realm_currency:
             recover_time = '已額滿！'
         else:
-            weekday_msg = self.__weekday_dict[notes.realm_currency_recovery_time.weekday()]
+            weekday_msg = getWeekdayName(notes.realm_currency_recovery_time.weekday())
             recover_time = f'{weekday_msg} {notes.realm_currency_recovery_time.strftime("%H:%M")}'
         result += f'寶錢全部恢復時間：{recover_time}\n'
         # 參數質變儀剩餘時間

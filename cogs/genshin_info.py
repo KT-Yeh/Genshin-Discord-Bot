@@ -4,6 +4,8 @@ from discord import app_commands
 from discord.ext import commands
 from discord.app_commands import Choice
 from utility.GenshinApp import genshin_app
+from utility.draw import drawRecordCard
+from utility.utils import log
 
 class GenshinInfo(commands.Cog, name='原神資訊'):
     def __init__(self, bot):
@@ -58,6 +60,35 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
             await interaction.response.send_message(embed=result)
         else:
             await interaction.response.send_message(result)
+
+    # 產生個人紀錄卡片
+    @app_commands.command(name='card紀錄卡片', description='產生原神個人遊戲紀錄卡片')
+    @app_commands.checks.cooldown(1, 60)
+    async def slash_card(self, interaction: discord.Interaction):
+        await interaction.response.defer()
+        result = await genshin_app.getRecordCard(str(interaction.user.id))
+
+        if isinstance(result, str):
+            await interaction.edit_original_message(content=result)
+            return
+        
+        avatar_bytes = await interaction.user.avatar.read()
+        card = result[0]
+        userstats = result[1]
+        try:
+            fp = drawRecordCard(avatar_bytes, card, userstats)
+        except Exception as e:
+            log.error(f'[例外][{interaction.user.id}][slash_card]: {e}')
+            await interaction.edit_original_message(content='發生錯誤，卡片製作失敗')
+        else:
+            fp.seek(0)
+            await interaction.edit_original_message(attachments=[discord.File(fp=fp, filename='image.jpeg')])
+            fp.close()
+
+    @slash_card.error
+    async def on_slash_card_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
+        if isinstance(error, app_commands.CommandOnCooldown):
+            await interaction.response.send_message('產生卡片的間隔為一分鐘，請稍後再使用~', ephemeral=True)
 
 async def setup(client: commands.Bot):
     await client.add_cog(GenshinInfo(client))

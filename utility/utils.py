@@ -33,6 +33,15 @@ def trimCookie(cookie: str) -> str:
         new_cookie = None
     return new_cookie
 
+__server_dict = {'os_usa': '美服', 'os_euro': '歐服', 'os_asia': '亞服', 'os_cht': '台港澳服',
+    '1': '天空島', '2': '天空島', '5': '世界樹', '6': '美服', '7': '歐服', '8': '亞服', '9': '台港澳服'}
+def getServerName(key: str) -> str:
+    return __server_dict.get(key)
+
+__weekday_dict = {0: '週一', 1: '週二', 2: '週三', 3: '週四', 4: '週五', 5: '週六', 6: '週日'}
+def getWeekdayName(n: int) -> str:
+    return __weekday_dict.get(n)
+
 class UserLastUseTime:
     def __init__(self) -> None:
         try:
