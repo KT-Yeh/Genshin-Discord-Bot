@@ -35,8 +35,8 @@ def drawRecordCard(avatar_bytes: bytes, record_card: genshin.models.RecordCard, 
     white = (255, 255, 255, 255)
     grey = (230, 230, 230, 255)
 
-    drawText(img, (360, 270), record_card.nickname, 'NotoSerifTC-Bold.otf', 88, white)
-    drawText(img, (370, 385), f'Lv.{record_card.level}  UID:{record_card.uid}  {getServerName(record_card.server)}', 'NotoSansTC-Medium.otf', 40, white)
+    drawText(img, (360, 270), record_card.nickname, 'SourceHanSerifTC-Bold.otf', 88, white)
+    drawText(img, (370, 385), f'Lv.{record_card.level}  UID:{record_card.uid}  {getServerName(record_card.server)}', 'SourceHanSansTC-Medium.otf', 40, white)
     
     s = user_stats.stats
     stat_list = [(s.days_active, '活躍天數'), (s.achievements, '成就達成數'), (s.characters, '獲得角色數'),
@@ -48,8 +48,8 @@ def drawRecordCard(avatar_bytes: bytes, record_card: genshin.models.RecordCard, 
     for n, stat in enumerate(stat_list):
         column = int(n % 3)
         row = int(n / 3)
-        drawText(img, (245 + column * 295, 630 + row * 230), str(stat[0]), 'NotoSansTC-Bold.otf', 80, white, 'mm')
-        drawText(img, (245 + column * 295, 700 + row * 230), str(stat[1]), 'NotoSansTC-Regular.otf', 40, grey, 'mm')
+        drawText(img, (245 + column * 295, 630 + row * 230), str(stat[0]), 'SourceHanSansTC-Bold.otf', 80, white, 'mm')
+        drawText(img, (245 + column * 295, 700 + row * 230), str(stat[1]), 'SourceHanSansTC-Regular.otf', 40, grey, 'mm')
 
     img = img.convert('RGB')
     fp = BytesIO()
