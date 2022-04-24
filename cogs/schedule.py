@@ -126,7 +126,7 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
                     await channel.send(f'[自動簽到] <@{user_id}> {result}')
                 except:
                     self.__remove_user(user_id, self.__daily_dict, self.__daily_reward_filename)
-                await asyncio.sleep(5)
+                await asyncio.sleep(2.5)
             log.info(f'[排程][System]schedule: 每日自動簽到結束，{count} 人已簽到')
         
         # 每小時檢查樹脂
@@ -149,7 +149,7 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
                         await channel.send(f'<@{user_id}>，{preamble}', embed=embed)
                     except:
                         self.__remove_user(user_id, self.__resin_dict, self.__resin_notifi_filename)
-                await asyncio.sleep(5)
+                await asyncio.sleep(4)
             log.info(f'[排程][System]schedule: 自動檢查樹脂結束，{count} 人已檢查')
         
         user_last_use_time.save() # 定時儲存使用者最後使用時間資料
