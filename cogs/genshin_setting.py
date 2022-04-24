@@ -37,14 +37,17 @@ class Setting(commands.Cog, name='設定'):
         Choice(name='③ 顯示小幫手Cookie使用與保存告知', value=2)])
     async def slash_cookie(self, interaction: discord.Interaction, option: int):
         if option == 0:
-            help_msg = ("1.PC或手機使用Chrome開啟Hoyolab登入帳號 <https://www.hoyolab.com>\n"
-            "2.複製底下整段程式碼，先在網址列輸入 `java` 然後貼上程式碼，讓網址開頭變成 `javascript:`\n"
-            "3.按Enter，網頁會變成顯示你的Cookie，全選然後複製\n"
-            "4.在這裡提交結果，使用：`/cookie設定 提交已取得的Cookie`\n"
+            help_msg = (
+            "1.先複製本文最底下整段程式碼\n"
+            "2.PC或手機使用Chrome開啟Hoyolab登入帳號 <https://www.hoyolab.com>\n"
+            "3.在網址列先輸入 `java`，然後貼上程式碼，確保網址開頭變成 `javascript:`\n"
+            "4.按Enter，網頁會變成顯示你的Cookie，全選然後複製\n"
+            "5.在這裡提交結果，使用：`/cookie設定 提交已取得的Cookie`\n"
+            "· 遇到問題嗎？點連結看其他方法：<https://bit.ly/3LgQkg0>\n"
             "https://i.imgur.com/OQ8arx0.gif")
-            code_msg = "script:d=document.cookie; c=d.includes('account_id') || alert('過期或無效的Cookie,請先登出帳號再重新登入!'); c && document.write(d)"
+            code_msg = "```script:d=document.cookie; c=d.includes('account_id') || alert('過期或無效的Cookie,請先登出帳號再重新登入!'); c && document.write(d)```"
             await interaction.response.send_message(content=help_msg)
-            await interaction.followup.send(embed=discord.Embed(description=code_msg))
+            await interaction.followup.send(content=code_msg)
         elif option == 1:
             await interaction.response.send_modal(self.CookieModal())
         elif option == 2:
