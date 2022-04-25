@@ -6,23 +6,37 @@ from io import BytesIO
 from utility.utils import getServerName
 
 def drawAvatar(img: Image.Image, avatar: Image.Image, pos: Tuple[float, float]):
+    """以圓形畫個人頭像"""
     mask = Image.new('L', avatar.size, 0)
     draw = ImageDraw.Draw(mask)
     draw.ellipse(((0, 0), avatar.size), fill=255)
     img.paste(avatar, pos, mask=mask)
 
 def drawRoundedRect(img: Image.Image, pos: Tuple[float, float, float, float], **kwargs):
+    """畫半透明圓角矩形"""
     transparent = Image.new('RGBA', img.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(transparent, 'RGBA')
     draw.rounded_rectangle(pos, **kwargs)
     img.paste(Image.alpha_composite(img, transparent))
 
 def drawText(img: Image.Image, pos: Tuple[float, float], text: str, font: str, size: int, fill, anchor = None):
+    """在圖片上印文字"""
     draw = ImageDraw.Draw(img)
     font = ImageFont.truetype(f'data/font/{font}', size)
     draw.text(pos, text, fill, font, anchor=anchor)
 
 def drawRecordCard(avatar_bytes: bytes, record_card: genshin.models.RecordCard, user_stats: genshin.models.PartialGenshinUserStats) -> BytesIO:
+    """製作個人紀錄卡片圖
+
+    ------
+    Parameters
+    avatar_bytes `bytes`: Discord使用者的頭像圖片，以bytes方式傳入
+    record_card `RecordCard`: 從Hoyolab取得的紀錄卡片資料
+    user_stats `PartialGenshinUserStats`: 從Hoyolab取得的使用者遊戲紀錄
+    ------
+    Returns
+    `BytesIO`: 製作完成的圖片存在記憶體，回傳file pointer，存取前需要先`seek(0)`
+    """
     img = Image.open(f'data/record_card/{random.randint(1, 12)}.jpg')
     img = img.convert('RGBA')
 
@@ -35,7 +49,7 @@ def drawRecordCard(avatar_bytes: bytes, record_card: genshin.models.RecordCard, 
     white = (255, 255, 255, 255)
     grey = (230, 230, 230, 255)
 
-    drawText(img, (360, 270), record_card.nickname, 'SourceHanSerifTC-Bold.otf', 88, white)
+    drawText(img, (370, 270), record_card.nickname, 'SourceHanSerifTC-Bold.otf', 88, white)
     drawText(img, (370, 385), f'Lv.{record_card.level}  UID:{record_card.uid}  {getServerName(record_card.server)}', 'SourceHanSansTC-Medium.otf', 40, white)
     
     s = user_stats.stats
