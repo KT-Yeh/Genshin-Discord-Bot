@@ -25,7 +25,7 @@ class GenshinDiscordBot(commands.Bot):
             await self.tree.sync(guild=test_guild)
 
     async def on_ready(self):
-        log.info(f'[資訊][System]on_ready: You have logged in as {client}')
+        log.info(f'[資訊][System]on_ready: You have logged in as {self.user}')
         log.info(f'[資訊][System]on_ready: Total {len(self.guilds)} servers connected')
         await self.change_presence(activity=discord.Game(name='Genshin Impact'))
 
