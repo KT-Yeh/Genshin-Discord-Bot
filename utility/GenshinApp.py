@@ -421,7 +421,7 @@ class GenshinApp:
         # 參數質變儀剩餘時間
         if notes.transformer_recovery_time != None:
             if notes.remaining_transformer_recovery_time < 10:
-                recover_time = '已完成！'
+                recover_time = '已可使用！'
             else:
                 t = timedelta(seconds=notes.remaining_transformer_recovery_time+10)
                 if t.days > 0:
