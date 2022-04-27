@@ -1,29 +1,31 @@
 # 原神 Discord Bot
 本分支使用 discord.py v2.0 開發版本
 
+## 公共機器人
+[![](https://i.imgur.com/ULhx0EP.png)](https://bit.ly/原神小幫手Bot)
+
+#### 點擊上圖或邀請連結：https://bit.ly/原神小幫手Bot
+- 多人伺服器要請有管理權限的人員邀請機器人
+- 個人使用可以建立一個只有自己的 Discord 伺服器，然後邀請機器人
+
 ## 簡介
 使用 Discord 機器人直接查詢原神內各項資訊，包含：
 - 即時便箋，包含樹脂、洞天寶錢、質變儀、探索派遣...等
 - 查詢深境螺旋紀錄
 - 查詢旅行者札記
+- 個人紀錄卡片（遊戲天數、成就、神瞳...等等）
+- Hoyolab 使用兌換碼
 - 每日早上 8~9 點 Hoyolab 自動簽到 (包含簽到崩壞3)
 - 每小時自動檢查樹脂，當樹脂超過 150 時推送提醒
+- 採用新的斜線指令，輸入 / 自動彈出指令提示，不需要記憶任何指令的使用方式
 
 ## 展示
+<img src="https://i.imgur.com/LcNJ2as.png" width="400"/> <img src="https://i.imgur.com/oNTOam5.png" width="300"/>
 
-![](https://i.imgur.com/LcNJ2as.png)
+<img src="https://i.imgur.com/H4vF8fo.png" width="300"/> <img src="https://i.imgur.com/rGFqQr2.gif"/>
 
-![](https://i.imgur.com/2d4Mzmu.png)
-![](https://i.imgur.com/rGFqQr2.gif)
+<img src="https://i.imgur.com/S52ld6a.png"/>
 
-![](https://i.imgur.com/S52ld6a.png)
-
-## 公共機器人
-[![](https://i.imgur.com/ULhx0EP.png)](https://bit.ly/原神小幫手Bot)
-
-#### 邀請連結：https://bit.ly/原神小幫手Bot
-- 多人伺服器要請有管理權限的人員邀請機器人
-- 個人使用可以建立一個只有自己的 Discord 伺服器，然後邀請機器人
 
 ## 自己安裝 & 架設機器人
 
@@ -54,7 +56,7 @@
 
 ![](https://i.imgur.com/BfzjewI.png)
 
-3. 在自己的 Discord 伺服器名稱或圖示上按滑鼠右鍵，複製伺服器 ID（複製ID按鈕需要去 設定->進階->開發者模式 開啟）
+3. 在自己的 Discord **伺服器名稱或圖示**上按滑鼠右鍵，複製伺服器 ID（複製ID按鈕需要去 設定->進階->開發者模式 開啟）
 
 ![](https://i.imgur.com/tCMhEhv.png)
 
