@@ -4,4 +4,5 @@ services:
     image: ghcr.io/KT-Yeh/Genshin-Discord-Bot:latest
     volumes:
       - ./.env:/app/.env:ro
+      - ./data/:/app/data/
     restart: unless-stopped
