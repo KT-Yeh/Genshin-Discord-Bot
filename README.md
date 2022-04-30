@@ -16,7 +16,7 @@
 - 個人紀錄卡片（遊戲天數、成就、神瞳...等等）
 - Hoyolab 使用兌換碼
 - 每日早上 8~9 點 Hoyolab 自動簽到 (包含簽到崩壞3)
-- 每小時自動檢查樹脂，當樹脂超過 150 時推送提醒
+- 每兩小時自動檢查樹脂，當樹脂超過 145 時推送提醒
 - 採用新的斜線指令，輸入 / 自動彈出指令提示，不需要記憶任何指令的使用方式
 
 ## 展示
@@ -72,6 +72,7 @@ pip3 install -U -r requirements.txt
 ```
 python .\main.py
 ```
+6. 若要在多個伺服器間使用，請在 Discord 測試伺服器的頻道內輸入 `/sync  範圍:全域伺服器`，並等待（約 1 小時）Discord 將指令推送
 
 ## 配置檔案說明 (config.json)
 ```python
@@ -79,10 +80,9 @@ python .\main.py
     "application_id": 123456789123456789,   # 機器人 Application ID，從 Discord Developer 網頁上取得
     "test_server_id": 212340008888812345,   # 測試用伺服器 ID，用來測試斜線指令，管理員指令只能在本伺服器使用
     "bot_token": "ABCDEFG",                 # 機器人 Token，從 Discord Developer 網頁取得
-    "bot_prefix": "%",                      # (已無效) 機器人指令前綴
-    "bot_cooldown": "3",                    # (已無效) 機器人對同一使用者接收指令的冷卻時間 (單位：秒)
     "auto_daily_reward_time": 8,            # 每日 Hoyolab 自動簽到時間 (單位：時)
-    "auto_check_resin_threshold": 150       # 每小時檢查，當超過多少樹脂發送提醒
+    "auto_check_resin_threshold": 150,      # 每小時檢查，當超過多少樹脂發送提醒
+    "auto_loop_delay": 2.0                  # 排程執行時每位使用者之間的等待間隔（單位：秒）
 }
 ```
 
