@@ -58,19 +58,19 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
         function='選擇要執行自動化的功能',
         switch='選擇開啟或關閉此功能')
     @app_commands.choices(
-        function=[Choice(name='顯示排程功能使用說明', value='help'),
+        function=[Choice(name='顯示使用說明', value='help'),
                   Choice(name='每日自動簽到', value='daily'),
                   Choice(name='樹脂額滿提醒', value='resin')],
         switch=[Choice(name='開啟功能', value=1),
                 Choice(name='關閉功能', value=0)])
     async def slash_schedule(self, interaction: discord.Interaction, function: str, switch: int):
-        log.info(f'[指令][{interaction.user.id}]schedule(function={function} , switch={switch})')
+        log.info(f'[指令][{interaction.user.id}]schedule(function={function}, switch={switch})')
         if function == 'help': # 排程功能使用說明
             msg = ('· 排程會在特定時間執行功能，執行結果會在設定指令的頻道推送\n'
             '· 設定前請先確認小幫手有在該頻道發言的權限，如果推送訊息失敗，小幫手會自動移除排程設定\n'
             '· 若要更改推送頻道，請在新的頻道重新設定指令一次\n\n'
-            f'· 每日簽到：每日 {config.auto_daily_reward_time}~{config.auto_daily_reward_time+1} 點之間自動論壇簽到，設定前請先使用 /daily每日簽到 指令確認小幫手能正確幫你簽到\n'
-            f'· 樹脂提醒：每小時檢查一次，當樹脂超過 {config.auto_check_resin_threshold} 時會發送提醒，設定前請先用 /notes即時便箋 指令確認小幫手能讀到你的樹脂資訊\n')
+            f'· 每日簽到：每日 {config.auto_daily_reward_time}~{config.auto_daily_reward_time+1} 點之間自動論壇簽到，設定前請先使用 `/daily每日簽到` 指令確認小幫手能正確幫你簽到\n'
+            f'· 樹脂提醒：每二小時檢查一次，當樹脂超過 {config.auto_check_resin_threshold} 會發送提醒，設定前請先用 `/notes即時便箋` 指令確認小幫手能讀到你的樹脂資訊\n')
             await interaction.response.send_message(embed=discord.Embed(title='排程功能使用說明', description=msg))
             return
         # 確認使用者Cookie資料
@@ -107,7 +107,7 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
     @tasks.loop(minutes=loop_interval)
     async def schedule(self):
         now = datetime.now()
-        # 每日 X 點自動簽到
+        # 每日 {config.auto_daily_reward_time} 點自動簽到
         if now.hour == config.auto_daily_reward_time and now.minute < self.loop_interval:
             log.info('[排程][System]schedule: 每日自動簽到開始')
             # 複製一份避免衝突
@@ -129,8 +129,8 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
                 await asyncio.sleep(config.auto_loop_delay)
             log.info(f'[排程][System]schedule: 每日自動簽到結束，{count} 人已簽到')
         
-        # 每小時檢查樹脂
-        if 30 <= now.minute < 30 + self.loop_interval:
+        # 每二小時檢查一次樹脂，並且與每日簽到時間錯開
+        if abs(now.hour - config.auto_daily_reward_time) % 2 == 1 and now.minute < self.loop_interval:
             log.info('[排程][System]schedule: 自動檢查樹脂開始')
             resin_dict = dict(self.__resin_dict)
             count = 0
