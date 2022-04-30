@@ -15,8 +15,9 @@ class GenshinTool(commands.Cog, name='原神工具'):
     @app_commands.rename(code='兌換碼')
     @app_commands.describe(code='請輸入要使用的兌換碼')
     async def slash_redeem(self, interaction: discord.Interaction, code: str):
+        await interaction.response.defer()
         result = await genshin_app.redeemCode(str(interaction.user.id), code)
-        await interaction.response.send_message(result)
+        await interaction.edit_original_message(content=result)
 
     # 為使用者在Hoyolab簽到
     @app_commands.command(
@@ -27,8 +28,9 @@ class GenshinTool(commands.Cog, name='原神工具'):
         Choice(name='原神', value=0), 
         Choice(name='原神 + 崩壞3', value=1)])
     async def slash_daily(self, interaction: discord.Interaction, game: int = 0):
+        await interaction.response.defer()
         result = await genshin_app.claimDailyReward(str(interaction.user.id), honkai=bool(game))
-        await interaction.response.send_message(result)
+        await interaction.edit_original_message(content=result)
 
 async def setup(client: commands.Bot):
     await client.add_cog(GenshinTool(client))
