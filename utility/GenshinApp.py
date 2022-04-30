@@ -294,8 +294,8 @@ class GenshinApp:
             )
             result.add_field(
                 name='當月共獲得', 
-                value=f'原石：{d.current_primogems}　上個月：{d.last_primogems}\n'
-                    f'摩拉：{d.current_mora}　上個月：{d.last_mora}',
+                value=f'原石：{d.current_primogems} ({round(d.current_primogems/160)})　上個月：{d.last_primogems} ({round(d.last_primogems/160)})\n'
+                    f'摩拉：{format(d.current_mora, ",")}　上個月：{format(d.last_mora, ",")}',
                 inline=False
             )
             # 將札記原石組成平分成兩個field
@@ -304,7 +304,7 @@ class GenshinApp:
                 length = len(d.categories)
                 for j in range(round(length/2*i), round(length/2*(i+1))):
                     msg += f'{d.categories[j].name[0:2]}：{d.categories[j].percentage}%\n'
-                result.add_field(name=f'原石收入組成 {i+1}', value=msg, inline=True)
+                result.add_field(name=f'原石收入組成 ({i+1})', value=msg, inline=True)
         finally:
             return result
     
