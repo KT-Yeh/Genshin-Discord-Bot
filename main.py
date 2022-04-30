@@ -29,9 +29,12 @@ class GenshinDiscordBot(commands.Bot):
         log.info(f'[資訊][System]on_ready: Total {len(self.guilds)} servers connected')
         await self.change_presence(activity=discord.Game(name='Genshin Impact'))
 
-    async def on_command_error(self, ctx, error):
-        if isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send(f'指令缺少必要參數，請使用 `{config.bot_prefix}help {ctx.command}` 查看使用方式')
+    async def on_command_error(self, ctx: commands.Context, error):
+        log.error(f'[例外][{ctx.author.id}]on_command_error: {error}')
 
 client = GenshinDiscordBot()
+@client.tree.error
+async def on_error(interaction: discord.Interaction, error: discord.app_commands.AppCommandError) -> None:
+    log.error(f'[例外][{interaction.user.id}]on_error: {error}')
+
 client.run(config.bot_token)
