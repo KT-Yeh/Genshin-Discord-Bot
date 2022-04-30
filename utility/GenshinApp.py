@@ -394,7 +394,7 @@ class GenshinApp:
             if user_last_use_time.checkExpiry(user_id, now, 30) == True:
                 self.clearUserData(user_id)
                 count += 1
-        log.info(f'[資訊][System]deleteExpiredUserData: 過期使用者已檢查，已刪除 {count} 位使用者')
+        log.info(f'[資訊][System]deleteExpiredUserData: {len(user_data)} 位使用者已檢查，已刪除 {count} 位過期使用者')
 
     def __parseNotes(self, notes: genshin.models.Notes) -> str:
         result = ''
