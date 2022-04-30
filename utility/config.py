@@ -1,19 +1,12 @@
-import json
 from pathlib import Path
+from pydantic import BaseModel
 
-class Config:
-    def __init__(self):
-        project_path = Path(__file__).parents[1]
-        config_path = project_path.joinpath('config.json') 
-        with open(config_path, encoding='utf-8') as file:
-            data: dict = json.loads(file.read())
-        
-        self.application_id: int = data.get('application_id')
-        self.test_server_id: int = data.get('test_server_id')
-        self.bot_token: str = data.get('bot_token')
-        self.bot_prefix: str = data.get('bot_prefix')
-        self.bot_cooldown: str = data.get('bot_cooldown')
-        self.auto_daily_reward_time: int = data.get('auto_daily_reward_time')
-        self.auto_check_resin_threshold: int = data.get('auto_check_resin_threshold')
+class Config(BaseModel):
+    application_id: int
+    test_server_id: int
+    bot_token: str
+    auto_daily_reward_time: int = 8
+    auto_check_resin_threshold: int = 145
+    auto_loop_delay: float = 2.0
 
-config = Config()
+config = Config.parse_file(Path('config.json'), encoding='utf8')
