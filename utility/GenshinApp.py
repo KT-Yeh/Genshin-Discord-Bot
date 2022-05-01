@@ -238,10 +238,15 @@ class GenshinApp:
             log.error(f'[例外][{user_id}]getSpiralAbyss: [例外內容]{e}')
             result = f'{e}'
         else:
-            result = discord.Embed(title=f'深境螺旋第 {abyss.season} 期戰績', color=0x7fbcf5)
+            result = discord.Embed(title=f'深境螺旋第 {abyss.season} 期戰績 ({abyss.start_time.astimezone().strftime("%Y.%m.%d")} ~ {abyss.end_time.astimezone().strftime("%Y.%m.%d")})', color=0x7fbcf5)
+            get_char = lambda c: ' ' if len(c) == 0 else f'{getCharacterName(c[0])}：{c[0].value}'
             result.add_field(
                 name=f'最深抵達：{abyss.max_floor}　戰鬥次數：{abyss.total_battles}　★：{abyss.total_stars}', 
-                value=f'統計週期：{abyss.start_time.astimezone().strftime("%Y.%m.%d")} ~ {abyss.end_time.astimezone().strftime("%Y.%m.%d")}',
+                value=f'[最多擊破數] {get_char(abyss.ranks.most_kills)}\n'
+                      f'[最強之一擊] {get_char(abyss.ranks.strongest_strike)}\n'
+                      f'[受最多傷害] {get_char(abyss.ranks.most_damage_taken)}\n'
+                      f'[Ｑ施放次數] {get_char(abyss.ranks.most_bursts_used)}\n'
+                      f'[Ｅ施放次數] {get_char(abyss.ranks.most_skills_used)}',
                 inline=False
             )
             # 取得深淵每一層資料
@@ -255,7 +260,7 @@ class GenshinApp:
                     for i, battle in enumerate(chamber.battles):
                         for chara in battle.characters:
                             chara_list[i].append(getCharacterName(chara))
-                    value = f'[{".".join(chara_list[0])}]／[{".".join(chara_list[1])}]'
+                    value = f'[{".".join(chara_list[0])}]／\n[{".".join(chara_list[1])}]'
                     result.add_field(name=name, value=value)
         finally:
             return result
