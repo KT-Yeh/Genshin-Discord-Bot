@@ -63,7 +63,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
 
     # 產生個人紀錄卡片
     @app_commands.command(name='card紀錄卡片', description='產生原神個人遊戲紀錄卡片')
-    @app_commands.checks.cooldown(1, 60)
+    @app_commands.checks.cooldown(1, 30)
     async def slash_card(self, interaction: discord.Interaction):
         await interaction.response.defer()
         result = await genshin_app.getRecordCard(str(interaction.user.id))
@@ -72,7 +72,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
             await interaction.edit_original_message(content=result)
             return
         
-        avatar_bytes = await interaction.user.avatar.read()
+        avatar_bytes = await interaction.user.display_avatar.read()
         card = result[0]
         userstats = result[1]
         try:
@@ -88,7 +88,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
     @slash_card.error
     async def on_slash_card_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
         if isinstance(error, app_commands.CommandOnCooldown):
-            await interaction.response.send_message('產生卡片的間隔為一分鐘，請稍後再使用~', ephemeral=True)
+            await interaction.response.send_message('產生卡片的間隔為30秒，請稍後再使用~', ephemeral=True)
 
 async def setup(client: commands.Bot):
     await client.add_cog(GenshinInfo(client))
