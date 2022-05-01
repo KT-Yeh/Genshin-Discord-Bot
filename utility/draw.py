@@ -49,8 +49,8 @@ def drawRecordCard(avatar_bytes: bytes, record_card: genshin.models.RecordCard, 
     white = (255, 255, 255, 255)
     grey = (230, 230, 230, 255)
 
-    drawText(img, (370, 270), record_card.nickname, 'SourceHanSerifTC-Bold.otf', 88, white)
-    drawText(img, (370, 385), f'Lv.{record_card.level}  UID:{record_card.uid}  {getServerName(record_card.server)}', 'SourceHanSansTC-Medium.otf', 40, white)
+    drawText(img, (665, 335), record_card.nickname, 'SourceHanSerifTC-Bold.otf', 88, white, 'mm')
+    drawText(img, (665, 415), f'{getServerName(record_card.server)}  Lv.{record_card.level}  UID:{record_card.uid}', 'SourceHanSansTC-Medium.otf', 40, white, 'mm')
     
     s = user_stats.stats
     stat_list = [(s.days_active, '活躍天數'), (s.achievements, '成就達成數'), (s.characters, '獲得角色數'),
