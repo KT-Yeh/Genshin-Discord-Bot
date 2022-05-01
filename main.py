@@ -35,6 +35,11 @@ class GenshinDiscordBot(commands.Bot):
 client = GenshinDiscordBot()
 @client.tree.error
 async def on_error(interaction: discord.Interaction, error: discord.app_commands.AppCommandError) -> None:
-    log.error(f'[例外][{interaction.user.id}]on_error: {error}')
+    log.error(f'[例外][{interaction.user.id}]{type(error)}: {error}')
+    if isinstance(error, discord.app_commands.CommandInvokeError):
+        try:
+            await interaction.channel.send(f'<@{interaction.user.id}> 使用指令過程中發生錯誤，請重新再試一次')
+        except:
+            pass
 
 client.run(config.bot_token)
