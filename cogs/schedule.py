@@ -49,6 +49,28 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
             self.value = '原神+崩3'
             self.stop()
 
+    class DailyMentionButton(discord.ui.View):
+        """每日簽到是否要tag使用者"""
+        def __init__(self, author: discord.Member, *, timeout: float = 30):
+            super().__init__(timeout=timeout)
+            self.value = True
+            self.author = author
+        
+        async def interaction_check(self, interaction: discord.Interaction) -> bool:
+            return interaction.user.id == self.author.id
+        
+        @discord.ui.button(label='好！', style=discord.ButtonStyle.blurple)
+        async def option1(self, interaction: discord.Interaction, button: discord.ui.button):
+            await interaction.response.defer()
+            self.value = True
+            self.stop()
+        
+        @discord.ui.button(label='不用', style=discord.ButtonStyle.blurple)
+        async def option2(self, interaction: discord.Interaction, button: discord.ui.button):
+            await interaction.response.defer()
+            self.value = False
+            self.stop()
+
     # 設定自動排程功能
     @app_commands.command(
         name='schedule排程',
@@ -73,25 +95,30 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
             f'· 樹脂提醒：每二小時檢查一次，當樹脂超過 {config.auto_check_resin_threshold} 會發送提醒，設定前請先用 `/notes即時便箋` 指令確認小幫手能讀到你的樹脂資訊\n')
             await interaction.response.send_message(embed=discord.Embed(title='排程功能使用說明', description=msg))
             return
-        # 確認使用者Cookie資料
+        
+        # 設定前先確認使用者是否有Cookie資料
         check, msg = genshin_app.checkUserData(str(interaction.user.id))
         if check == False:
             await interaction.response.send_message(msg)
             return
         if function == 'daily': # 每日自動簽到
             if switch == 1: # 開啟簽到功能
-                view = self.ChooseGameButton(interaction.user)
-                await interaction.response.send_message('請選擇要自動簽到的遊戲：', view=view)
-                await view.wait()
-                if view.value == None: 
+                choose_game_btn = self.ChooseGameButton(interaction.user)
+                await interaction.response.send_message('請選擇要自動簽到的遊戲：', view=choose_game_btn)
+                await choose_game_btn.wait()
+                if choose_game_btn.value == None: 
                     await interaction.edit_original_message(content='已取消', view=None)
                     return
+                
+                daily_mention_btn = self.DailyMentionButton(interaction.user)
+                await interaction.edit_original_message(content=f'每日自動簽到時希望小幫手tag你({interaction.user.mention})嗎？', view=daily_mention_btn)
+                await daily_mention_btn.wait()
+                
                 # 新增使用者
-                self.__add_user(str(interaction.user.id), str(interaction.channel_id), self.__daily_dict, self.__daily_reward_filename)
-                if view.value == '原神+崩3': # 新增崩壞3使用者
+                self.__add_user(str(interaction.user.id), str(interaction.channel_id), self.__daily_dict, self.__daily_reward_filename, mention=daily_mention_btn.value)
+                if choose_game_btn.value == '原神+崩3': # 新增崩壞3使用者
                     self.__add_honkai_user(str(interaction.user.id), self.__daily_dict, self.__daily_reward_filename)
-                await interaction.edit_original_message(content='已選擇', view=None)
-                await interaction.followup.send(f'{view.value}每日自動簽到已開啟')
+                await interaction.edit_original_message(content=f'{choose_game_btn.value}每日自動簽到已開啟，簽到時小幫手{"會" if daily_mention_btn.value else "不會"}tag你', view=None)
             elif switch == 0: # 關閉簽到功能
                 self.__remove_user(str(interaction.user.id), self.__daily_dict, self.__daily_reward_filename)
                 await interaction.response.send_message('每日自動簽到已關閉')
@@ -123,8 +150,13 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
                 result = await genshin_app.claimDailyReward(user_id, honkai=has_honkai)
                 count += 1
                 try:
-                    await channel.send(f'[自動簽到] <@{user_id}> {result}')
-                except:
+                    if value.get('mention') == 'False':
+                        user = await self.bot.fetch_user(int(user_id))
+                        await channel.send(f'[自動簽到] {user.display_name}：{result}')
+                    else:
+                        await channel.send(f'[自動簽到] <@{user_id}> {result}')
+                except Exception as e:
+                    log.error(f'[排程][{user_id}]自動簽到：{e}')
                     self.__remove_user(user_id, self.__daily_dict, self.__daily_reward_filename)
                 await asyncio.sleep(config.auto_loop_delay)
             log.info(f'[排程][System]schedule: 每日自動簽到結束，{count} 人已簽到')
@@ -161,9 +193,11 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
     async def before_schedule(self):
         await self.bot.wait_until_ready()
 
-    def __add_user(self, user_id: str, channel: str, data: dict, filename: str) -> None:
+    def __add_user(self, user_id: str, channel: str, data: dict, filename: str, *, mention: bool = True) -> None:
         data[user_id] = { }
         data[user_id]['channel'] = channel
+        if mention == False:
+            data[user_id]['mention'] = 'False'
         self.__saveScheduleData(data, filename)
     
     def __add_honkai_user(self, user_id: str, data: dict, filename: str) -> None:
