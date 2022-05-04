@@ -417,12 +417,13 @@ class GenshinApp:
         
         result += f'當前洞天寶錢/上限：{notes.current_realm_currency}/{notes.max_realm_currency}\n'
         # 洞天寶錢恢復時間
-        if notes.current_realm_currency == notes.max_realm_currency:
-            recover_time = '已額滿！'
-        else:
-            weekday_msg = getWeekdayName(notes.realm_currency_recovery_time.weekday())
-            recover_time = f'{weekday_msg} {notes.realm_currency_recovery_time.strftime("%H:%M")}'
-        result += f'寶錢全部恢復時間：{recover_time}\n'
+        if notes.max_realm_currency > 0:
+            if notes.current_realm_currency == notes.max_realm_currency:
+                recover_time = '已額滿！'
+            else:
+                weekday_msg = getWeekdayName(notes.realm_currency_recovery_time.weekday())
+                recover_time = f'{weekday_msg} {notes.realm_currency_recovery_time.strftime("%H:%M")}'
+            result += f'寶錢全部恢復時間：{recover_time}\n'
         # 參數質變儀剩餘時間
         if notes.transformer_recovery_time != None:
             if notes.remaining_transformer_recovery_time < 10:
