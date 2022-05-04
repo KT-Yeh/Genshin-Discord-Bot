@@ -4,7 +4,7 @@ from discord import app_commands
 from discord.ext import commands
 from discord.app_commands import Choice
 from utility.GenshinApp import genshin_app
-from utility.draw import drawRecordCard
+from utility.draw import drawRecordCard, drawAbyssCard
 from utility.utils import log
 
 class GenshinInfo(commands.Cog, name='原神資訊'):
@@ -27,20 +27,40 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
     @app_commands.rename(season='時間', floor='樓層')
     @app_commands.describe(
         season='選擇本期或是上期紀錄',
-        floor='是否顯示全部樓層人物紀錄')
+        floor='選擇樓層人物紀錄顯示方式')
     @app_commands.choices(
         season=[Choice(name='上期紀錄', value=0),
                 Choice(name='本期紀錄', value=1)],
-        floor=[Choice(name='顯示全部樓層', value=0),
-               Choice(name='只顯示最後一層', value=1)])
-    async def slash_abyss(self, interaction: discord.Interaction, season: int = 1, floor: int = 1):
+        floor=[Choice(name='[文字] 顯示全部樓層', value=0),
+               Choice(name='[文字] 只顯示最後一層', value=1),
+               Choice(name='[圖片] 只顯示最後一層', value=2)])
+    async def slash_abyss(self, interaction: discord.Interaction, season: int = 1, floor: int = 2):
+        await interaction.response.defer()
         previous = True if season == 0 else False
-        full_data = True if floor == 0 else False
-        result = await genshin_app.getSpiralAbyss(str(interaction.user.id), previous, full_data)
-        if type(result) == discord.Embed:
-            await interaction.response.send_message(embed=result)
-        else:
-            await interaction.response.send_message(result)
+        result = await genshin_app.getSpiralAbyss(str(interaction.user.id), previous)
+        if isinstance(result, str):
+            await interaction.edit_original_message(content=result)
+            return
+
+        embed = genshin_app.parseAbyssOverview(result)
+        if floor == 0: # [文字] 顯示全部樓層
+            embed = genshin_app.parseAbyssFloor(embed, result, True)
+            await interaction.edit_original_message(embed=embed)
+        elif floor == 1: # [文字] 只顯示最後一層
+            embed = genshin_app.parseAbyssFloor(embed, result, False)
+            await interaction.edit_original_message(embed=embed)
+        elif floor == 2: # [圖片] 只顯示最後一層
+            try:
+                fp = drawAbyssCard(result)
+            except Exception as e:
+                log.error(f'[例外][{interaction.user.id}][slash_abyss]: {e}')
+                await interaction.edit_original_message(content='發生錯誤，圖片製作失敗')
+            else:
+                embed.set_thumbnail(url=interaction.user.display_avatar.url)
+                fp.seek(0)
+                file = discord.File(fp, filename='image.jpeg')
+                embed.set_image(url='attachment://image.jpeg')
+                await interaction.edit_original_message(embed=embed, attachments=[file])
 
     # 取得使用者旅行者札記
     @app_commands.command(

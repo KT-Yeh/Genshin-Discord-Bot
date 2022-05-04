@@ -212,19 +212,18 @@ class GenshinApp:
                 result += f'崩壞3今日簽到成功，獲得 {reward.amount}x {reward.name}！'
         return result
 
-    async def getSpiralAbyss(self, user_id: str, previous: bool = False, full_data: bool = False) -> Union[str, discord.Embed]:
+    async def getSpiralAbyss(self, user_id: str, previous: bool = False) -> Union[str, genshin.models.SpiralAbyss]:
         """取得深境螺旋資訊
 
         ------
         Parameters
         user_id `str`: 使用者Discord ID
         previous `bool`: `True`查詢前一期的資訊、`False`查詢本期資訊
-        full_data `bool`: `True`結果完整顯示9~12層資訊、`False`結果只顯示最後一層資訊
         ------
         Returns
-        `Union[str, discord.Embed]`: 發生例外回傳錯誤訊息`str`、正常情況回傳查詢結果`discord.Embed`
+        `Union[str, SpiralAbyss]`: 發生例外回傳錯誤訊息`str`、正常情況回傳查詢結果`SpiralAbyss`
         """
-        log.info(f'[指令][{user_id}]getSpiralAbyss: previous={previous} full_data={full_data}')
+        log.info(f'[指令][{user_id}]getSpiralAbyss: previous={previous}')
         check, msg = self.checkUserData(user_id)
         if check == False:
             return msg
@@ -233,37 +232,12 @@ class GenshinApp:
             abyss = await client.get_genshin_spiral_abyss(int(self.__user_data[user_id]['uid']), previous=previous)
         except genshin.errors.GenshinException as e:
             log.error(f'[例外][{user_id}]getSpiralAbyss: [retcode]{e.retcode} [例外內容]{e.original}')
-            result = e.original
+            return e.original
         except Exception as e:
             log.error(f'[例外][{user_id}]getSpiralAbyss: [例外內容]{e}')
-            result = f'{e}'
+            return f'{e}'
         else:
-            result = discord.Embed(title=f'深境螺旋第 {abyss.season} 期戰績 ({abyss.start_time.astimezone().strftime("%Y.%m.%d")} ~ {abyss.end_time.astimezone().strftime("%Y.%m.%d")})', color=0x7fbcf5)
-            get_char = lambda c: ' ' if len(c) == 0 else f'{getCharacterName(c[0])}：{c[0].value}'
-            result.add_field(
-                name=f'最深抵達：{abyss.max_floor}　戰鬥次數：{"👑" if abyss.total_stars == 36 and abyss.total_battles == 12 else abyss.total_battles}　★：{abyss.total_stars}',
-                value=f'[最多擊破數] {get_char(abyss.ranks.most_kills)}\n'
-                      f'[最強之一擊] {get_char(abyss.ranks.strongest_strike)}\n'
-                      f'[受最多傷害] {get_char(abyss.ranks.most_damage_taken)}\n'
-                      f'[Ｑ施放次數] {get_char(abyss.ranks.most_bursts_used)}\n'
-                      f'[Ｅ施放次數] {get_char(abyss.ranks.most_skills_used)}',
-                inline=False
-            )
-            # 取得深淵每一層資料
-            for floor in abyss.floors:
-                if full_data == False and floor is not abyss.floors[-1]:
-                    continue
-                for chamber in floor.chambers:
-                    name = f'{floor.floor}-{chamber.chamber}　★{chamber.stars}'
-                    # 取得深淵上下半層角色名字
-                    chara_list = [[], []]
-                    for i, battle in enumerate(chamber.battles):
-                        for chara in battle.characters:
-                            chara_list[i].append(getCharacterName(chara))
-                    value = f'[{".".join(chara_list[0])}]／\n[{".".join(chara_list[1])}]'
-                    result.add_field(name=name, value=value)
-        finally:
-            return result
+            return abyss
     
     async def getTravelerDiary(self, user_id: str, month: int) -> Union[str, discord.Embed]:
         """取得使用者旅行者札記
@@ -401,6 +375,38 @@ class GenshinApp:
                 count += 1
         log.info(f'[資訊][System]deleteExpiredUserData: {len(user_data)} 位使用者已檢查，已刪除 {count} 位過期使用者')
 
+    def parseAbyssOverview(self, abyss: genshin.models.SpiralAbyss) -> discord.Embed:
+        """解析深淵概述資料
+        """
+        result = discord.Embed(title=f'深境螺旋第 {abyss.season} 期戰績 ({abyss.start_time.astimezone().strftime("%Y.%m.%d")} ~ {abyss.end_time.astimezone().strftime("%Y.%m.%d")})', color=0x7fbcf5)
+        get_char = lambda c: ' ' if len(c) == 0 else f'{getCharacterName(c[0])}：{c[0].value}'
+        result.add_field(
+            name=f'最深抵達：{abyss.max_floor}　戰鬥次數：{"👑" if abyss.total_stars == 36 and abyss.total_battles == 12 else abyss.total_battles}　★：{abyss.total_stars}',
+            value=f'[最多擊破數] {get_char(abyss.ranks.most_kills)}\n'
+                    f'[最強之一擊] {get_char(abyss.ranks.strongest_strike)}\n'
+                    f'[受最多傷害] {get_char(abyss.ranks.most_damage_taken)}\n'
+                    f'[Ｑ施放次數] {get_char(abyss.ranks.most_bursts_used)}\n'
+                    f'[Ｅ施放次數] {get_char(abyss.ranks.most_skills_used)}',
+            inline=False
+        )
+        return result
+    
+    def parseAbyssFloor(self, embed: discord.Embed, abyss: genshin.models.SpiralAbyss, full_data: bool = False) -> discord.Embed:
+        """解析深淵每一層資料"""
+        for floor in abyss.floors:
+            if full_data == False and floor is not abyss.floors[-1]:
+                continue
+            for chamber in floor.chambers:
+                name = f'{floor.floor}-{chamber.chamber}　★{chamber.stars}'
+                # 取得深淵上下半層角色名字
+                chara_list = [[], []]
+                for i, battle in enumerate(chamber.battles):
+                    for chara in battle.characters:
+                        chara_list[i].append(getCharacterName(chara))
+                value = f'[{".".join(chara_list[0])}]／\n[{".".join(chara_list[1])}]'
+                embed.add_field(name=name, value=value)
+        return embed
+    
     def __parseNotes(self, notes: genshin.models.Notes) -> str:
         result = ''
         result += f'當前樹脂：{notes.current_resin}/{notes.max_resin}\n'

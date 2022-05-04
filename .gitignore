@@ -8,6 +8,7 @@ config.json
 # Data
 data/*.json
 data/*.log
+data/image/character/[0-9]*.png
 
 # VS Code
 .vscode
