@@ -376,7 +376,14 @@ class GenshinApp:
         log.info(f'[資訊][System]deleteExpiredUserData: {len(user_data)} 位使用者已檢查，已刪除 {count} 位過期使用者')
 
     def parseAbyssOverview(self, abyss: genshin.models.SpiralAbyss) -> discord.Embed:
-        """解析深淵概述資料
+        """解析深淵概述資料，包含日期、層數、戰鬥次數、總星數...等等
+
+        ------
+        Parameters
+        abyss `SpiralAbyss`: 深境螺旋資料
+        ------
+        Returns
+        `discord.Embed`: discord嵌入格式
         """
         result = discord.Embed(title=f'深境螺旋第 {abyss.season} 期戰績 ({abyss.start_time.astimezone().strftime("%Y.%m.%d")} ~ {abyss.end_time.astimezone().strftime("%Y.%m.%d")})', color=0x7fbcf5)
         get_char = lambda c: ' ' if len(c) == 0 else f'{getCharacterName(c[0])}：{c[0].value}'
@@ -392,7 +399,17 @@ class GenshinApp:
         return result
     
     def parseAbyssFloor(self, embed: discord.Embed, abyss: genshin.models.SpiralAbyss, full_data: bool = False) -> discord.Embed:
-        """解析深淵每一層資料"""
+        """解析深淵每一樓層，將每層的星數、所使用的人物資料加到embed中
+        
+        ------
+        Parameters
+        embed `discord.Embed`: 從`parseAbyssOverview`函式取得的嵌入資料
+        abyss `SpiralAbyss`: 深境螺旋資料
+        full_data `bool`: `True`表示解析所有樓層；`False`表示只解析最後一層
+        ------
+        Returns
+        `discord.Embed`: discord嵌入格式
+        """
         for floor in abyss.floors:
             if full_data == False and floor is not abyss.floors[-1]:
                 continue

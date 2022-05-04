@@ -73,7 +73,14 @@ def drawRecordCard(avatar_bytes: bytes, record_card: genshin.models.RecordCard, 
     return fp
 
 def drawCharacter(img: Image.Image, character: genshin.models.AbyssCharacter, size: Tuple[int, int], pos: Tuple[float, float]):
-    """畫角色頭像(含背景框)"""
+    """畫角色頭像，包含背景框、角色等級
+    
+    ------
+    Parameters
+    character `AbyssCharacter`: 角色資料
+    size `Tuple[int, int]`: 背景框大小
+    pos `Tuple[float, float]`: 要畫的左上角位置
+    """
     background = Image.open(f'data/image/character/char_{character.rarity}star_bg.png').convert('RGBA').resize(size)
     avatar_file = Path(f'data/image/character/{character.id}.png')
     # 若本地沒有圖檔則從URL下載
@@ -84,7 +91,14 @@ def drawCharacter(img: Image.Image, character: genshin.models.AbyssCharacter, si
     img.paste(avatar, pos, avatar)
 
 def drawAbyssStar(img: Image.Image, number: int, size: Tuple[int, int], pos: Tuple[float, float]):
-    """畫深淵星星數量"""
+    """畫深淵星星數量
+    
+    ------
+    Parameters
+    number `int`: 星星數量
+    size `Tuple[int, int]`: 單顆星星大小
+    pos `Tuple[float, float]`: 正中央位置，星星會自動置中
+    """
     star = Image.open(f'data/image/spiral_abyss/star.png').convert('RGBA').resize(size)
     pad = 5
     upper_left = (pos[0] - number / 2 * size[0] - (number - 1) * pad, pos[1] - size[1] / 2)
@@ -92,7 +106,7 @@ def drawAbyssStar(img: Image.Image, number: int, size: Tuple[int, int], pos: Tup
         img.paste(star, (int(upper_left[0] + i * (size[0] + 2 * pad)), int(upper_left[1])), star)
 
 def drawAbyssCard(abyss: genshin.models.SpiralAbyss) -> BytesIO:
-    """製作深淵樓層紀錄圖
+    """繪製深淵樓層紀錄圖，包含每一間星數以及上下半所使用的角色和等級
 
     ------
     Parameters
