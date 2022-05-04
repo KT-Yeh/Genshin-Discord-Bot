@@ -24,6 +24,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
     @app_commands.command(
         name='abyss深淵紀錄',
         description='查詢深境螺旋紀錄')
+    @app_commands.checks.cooldown(1, 10)
     @app_commands.rename(season='時間', floor='樓層')
     @app_commands.describe(
         season='選擇本期或是上期紀錄',
@@ -61,6 +62,11 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
                 file = discord.File(fp, filename='image.jpeg')
                 embed.set_image(url='attachment://image.jpeg')
                 await interaction.edit_original_message(embed=embed, attachments=[file])
+    
+    @slash_abyss.error
+    async def on_slash_abyss_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
+        if isinstance(error, app_commands.CommandOnCooldown):
+            await interaction.response.send_message('使用指令的間隔為10秒，請稍後再使用~', ephemeral=True)
 
     # 取得使用者旅行者札記
     @app_commands.command(
