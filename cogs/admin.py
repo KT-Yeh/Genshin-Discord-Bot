@@ -1,7 +1,8 @@
 import discord
+import random
 from discord import app_commands
 from discord.app_commands import Choice
-from discord.ext import commands
+from discord.ext import commands, tasks
 from pathlib import Path
 from utility.utils import log
 from utility.config import config
@@ -9,6 +10,8 @@ from utility.config import config
 class Admin(commands.Cog):
     def __init__(self, bot):
         self.bot: commands.Bot = bot
+        self.presence_string: list[str] = ['原神']
+        self.change_presence.start()
     
     # 同步 Slash commands 到全域或是當前伺服器
     @app_commands.command(name='sync', description='同步Slash commands到全域或是當前伺服器')
@@ -64,7 +67,7 @@ class Admin(commands.Cog):
     # 使用系統命令
     @app_commands.command(name='system', description='使用系統命令')
     @app_commands.rename(option='選項', param='參數')
-    @app_commands.choices(option=[Choice(name='reload', value=0)])
+    @app_commands.choices(option=[Choice(name='reload', value=0), Choice(name='presence', value=1)])
     async def system(self, interaction: discord.Interaction, option: int, param: str = None):
         # Reload cogs
         if option == 0:
@@ -87,6 +90,23 @@ class Admin(commands.Cog):
                     await interaction.response.send_message(f'[例外][Admin]system reload all: {e}')
                 else:
                     await interaction.response.send_message('全部指令集重新載入完成')
+        # Change presence string
+        elif option == 1:
+            self.presence_string = param.split(',')
+            await interaction.response.send_message(f'Presence list已變更為：{self.presence_string}')
+
+    @tasks.loop(minutes=5)
+    async def change_presence(self):
+        l = len(self.presence_string)
+        n = random.randint(0, l)
+        if n < l:
+            await self.bot.change_presence(activity=discord.Game(self.presence_string[n]))
+        elif n == l:
+            await self.bot.change_presence(activity=discord.Game(f'{len(self.bot.guilds)} 個伺服器'))
+
+    @change_presence.before_loop
+    async def before_change_presence(self):
+        await self.bot.wait_until_ready()
     
     # 測試伺服器是否有 applications.commands 的 scope
     async def __hasAppCmdScope(self, guild: discord.Guild) -> bool:

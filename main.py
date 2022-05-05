@@ -27,7 +27,6 @@ class GenshinDiscordBot(commands.Bot):
     async def on_ready(self):
         log.info(f'[資訊][System]on_ready: You have logged in as {self.user}')
         log.info(f'[資訊][System]on_ready: Total {len(self.guilds)} servers connected')
-        await self.change_presence(activity=discord.Game(name='Genshin Impact'))
 
     async def on_command_error(self, ctx: commands.Context, error):
         log.error(f'[例外][{ctx.author.id}]on_command_error: {error}')
