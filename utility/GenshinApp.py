@@ -2,7 +2,7 @@ import json
 import discord
 import genshin
 from datetime import datetime, timedelta
-from typing import Union, Tuple
+from typing import Sequence, Union, Tuple
 from .utils import log, getCharacterName, trimCookie, getServerName, getWeekdayName,user_last_use_time
 from .config import config
 
@@ -316,6 +316,32 @@ class GenshinApp:
                 if card.uid == int(self.__user_data[user_id]['uid']):
                     return (card, userstats)
             return '找不到原神紀錄卡片'
+
+    async def getCharacters(self, user_id: str) -> Union[str, Sequence[genshin.models.Character]]:
+        """取得使用者所有角色資料
+
+        ------
+        Parameters:
+        user_id `str`: 使用者Discord ID
+        ------
+        Returns:
+        `str | Sequence[Character]`: 發生例外回傳錯誤訊息`str`、正常情況回傳查詢結果`Sequence[Character]`
+        """
+        log.info(f'[指令][{user_id}]getCharacters')
+        check, msg = self.checkUserData(user_id)
+        if check == False:
+            return msg
+        client = self.__getGenshinClient(user_id)
+        try:
+            characters = await client.get_genshin_characters(int(self.__user_data[user_id]['uid']))
+        except genshin.errors.GenshinException as e:
+            log.error(f'[例外][{user_id}]getCharacters: [retcode]{e.retcode} [例外內容]{e.original}')
+            return e.original
+        except Exception as e:
+            log.error(f'[例外][{user_id}]getCharacters: [例外內容]{e}')
+            return str(e)
+        else:
+            return characters
     
     def checkUserData(self, user_id: str, *,checkUserID = True, checkCookie = True, checkUID = True) -> Tuple[bool, str]:
         """檢查使用者相關資料是否已保存在資料庫內
@@ -424,6 +450,35 @@ class GenshinApp:
                 embed.add_field(name=name, value=value)
         return embed
     
+    def parseCharacter(self, character: genshin.models.Character) -> discord.Embed:
+        """解析角色，包含命座、等級、好感、武器、聖遺物
+        
+        ------
+        Parameters
+        character `Character`: 人物資料
+        ------
+        Returns
+        `discord.Embed`: discord嵌入格式
+        """
+        color = {'pyro': 0xfb4120, 'electro': 0xbf73e7, 'hydro': 0x15b1ff, 'cryo': 0x70daf1, 'dendro': 0xa0ca22, 'anemo': 0x5cd4ac, 'geo': 0xfab632}
+        embed = discord.Embed(color=color.get(character.element.lower()))
+        embed.set_thumbnail(url=character.icon)
+        embed.add_field(name=f'★{character.rarity} {character.name}', inline=True, value=f'命座：{character.constellation}\n等級：Lv. {character.level}\n好感：Lv. {character.friendship}')
+
+        weapon = character.weapon
+        embed.add_field(name=f'★{weapon.rarity} {weapon.name}', inline=True, value=f'精煉：{weapon.refinement} 階\n等級：Lv. {weapon.level}')
+
+        if character.constellation > 0:
+            number = {1: '一', 2: '二', 3: '三', 4: '四', 5: '五', 6: '六'}
+            msg = '\n'.join([f'第{number[constella.pos]}層：{constella.name}' for constella in character.constellations if constella.activated])
+            embed.add_field(name='命之座', inline=False, value=msg)
+
+        if len(character.artifacts) > 0:
+            msg = '\n'.join([f'{artifact.pos_name}：{artifact.name} ({artifact.set.name})' for artifact in character.artifacts])
+            embed.add_field(name='聖遺物', inline=False, value=msg)
+
+        return embed
+
     def __parseNotes(self, notes: genshin.models.Notes) -> str:
         result = ''
         result += f'當前樹脂：{notes.current_resin}/{notes.max_resin}\n'

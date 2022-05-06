@@ -1,5 +1,7 @@
 import datetime
 import discord
+import genshin
+from typing import Sequence
 from discord import app_commands
 from discord.ext import commands
 from discord.app_commands import Choice
@@ -115,6 +117,46 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
     async def on_slash_card_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
         if isinstance(error, app_commands.CommandOnCooldown):
             await interaction.response.send_message('產生卡片的間隔為30秒，請稍後再使用~', ephemeral=True)
+
+    class CharactersDropdown(discord.ui.Select):
+        """選擇角色的下拉選單"""
+        def __init__(self, previous_interaction: discord.Interaction, characters: Sequence[genshin.models.Character], index: int = 1):
+            options = [discord.SelectOption(label=f'★{character.rarity} Lv.{character.level} {character.name}', value=str(i)) for i, character in enumerate(characters)]
+            super().__init__(placeholder=f'選擇角色 (第 {index}~{index + len(characters) - 1} 名)', min_values=1, max_values=1, options=options)
+            self.characters = characters
+            self.previous_interaction = previous_interaction
+        
+        async def callback(self, interaction: discord.Interaction):
+            try:
+                await interaction.response.defer()
+                embed = genshin_app.parseCharacter(self.characters[int(self.values[0])])
+                embed.title = f'{interaction.user.display_name} 的角色一覽'
+                await self.previous_interaction.edit_original_message(content=None, embed=embed)
+            except Exception as e:
+                log.info(f'[例外][{interaction.user.id}]CharactersDropdown > callback: {e}')
+    
+    class CharactersDropdownView(discord.ui.View):
+        """顯示角色下拉選單的View，依照選單欄位上限25個分割選單"""
+        def __init__(self, previous_interaction: discord.Interaction, characters: Sequence[genshin.models.Character]):
+            super().__init__(timeout=60)
+            max_row = 25
+            for i in range(0, len(characters), max_row):
+                self.add_item(GenshinInfo.CharactersDropdown(previous_interaction, characters[i:i+max_row], i+1))
+    
+    # 個人所有角色一覽
+    @app_commands.command(name='character角色一覽', description='公開展示我的所有角色')
+    async def slash_character(self, interaction: discord.Interaction):
+        await interaction.response.defer()
+        result = await genshin_app.getCharacters(str(interaction.user.id))
+
+        if isinstance(result, str):
+            await interaction.edit_original_message(content=result)
+            return
+        
+        view = self.CharactersDropdownView(interaction ,result)
+        await interaction.edit_original_message(content='請選擇角色：', view=view)
+        await view.wait()
+        await interaction.edit_original_message(view=None)
 
 async def setup(client: commands.Bot):
     await client.add_cog(GenshinInfo(client))
