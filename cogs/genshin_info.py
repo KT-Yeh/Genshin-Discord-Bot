@@ -130,7 +130,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
             try:
                 await interaction.response.defer()
                 embed = genshin_app.parseCharacter(self.characters[int(self.values[0])])
-                embed.title = f'{interaction.user.display_name} 的角色一覽'
+                embed.title = f'{self.previous_interaction.user.display_name} 的角色一覽'
                 await self.previous_interaction.edit_original_message(content=None, embed=embed)
             except Exception as e:
                 log.info(f'[例外][{interaction.user.id}]CharactersDropdown > callback: {e}')
