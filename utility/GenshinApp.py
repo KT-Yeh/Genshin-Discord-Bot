@@ -97,7 +97,7 @@ class GenshinApp:
                 log.info(f'[資訊][{user_id}]setUID: 找不到該UID的角色資料')
                 return f'找不到該UID的角色資料，請確認是否輸入正確'
 
-    async def getRealtimeNote(self, user_id: str, check_resin_excess = False) -> Tuple[bool, str]:
+    async def getRealtimeNote(self, user_id: str, check_resin_excess = False) -> Union[None, str, discord.Embed]:
         """取得使用者即時便箋(樹脂、洞天寶錢、參數質變儀、派遣、每日、週本)
         
         ------
@@ -106,14 +106,13 @@ class GenshinApp:
         check_resin_excess `bool`: 設為`True`時，只有當樹脂超過設定標準時才會回傳即時便箋結果，用於自動檢查樹脂
         ------
         Returns
-        `bool`: 正常情況回傳`True`，發生錯誤或例外回傳`False`
-        `str`: 回覆給使用者的訊息
+        `None | str | Embed`: 自動檢查樹脂時，在正常未溢出的情況下回傳`None`；發生例外回傳錯誤訊息`str`、正常情況回傳查詢結果`discord.Embed`
         """
         if not check_resin_excess:
             log.info(f'[指令][{user_id}]getRealtimeNote')
         check, msg = self.checkUserData(user_id)
         if check == False:
-            return (False, msg)
+            return msg
    
         uid = self.__user_data[user_id]['uid']
         client = self.__getGenshinClient(user_id)
@@ -121,21 +120,26 @@ class GenshinApp:
             notes = await client.get_genshin_notes(int(uid))
         except genshin.errors.DataNotPublic as e:
             log.info(f'[例外][{user_id}]getRealtimeNote: {e.original}')
-            return (False, '即時便箋功能未開啟\n請從HOYOLAB網頁或App開啟即時便箋功能')
+            return '即時便箋功能未開啟，請先從Hoyolab網頁或App開啟即時便箋功能'
         except genshin.errors.GenshinException as e:
             log.info(f'[例外][{user_id}]getRealtimeNote: [retcode]{e.retcode} [例外內容]{e.original}')
-            return (False, f'發生錯誤: [retcode]{e.retcode} [內容]{e.original}')
+            return f'發生錯誤: [retcode]{e.retcode} [內容]{e.original}'
         except Exception as e:
             log.error(f'[例外][{user_id}]getRealtimeNote: {e}')
-            return (False, f'發生錯誤: {e}')
+            return f'發生錯誤: {e}'
         else:
             if check_resin_excess == True and notes.current_resin < config.auto_check_resin_threshold:
-                msg = None
+                return None
             else:
                 msg = f'{getServerName(uid[0])} {uid.replace(uid[3:-3], "***", 1)}\n'
                 msg += f'--------------------\n'
                 msg += self.__parseNotes(notes)
-            return (True, msg)
+                # 根據樹脂數量embed顏色從0x28c828漸變到0xc82828
+                percent = notes.current_resin / notes.max_resin * 2
+                red = 0x010000 * int(0xa0 * min(1, percent))
+                green = 0x000100 * int(0xa0 * max(0, percent - 1))
+                embed = discord.Embed(description=msg, color=0x28c828 + red - green)
+                return embed
     
     async def redeemCode(self, user_id: str, code: str) -> str:
         """為使用者使用指定的兌換碼
@@ -411,7 +415,7 @@ class GenshinApp:
         Returns
         `discord.Embed`: discord嵌入格式
         """
-        result = discord.Embed(description=f'第 {abyss.season} 期：{abyss.start_time.astimezone().strftime("%Y.%m.%d")} ~ {abyss.end_time.astimezone().strftime("%Y.%m.%d")}', color=0x7fbcf5)
+        result = discord.Embed(description=f'第 {abyss.season} 期：{abyss.start_time.astimezone().strftime("%Y.%m.%d")} ~ {abyss.end_time.astimezone().strftime("%Y.%m.%d")}', color=0x6959c1)
         get_char = lambda c: ' ' if len(c) == 0 else f'{getCharacterName(c[0])}：{c[0].value}'
         result.add_field(
             name=f'最深抵達：{abyss.max_floor}　戰鬥次數：{"👑" if abyss.total_stars == 36 and abyss.total_battles == 12 else abyss.total_battles}　★：{abyss.total_stars}',

@@ -174,11 +174,12 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
                     continue
                 result = await genshin_app.getRealtimeNote(user_id, True)
                 count += 1
-                if result[1] != None:
-                    preamble = '樹脂(快要)溢出啦！' if result[0] == True else '自動檢查樹脂時發生錯誤！'
-                    embed = discord.Embed(title='', description=result[1], color=0xff2424)
+                if result != None:
                     try:
-                        await channel.send(f'<@{user_id}>，{preamble}', embed=embed)
+                        if isinstance(result, str):
+                            await channel.send(f'<@{user_id}>，自動檢查樹脂時發生錯誤：{result}')
+                        else:
+                            await channel.send(f'<@{user_id}>，樹脂(快要)溢出啦！', embed=result)
                     except:
                         self.__remove_user(user_id, self.__resin_dict, self.__resin_notifi_filename)
                 await asyncio.sleep(config.auto_loop_delay)
