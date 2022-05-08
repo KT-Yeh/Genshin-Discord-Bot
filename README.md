@@ -20,11 +20,9 @@
 - 採用新的斜線指令，輸入 / 自動彈出指令提示，不需要記憶任何指令的使用方式
 
 ## 展示
+更多展示圖片、GIF請參考巴哈文章：https://forum.gamer.com.tw/Co.php?bsn=36730&sn=162433
+
 <img src="https://i.imgur.com/LcNJ2as.png" width="400"/> <img src="https://i.imgur.com/oNTOam5.png" width="300"/>
-
-<img src="https://i.imgur.com/H4vF8fo.png" width="300"/> <img src="https://i.imgur.com/rGFqQr2.gif"/>
-
-<img src="https://i.imgur.com/S52ld6a.png"/>
 
 
 ## 自己安裝 & 架設機器人
@@ -56,7 +54,7 @@
 
 ![](https://i.imgur.com/BfzjewI.png)
 
-3. 在自己的 Discord **伺服器名稱或圖示**上按滑鼠右鍵，複製伺服器 ID（複製ID按鈕需要去 設定->進階->開發者模式 開啟）
+3. 在自己的 Discord **伺服器名稱或圖示**上按滑鼠右鍵，複製**伺服器 ID**（複製 ID 按鈕需要去 設定->進階->開發者模式 開啟）
 
 ![](https://i.imgur.com/tCMhEhv.png)
 
@@ -74,11 +72,15 @@ python .\main.py
 ```
 6. 若要在多個伺服器間使用，請在 Discord 測試伺服器的頻道內輸入 `/sync  範圍:全域伺服器`，並等待（約 1 小時）Discord 將指令推送
 
+註1：當運行後看到 `[資訊][System]on_ready: You have logged in as XXXXX` 表示參數設置正確並成功啟動，此時機器人會自動同步所有指令到你的測試伺服器，稱為「本地同步」。
+
+註2：若你輸入斜線 / 後看不到指令的話，請嘗試完全關閉 Discord 軟體並重啟 Discord。
+
 ## 配置檔案說明 (config.json)
 ```python
 {
     "application_id": 123456789123456789,   # 機器人 Application ID，從 Discord Developer 網頁上取得
-    "test_server_id": 212340008888812345,   # 測試用伺服器 ID，用來測試斜線指令，管理員指令只能在本伺服器使用
+    "test_server_id": 212340008888812345,   # 測試伺服器 ID，用來測試斜線指令，管理員指令只能在本伺服器使用
     "bot_token": "ABCDEFG",                 # 機器人 Token，從 Discord Developer 網頁取得
     "auto_daily_reward_time": 8,            # 每日 Hoyolab 自動簽到時間 (單位：時)
     "auto_check_resin_threshold": 150,      # 每小時檢查，當超過多少樹脂發送提醒
@@ -86,9 +88,17 @@ python .\main.py
 }
 ```
 
+## Admin 管理指令說明
+管理指令只能在配置檔案內設定的伺服器才能使用
+```python
+/sync：同步斜線指令，範圍「當前伺服器」表示將指令同步到你配置檔案的測試伺服器、「全域伺服器」表示將指令推送到所有伺服器，需等待約 1 小時
+/broadcast：向機器人已連接的所有伺服器廣播訊息
+/status：顯示機器人狀態，包含延遲、已連接伺服器數量、已連接伺服器名稱
+/system reload：重新載入模組，非開發者不需要使用，重新載入後須使用 /sync，否則指令不會同步
+/system precense 字串1,字串2,字串3,...：變更機器人顯示狀態(正在玩 ...)，每 5 分鐘隨機變更為設定的其中一個字串，字串數量不限
+```
+
 ## 致謝
-構想啟發自: https://github.com/Xm798/Genshin-Dailynote-Helper
-
-原神 API 使用自: https://github.com/thesadru/genshin.py
-
-Discord API 使用自: https://github.com/Rapptz/discord.py
+- 構想啟發自: https://github.com/Xm798/Genshin-Dailynote-Helper
+- 原神 API 使用自: https://github.com/thesadru/genshin.py
+- Discord API 使用自: https://github.com/Rapptz/discord.py
