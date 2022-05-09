@@ -97,20 +97,20 @@ class GenshinApp:
                 log.info(f'[資訊][{user_id}]setUID: 找不到該UID的角色資料')
                 return f'找不到該UID的角色資料，請確認是否輸入正確'
 
-    async def getRealtimeNote(self, user_id: str, check_resin_excess = False) -> Union[None, str, discord.Embed]:
+    async def getRealtimeNote(self, user_id: str, *, schedule = False) -> Union[None, str, discord.Embed]:
         """取得使用者即時便箋(樹脂、洞天寶錢、參數質變儀、派遣、每日、週本)
         
         ------
         Parameters
         user_id `str`: 使用者Discord ID
-        check_resin_excess `bool`: 設為`True`時，只有當樹脂超過設定標準時才會回傳即時便箋結果，用於自動檢查樹脂
+        schedule `bool`: 是否為排程檢查樹脂，設為`True`時，只有當樹脂超過設定標準時才會回傳即時便箋結果
         ------
         Returns
         `None | str | Embed`: 自動檢查樹脂時，在正常未溢出的情況下回傳`None`；發生例外回傳錯誤訊息`str`、正常情況回傳查詢結果`discord.Embed`
         """
-        if not check_resin_excess:
+        if not schedule:
             log.info(f'[指令][{user_id}]getRealtimeNote')
-        check, msg = self.checkUserData(user_id)
+        check, msg = self.checkUserData(user_id, update_use_time=(not schedule))
         if check == False:
             return msg
    
@@ -128,7 +128,7 @@ class GenshinApp:
             log.error(f'[例外][{user_id}]getRealtimeNote: {e}')
             return f'發生錯誤: {e}'
         else:
-            if check_resin_excess == True and notes.current_resin < config.auto_check_resin_threshold:
+            if schedule == True and notes.current_resin < config.auto_check_resin_threshold:
                 return None
             else:
                 msg = f'{getServerName(uid[0])} {uid.replace(uid[3:-3], "***", 1)}\n'
@@ -169,19 +169,21 @@ class GenshinApp:
         finally:
             return result
     
-    async def claimDailyReward(self, user_id: str, *, honkai: bool = False) -> str:
+    async def claimDailyReward(self, user_id: str, *, honkai: bool = False, schedule = False) -> str:
         """為使用者在Hoyolab簽到
 
         ------
         Parameters
         user_id `str`: 使用者Discord ID
         honkai `bool`: 是否也簽到崩壞3
+        schedule `bool`: 是否為排程自動簽到
         ------
         Returns
         `str`: 回覆給使用者的訊息
         """
-        log.info(f'[指令][{user_id}]claimDailyReward: honkai={honkai}')
-        check, msg = self.checkUserData(user_id)
+        if not schedule:
+            log.info(f'[指令][{user_id}]claimDailyReward: honkai={honkai}')
+        check, msg = self.checkUserData(user_id, update_use_time=(not schedule))
         if check == False:
             return msg
         client = self.__getGenshinClient(user_id)
@@ -346,31 +348,31 @@ class GenshinApp:
         else:
             return characters
     
-    def checkUserData(self, user_id: str, *,checkUserID = True, checkCookie = True, checkUID = True) -> Tuple[bool, str]:
+    def checkUserData(self, user_id: str, *, checkUID = True, update_use_time = True) -> Tuple[bool, str]:
         """檢查使用者相關資料是否已保存在資料庫內
         
         ------
         Parameters
         user_id `str`: 使用者Discord ID
-        checkUserID `bool`: 是否檢查Discord ID
-        checkCookie `bool`: 是否檢查Cookie
         checkUID `bool`: 是否檢查UID
+        update_use_time `bool`: 是否更新使用者最後使用時間
         ------
         Returns
         `bool`: `True`檢查成功，資料存在資料庫內；`False`檢查失敗，資料不存在資料庫內
         `str`: 檢查失敗時，回覆給使用者的訊息
         """
-        if checkUserID and user_id not in self.__user_data.keys():
+        if user_id not in self.__user_data.keys():
             log.info(f'[資訊][{user_id}]checkUserData: 找不到使用者')
             return False, f'找不到使用者，請先設定Cookie(輸入 `/cookie設定` 顯示說明)'
         else:
-            if checkCookie and 'cookie' not in self.__user_data[user_id].keys():
+            if 'cookie' not in self.__user_data[user_id].keys():
                 log.info(f'[資訊][{user_id}]checkUserData: 找不到Cookie')
                 return False, f'找不到Cookie，請先設定Cookie(輸入 `/cookie設定` 顯示說明)'
             if checkUID and 'uid' not in self.__user_data[user_id].keys():
                 log.info(f'[資訊][{user_id}]checkUserData: 找不到角色UID')
                 return False, f'找不到角色UID，請先設定UID(使用 `/uid設定` 來設定UID)'
-        user_last_use_time.update(user_id)
+        if update_use_time:
+            user_last_use_time.update(user_id)
         return True, None
     
     def clearUserData(self, user_id: str) -> str:

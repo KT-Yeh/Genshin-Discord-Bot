@@ -139,16 +139,17 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
             log.info('[排程][System]schedule: 每日自動簽到開始')
             # 複製一份避免衝突
             daily_dict = dict(self.__daily_dict)
-            count = 0
+            total, honkai_count = 0, 0
             for user_id, value in daily_dict.items():
                 channel = self.bot.get_channel(int(value['channel']))
                 has_honkai = False if value.get('honkai') == None else True
-                check, msg = genshin_app.checkUserData(user_id)
+                check, msg = genshin_app.checkUserData(user_id, update_use_time=False)
                 if channel == None or check == False:
                     self.__remove_user(user_id, self.__daily_dict, self.__daily_reward_filename)
                     continue
-                result = await genshin_app.claimDailyReward(user_id, honkai=has_honkai)
-                count += 1
+                result = await genshin_app.claimDailyReward(user_id, honkai=has_honkai, schedule=True)
+                total += 1
+                honkai_count += int(has_honkai)
                 try:
                     if value.get('mention') == 'False':
                         user = await self.bot.fetch_user(int(user_id))
@@ -159,7 +160,7 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
                     log.error(f'[排程][{user_id}]自動簽到：{e}')
                     self.__remove_user(user_id, self.__daily_dict, self.__daily_reward_filename)
                 await asyncio.sleep(config.auto_loop_delay)
-            log.info(f'[排程][System]schedule: 每日自動簽到結束，{count} 人已簽到')
+            log.info(f'[排程][System]schedule: 每日自動簽到結束，總共 {total} 人簽到，其中 {honkai_count} 人也簽到崩壞3')
         
         # 每二小時檢查一次樹脂，並且與每日簽到時間錯開
         if abs(now.hour - config.auto_daily_reward_time) % 2 == 1 and now.minute < self.loop_interval:
@@ -168,11 +169,11 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
             count = 0
             for user_id, value in resin_dict.items():
                 channel = self.bot.get_channel(int(value['channel']))
-                check, msg = genshin_app.checkUserData(user_id)
+                check, msg = genshin_app.checkUserData(user_id, update_use_time=False)
                 if channel == None or check == False:
                     self.__remove_user(user_id, self.__resin_dict, self.__resin_notifi_filename)
                     continue
-                result = await genshin_app.getRealtimeNote(user_id, True)
+                result = await genshin_app.getRealtimeNote(user_id, schedule=True)
                 count += 1
                 if result != None:
                     try:
