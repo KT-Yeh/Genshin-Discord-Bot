@@ -134,11 +134,10 @@ class GenshinApp:
                 msg = f'{getServerName(uid[0])} {uid.replace(uid[3:-3], "***", 1)}\n'
                 msg += f'--------------------\n'
                 msg += self.__parseNotes(notes)
-                # 根據樹脂數量embed顏色從0x28c828漸變到0xc82828
-                percent = notes.current_resin / notes.max_resin * 2
-                red = 0x010000 * int(0xa0 * min(1, percent))
-                green = 0x000100 * int(0xa0 * max(0, percent - 1))
-                embed = discord.Embed(description=msg, color=0x28c828 + red - green)
+                # 根據樹脂數量，以80作分界，embed顏色從綠色(0x28c828)漸變到黃色(0xc8c828)，再漸變到紅色(0xc82828)
+                r = notes.current_resin
+                color = 0x28c828 + 0x010000 * int(0xa0 * r / 80) if r < 80 else 0xc8c828 - 0x000100 * int(0xa0 * (r - 80) / 80)
+                embed = discord.Embed(description=msg, color=color)
                 return embed
     
     async def redeemCode(self, user_id: str, code: str) -> str:
