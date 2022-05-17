@@ -83,8 +83,9 @@ python .\main.py
     "test_server_id": 212340008888812345,   # 測試伺服器 ID，用來測試斜線指令，管理員指令只能在本伺服器使用
     "bot_token": "ABCDEFG",                 # 機器人 Token，從 Discord Developer 網頁取得
     "auto_daily_reward_time": 8,            # 每日 Hoyolab 自動簽到時間 (單位：時)
-    "auto_check_resin_threshold": 150,      # 每小時檢查，當超過多少樹脂發送提醒
-    "auto_loop_delay": 2.0                  # 排程執行時每位使用者之間的等待間隔（單位：秒）
+    "auto_check_resin_threshold": 145,      # 每兩小時檢查一次，當超過多少樹脂時發送提醒
+    "auto_loop_delay": 2.0,                 # 排程執行時每位使用者之間的等待間隔（單位：秒）
+    "slash_cmd_cooldown": 5.0               # 使用者重複呼叫斜線指令的冷卻時間（單位：秒）
 }
 ```
 

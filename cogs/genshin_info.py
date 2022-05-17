@@ -8,6 +8,7 @@ from discord.app_commands import Choice
 from utility.GenshinApp import genshin_app
 from utility.draw import drawRecordCard, drawAbyssCard
 from utility.utils import log
+from utility.config import config
 
 class GenshinInfo(commands.Cog, name='原神資訊'):
     def __init__(self, bot):
@@ -28,7 +29,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
     @app_commands.command(
         name='abyss深淵紀錄',
         description='查詢深境螺旋紀錄')
-    @app_commands.checks.cooldown(1, 10)
+    @app_commands.checks.cooldown(1, config.slash_cmd_cooldown)
     @app_commands.rename(season='時間', floor='樓層')
     @app_commands.describe(
         season='選擇本期或是上期紀錄',
@@ -71,7 +72,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
     @slash_abyss.error
     async def on_slash_abyss_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
         if isinstance(error, app_commands.CommandOnCooldown):
-            await interaction.response.send_message('使用指令的間隔為10秒，請稍後再使用~', ephemeral=True)
+            await interaction.response.send_message(f'使用指令的間隔為{config.slash_cmd_cooldown}秒，請稍後再使用~', ephemeral=True)
 
     # 取得使用者旅行者札記
     @app_commands.command(
@@ -94,7 +95,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
 
     # 產生個人紀錄卡片
     @app_commands.command(name='card紀錄卡片', description='產生原神個人遊戲紀錄卡片')
-    @app_commands.checks.cooldown(1, 30)
+    @app_commands.checks.cooldown(1, config.slash_cmd_cooldown)
     async def slash_card(self, interaction: discord.Interaction):
         await interaction.response.defer()
         result = await genshin_app.getRecordCard(str(interaction.user.id))
@@ -119,7 +120,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
     @slash_card.error
     async def on_slash_card_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
         if isinstance(error, app_commands.CommandOnCooldown):
-            await interaction.response.send_message('產生卡片的間隔為30秒，請稍後再使用~', ephemeral=True)
+            await interaction.response.send_message(f'產生卡片的間隔為{config.slash_cmd_cooldown}秒，請稍後再使用~', ephemeral=True)
 
     class CharactersDropdown(discord.ui.Select):
         """選擇角色的下拉選單"""

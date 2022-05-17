@@ -4,5 +4,6 @@
     "bot_token": "ABCDEFG",
     "auto_daily_reward_time": 8,
     "auto_check_resin_threshold": 145,
-    "auto_loop_delay": 2.0
+    "auto_loop_delay": 2.0,
+    "slash_cmd_cooldown": 5.0
 }
