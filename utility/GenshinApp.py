@@ -187,6 +187,14 @@ class GenshinApp:
         if check == False:
             return msg
         client = self.__getGenshinClient(user_id)
+        # Hoyolab社群簽到
+        try:
+            await client.check_in_community()
+        except genshin.errors.GenshinException as e:
+            log.info(f'[例外][{user_id}]claimDailyReward: Hoyolab[retcode]{e.retcode} [例外內容]{e.original}')
+        except Exception as e:
+            log.error(f'[例外][{user_id}]claimDailyReward: Hoyolab[例外內容]{e}')
+        # 原神簽到
         try:
             reward = await client.claim_daily_reward()
         except genshin.errors.AlreadyClaimed:
@@ -199,8 +207,7 @@ class GenshinApp:
             result = f'原神簽到失敗：{e}'
         else:
             result = f'原神今日簽到成功，獲得 {reward.amount}x {reward.name}！'
-        
-        # 崩壞3
+        # 崩壞3簽到
         if honkai:
             result += ' '
             try:
@@ -261,8 +268,7 @@ class GenshinApp:
             return msg
         client = self.__getGenshinClient(user_id)
         try:
-            client.uids[genshin.Game.GENSHIN] = int(self.__user_data[user_id]['uid'])
-            diary = await client.get_diary(month=month)
+            diary = await client.get_diary(int(self.__user_data[user_id]['uid']), month=month)
         except genshin.errors.GenshinException as e:
             log.error(f'[例外][{user_id}]getTravelerDiary: [retcode]{e.retcode} [例外內容]{e.original}')
             result = e.original
@@ -509,16 +515,17 @@ class GenshinApp:
             result += f'寶錢全部恢復時間：{recover_time}\n'
         # 參數質變儀剩餘時間
         if notes.transformer_recovery_time != None:
-            if notes.remaining_transformer_recovery_time < 10:
-                recover_time = '已可使用！'
+            t = notes.remaining_transformer_recovery_time
+            if t.days > 0:
+                recover_time = f'{t.days} 天'
+            elif t.hours > 0:
+                recover_time = f'{t.hours} 小時'
+            elif t.minutes > 0:
+                recover_time = f'{t.minutes} 分'
+            elif t.seconds > 0:
+                recover_time = f'{t.seconds} 秒'
             else:
-                t = timedelta(seconds=notes.remaining_transformer_recovery_time+10)
-                if t.days > 0:
-                    recover_time = f'{t.days} 天'
-                elif t.seconds > 3600:
-                    recover_time = f'{round(t.seconds/3600)} 小時'
-                else:
-                    recover_time = f'{round(t.seconds/60)} 分'
+                recover_time = '可使用'
             result += f'參數質變儀剩餘時間：{recover_time}\n'
 
         result += f'--------------------\n'
