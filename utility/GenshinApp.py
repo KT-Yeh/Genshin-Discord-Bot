@@ -133,7 +133,7 @@ class GenshinApp:
             else:
                 msg = f'{getServerName(uid[0])} {uid.replace(uid[3:-3], "***", 1)}\n'
                 msg += f'--------------------\n'
-                msg += self.__parseNotes(notes)
+                msg += self.__parseNotes(notes, shortForm=schedule)
                 # 根據樹脂數量，以80作分界，embed顏色從綠色(0x28c828)漸變到黃色(0xc8c828)，再漸變到紅色(0xc82828)
                 r = notes.current_resin
                 color = 0x28c828 + 0x010000 * int(0xa0 * r / 80) if r < 80 else 0xc8c828 - 0x000100 * int(0xa0 * (r - 80) / 80)
@@ -490,7 +490,7 @@ class GenshinApp:
 
         return embed
 
-    def __parseNotes(self, notes: genshin.models.Notes) -> str:
+    def __parseNotes(self, notes: genshin.models.Notes, shortForm: bool = False) -> str:
         result = ''
         result += f'當前樹脂：{notes.current_resin}/{notes.max_resin}\n'
         
@@ -500,8 +500,9 @@ class GenshinApp:
             day_msg = '今天' if notes.resin_recovery_time.day == datetime.now().day else '明天'
             recover_time = f'{day_msg} {notes.resin_recovery_time.strftime("%H:%M")}'
         result += f'樹脂全部恢復時間：{recover_time}\n'
-        result += f'每日委託任務：{notes.completed_commissions} 已完成\n'
-        result += f'週本樹脂減半：剩餘 {notes.remaining_resin_discounts} 次\n'
+        if not shortForm:
+            result += f'每日委託任務：{notes.completed_commissions} 已完成\n'
+            result += f'週本樹脂減半：剩餘 {notes.remaining_resin_discounts} 次\n'
         result += f'--------------------\n'
         
         result += f'當前洞天寶錢/上限：{notes.current_realm_currency}/{notes.max_realm_currency}\n'
@@ -527,21 +528,21 @@ class GenshinApp:
             else:
                 recover_time = '可使用'
             result += f'參數質變儀剩餘時間：{recover_time}\n'
-
-        result += f'--------------------\n'
-
-        exped_finished = 0
-        exped_msg = ''
-        for expedition in notes.expeditions:
-            exped_msg += f'· {getCharacterName(expedition.character)}'
-            if expedition.finished:
-                exped_finished += 1
-                exped_msg += '：已完成\n'
-            else:
-                day_msg = '今天' if expedition.completion_time.day == datetime.now().day else '明天'
-                exped_msg += f' 完成時間：{day_msg} {expedition.completion_time.strftime("%H:%M")}\n'
-        result += f'探索派遣已完成/總數量：{exped_finished}/{len(notes.expeditions)}\n'
-        result += exped_msg
+        # 探索派遣剩餘時間
+        if not shortForm:
+            result += f'--------------------\n'
+            exped_finished = 0
+            exped_msg = ''
+            for expedition in notes.expeditions:
+                exped_msg += f'· {getCharacterName(expedition.character)}'
+                if expedition.finished:
+                    exped_finished += 1
+                    exped_msg += '：已完成\n'
+                else:
+                    day_msg = '今天' if expedition.completion_time.day == datetime.now().day else '明天'
+                    exped_msg += f' 完成時間：{day_msg} {expedition.completion_time.strftime("%H:%M")}\n'
+            result += f'探索派遣已完成/總數量：{exped_finished}/{len(notes.expeditions)}\n'
+            result += exped_msg
         
         return result
         
