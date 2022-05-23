@@ -60,9 +60,12 @@ class Admin(commands.Cog):
         elif option == 1:
             await interaction.response.send_message(f'已連接 {len(self.bot.guilds)} 個伺服器')
         elif option == 2:
-            msg = '、'.join([guild.name for guild in self.bot.guilds])
-            embed = discord.Embed(title='已連接伺服器名稱', description=msg)
-            await interaction.response.send_message(embed=embed)
+            await interaction.response.defer()
+            names = [guild.name for guild in self.bot.guilds]
+            for i in range(0, len(self.bot.guilds), 100):
+                msg = '、'.join(names[i : i + 100])
+                embed = discord.Embed(title=f'已連接伺服器名稱({i + 1})', description=msg)
+                await interaction.followup.send(embed=embed)
     
     # 使用系統命令
     @app_commands.command(name='system', description='使用系統命令')
