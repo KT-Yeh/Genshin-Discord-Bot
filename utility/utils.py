@@ -39,8 +39,13 @@ def getServerName(key: str) -> str:
     return __server_dict.get(key)
 
 __weekday_dict = {0: '週一', 1: '週二', 2: '週三', 3: '週四', 4: '週五', 5: '週六', 6: '週日'}
-def getWeekdayName(n: int) -> str:
-    return __weekday_dict.get(n)
+def getDayOfWeek(time: datetime) -> str:
+    delta = time.date() - datetime.now().astimezone().date()
+    if delta.days == 0:
+        return '今天'
+    elif delta.days == 1:
+        return '明天'
+    return __weekday_dict.get(time.weekday())
 
 class UserLastUseTime:
     def __init__(self) -> None:
