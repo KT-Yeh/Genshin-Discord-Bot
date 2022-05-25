@@ -118,15 +118,15 @@ class GenshinApp:
         client = self.__getGenshinClient(user_id)
         try:
             notes = await client.get_genshin_notes(int(uid))
-        except genshin.errors.DataNotPublic as e:
-            log.info(f'[例外][{user_id}]getRealtimeNote: {e.original}')
-            return '即時便箋功能未開啟，請先從Hoyolab網頁或App開啟即時便箋功能'
+        except genshin.errors.InvalidCookies as e:
+            log.info(f'[例外][{user_id}]getRealtimeNote: [retcode]{e.retcode} [例外內容]{e.original}')
+            return 'Cookie已過期失效，請重新設定Cookie'
         except genshin.errors.GenshinException as e:
             log.info(f'[例外][{user_id}]getRealtimeNote: [retcode]{e.retcode} [例外內容]{e.original}')
-            return f'發生錯誤: [retcode]{e.retcode} [內容]{e.original}'
+            return e.original
         except Exception as e:
             log.error(f'[例外][{user_id}]getRealtimeNote: {e}')
-            return f'發生錯誤: {e}'
+            return str(e)
         else:
             if schedule == True and notes.current_resin < config.auto_check_resin_threshold:
                 return None
