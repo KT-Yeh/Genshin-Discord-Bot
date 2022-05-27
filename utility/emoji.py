@@ -1,3 +1,4 @@
+import typing
 from pathlib import Path
 from pydantic import BaseModel
 
@@ -16,7 +17,7 @@ class Items(BaseModel):
 class Emoji(BaseModel):
     notes: Notes = Notes()
     items: Items = Items()
-    elements: dict[str, str] = { }
+    elements: typing.Dict[str, str] = { }
 
 path = Path('data/emoji.json')
 emoji = Emoji.parse_file(path) if path.exists() else Emoji()
