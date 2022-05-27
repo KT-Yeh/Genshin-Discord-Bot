@@ -2,7 +2,7 @@
 本分支使用 discord.py v2.0 開發版本
 
 ## 公共機器人
-[![](https://i.imgur.com/ULhx0EP.png)](https://bit.ly/原神小幫手Bot)
+[![](https://i.imgur.com/ULhx0EP.png)](https://bit.ly/原神小幫手邀請)
 
 #### 點擊上圖或邀請連結：https://bit.ly/原神小幫手Bot
 - 多人伺服器要請有管理權限的人員邀請機器人
@@ -88,6 +88,16 @@ python .\main.py
     "slash_cmd_cooldown": 5.0               # 使用者重複呼叫斜線指令的冷卻時間（單位：秒）
 }
 ```
+## 表情符號配置說明 (data/emoji.json)
+
+1. 將 `data/emoji.json.example` 重新命名為 `data/emoji.json`
+2. 自行上傳相關的表情符號至自己的伺服器
+3. 將相對應的表情符號依照 Discord 格式填入到 `emoji.json` 檔案裡
+
+註：
+- 不配置表情符號也能正常運行機器人
+- Discord 表情符號格式：`<:表符名字:表符ID>`，例如：`<:Mora:979597026285200002>`
+- 可以在 Discord 訊息頻道輸入 `\:表符名字:` 取得上述格式
 
 ## Admin 管理指令說明
 管理指令只能在配置檔案內設定的伺服器才能使用
