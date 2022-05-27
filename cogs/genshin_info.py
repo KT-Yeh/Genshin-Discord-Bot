@@ -9,6 +9,7 @@ from utility.GenshinApp import genshin_app
 from utility.draw import drawRecordCard, drawAbyssCard
 from utility.utils import log
 from utility.config import config
+from utility.emoji import emoji
 
 class GenshinInfo(commands.Cog, name='原神資訊'):
     def __init__(self, bot):
@@ -125,7 +126,12 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
     class CharactersDropdown(discord.ui.Select):
         """選擇角色的下拉選單"""
         def __init__(self, previous_interaction: discord.Interaction, characters: Sequence[genshin.models.Character], index: int = 1):
-            options = [discord.SelectOption(label=f'★{character.rarity} Lv.{character.level} {character.name}', value=str(i)) for i, character in enumerate(characters)]
+            options = [discord.SelectOption(
+                    label=f'★{character.rarity} Lv.{character.level} {character.name}',
+                    value=str(i),
+                    emoji=emoji.elements.get(character.element.lower())
+                ) for i, character in enumerate(characters)
+            ]
             super().__init__(placeholder=f'選擇角色 (第 {index}~{index + len(characters) - 1} 名)', min_values=1, max_values=1, options=options)
             self.characters = characters
             self.previous_interaction = previous_interaction

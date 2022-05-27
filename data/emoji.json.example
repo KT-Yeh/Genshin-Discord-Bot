@@ -1,0 +1,23 @@
+{
+    "notes": {
+        "resin": "",
+        "realm_currency": "",
+        "commission": "",
+        "enemies_of_note": "",
+        "transformer": ""
+    },
+    "items": {
+        "mora": "",
+        "primogem": "",
+        "intertwined_fate": ""
+    },
+    "elements": {
+        "anemo": "",
+        "cryo": "",
+        "dendro": "",
+        "electro": "",
+        "geo": "",
+        "hydro": "",
+        "pyro": ""
+    }
+}

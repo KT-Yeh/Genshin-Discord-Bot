@@ -3,6 +3,7 @@ import discord
 import genshin
 from datetime import datetime, timedelta
 from typing import Sequence, Union, Tuple
+from .emoji import emoji
 from .utils import log, getCharacterName, trimCookie, getServerName, getDayOfWeek,user_last_use_time
 from .config import config
 
@@ -287,8 +288,8 @@ class GenshinApp:
             )
             result.add_field(
                 name='當月共獲得', 
-                value=f'原石：{d.current_primogems} ({round(d.current_primogems/160)})　上個月：{d.last_primogems} ({round(d.last_primogems/160)})\n'
-                    f'摩拉：{format(d.current_mora, ",")}　上個月：{format(d.last_mora, ",")}',
+                value=f'{emoji.items.primogem}原石：{d.current_primogems} ({round(d.current_primogems/160)}{emoji.items.intertwined_fate})　上個月：{d.last_primogems} ({round(d.last_primogems/160)}{emoji.items.intertwined_fate})\n'
+                    f'{emoji.items.mora}摩拉：{format(d.current_mora, ",")}　上個月：{format(d.last_mora, ",")}',
                 inline=False
             )
             # 將札記原石組成平分成兩個field
@@ -495,28 +496,28 @@ class GenshinApp:
 
     def __parseNotes(self, notes: genshin.models.Notes, shortForm: bool = False) -> str:
         result = ''
-        result += f'當前樹脂：{notes.current_resin}/{notes.max_resin}\n'
+        result += f'{emoji.notes.resin}當前樹脂：{notes.current_resin}/{notes.max_resin}\n'
         # 樹脂
         if notes.current_resin == notes.max_resin:
             recover_time = '已額滿！'  
         else:
             day_msg = getDayOfWeek(notes.resin_recovery_time)
             recover_time = f'{day_msg} {notes.resin_recovery_time.strftime("%H:%M")}'
-        result += f'樹脂全部恢復時間：{recover_time}\n'
+        result += f'{emoji.notes.resin}全部恢復時間：{recover_time}\n'
         # 每日、週本
         if not shortForm:
-            result += f'每日委託任務：{notes.completed_commissions} 已完成\n'
-            result += f'週本樹脂減半：剩餘 {notes.remaining_resin_discounts} 次\n'
+            result += f'{emoji.notes.commission}每日委託任務：{notes.completed_commissions} 已完成\n'
+            result += f'{emoji.notes.enemies_of_note}週本樹脂減半：剩餘 {notes.remaining_resin_discounts} 次\n'
         result += f'--------------------\n'
         # 洞天寶錢恢復時間
-        result += f'當前洞天寶錢：{notes.current_realm_currency}/{notes.max_realm_currency}\n'
+        result += f'{emoji.notes.realm_currency}當前洞天寶錢：{notes.current_realm_currency}/{notes.max_realm_currency}\n'
         if notes.max_realm_currency > 0:
             if notes.current_realm_currency == notes.max_realm_currency:
                 recover_time = '已額滿！'
             else:
                 day_msg = getDayOfWeek(notes.realm_currency_recovery_time)
                 recover_time = f'{day_msg} {notes.realm_currency_recovery_time.strftime("%H:%M")}'
-            result += f'寶錢全部恢復時間：{recover_time}\n'
+            result += f'{emoji.notes.realm_currency}全部恢復時間：{recover_time}\n'
         # 參數質變儀剩餘時間
         if notes.transformer_recovery_time != None:
             t = notes.remaining_transformer_recovery_time
@@ -530,7 +531,7 @@ class GenshinApp:
                 recover_time = f'{t.seconds} 秒'
             else:
                 recover_time = '可使用'
-            result += f'參數質變儀剩餘時間：{recover_time}\n'
+            result += f'{emoji.notes.transformer}參數質變儀剩餘時間：{recover_time}\n'
         # 探索派遣剩餘時間
         if not shortForm:
             result += f'--------------------\n'
