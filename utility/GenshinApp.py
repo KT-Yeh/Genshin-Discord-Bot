@@ -191,6 +191,30 @@ class GenshinApp:
         if check == False:
             return msg
         client = self.__getGenshinClient(user_id)
+        
+        game_name = {genshin.Game.GENSHIN: '原神', genshin.Game.HONKAI: '崩壞3'}
+        async def claimReward(game: genshin.Game, retry: int = 3) -> str:
+            try:
+                reward = await client.claim_daily_reward(game=game)
+            except genshin.errors.AlreadyClaimed:
+                return f'{game_name[game]}今日獎勵已經領過了！'
+            except genshin.errors.GenshinException as e:
+                log.info(f'[例外][{user_id}]claimDailyReward: {game_name[game]}[retcode]{e.retcode} [例外內容]{e.original}')
+                if e.retcode == 0 and retry > 0:
+                    return claimReward(game, retry - 1)
+                if e.retcode == -10002 and game == genshin.Game.HONKAI:
+                    return '崩壞3簽到失敗，未查詢到角色資訊，請確認艦長是否已綁定新HoYoverse通行證'
+                return f'{game_name[game]}簽到失敗：[retcode]{e.retcode} [內容]{e.original}'
+            except Exception as e:
+                log.error(f'[例外][{user_id}]claimDailyReward: {game_name[game]}[例外內容]{e}')
+                return f'{game_name[game]}簽到失敗：{e}'
+            else:
+                return f'{game_name[game]}今日簽到成功，獲得 {reward.amount}x {reward.name}！'
+
+        result = await claimReward(genshin.Game.GENSHIN)
+        if honkai:
+            result = result + ' ' + await claimReward(genshin.Game.HONKAI)
+        
         # Hoyolab社群簽到
         try:
             await client.check_in_community()
@@ -198,34 +222,7 @@ class GenshinApp:
             log.info(f'[例外][{user_id}]claimDailyReward: Hoyolab[retcode]{e.retcode} [例外內容]{e.original}')
         except Exception as e:
             log.error(f'[例外][{user_id}]claimDailyReward: Hoyolab[例外內容]{e}')
-        # 原神簽到
-        try:
-            reward = await client.claim_daily_reward()
-        except genshin.errors.AlreadyClaimed:
-            result = '原神今日獎勵已經領過了！'
-        except genshin.errors.GenshinException as e:
-            log.info(f'[例外][{user_id}]claimDailyReward: 原神[retcode]{e.retcode} [例外內容]{e.original}')
-            result = f'原神簽到失敗：{e.original}'
-        except Exception as e:
-            log.error(f'[例外][{user_id}]claimDailyReward: 原神[例外內容]{e}')
-            result = f'原神簽到失敗：{e}'
-        else:
-            result = f'原神今日簽到成功，獲得 {reward.amount}x {reward.name}！'
-        # 崩壞3簽到
-        if honkai:
-            result += ' '
-            try:
-                reward = await client.claim_daily_reward(game=genshin.Game.HONKAI)
-            except genshin.errors.AlreadyClaimed:
-                result += '崩壞3今日獎勵已經領過了！'
-            except genshin.errors.GenshinException as e:
-                log.info(f'[例外][{user_id}]claimDailyReward: 崩3[retcode]{e.retcode} [例外內容]{e.original}')
-                result += '崩壞3簽到失敗，未查詢到角色資訊，請確認艦長是否已綁定新HoYoverse通行證' if e.retcode == -10002 else f'崩壞3簽到失敗：{e.original}'
-            except Exception as e:
-                log.error(f'[例外][{user_id}]claimDailyReward: 崩3[例外內容]{e}')
-                result = f'崩壞3簽到失敗：{e}'
-            else:
-                result += f'崩壞3今日簽到成功，獲得 {reward.amount}x {reward.name}！'
+        
         return result
 
     async def getSpiralAbyss(self, user_id: str, previous: bool = False) -> Union[str, genshin.models.SpiralAbyss]:
@@ -496,23 +493,23 @@ class GenshinApp:
 
     def __parseNotes(self, notes: genshin.models.Notes, shortForm: bool = False) -> str:
         result = ''
-        result += f'{emoji.notes.resin}當前樹脂：{notes.current_resin}/{notes.max_resin}\n'
-        # 樹脂
-        if notes.current_resin == notes.max_resin:
-            recover_time = '已額滿！'  
+        # 原粹樹脂
+        result += f'{emoji.notes.resin}當前原粹樹脂：{notes.current_resin}/{notes.max_resin}\n'
+        if notes.current_resin >= notes.max_resin:
+            recover_time = '已額滿！'
         else:
             day_msg = getDayOfWeek(notes.resin_recovery_time)
             recover_time = f'{day_msg} {notes.resin_recovery_time.strftime("%H:%M")}'
         result += f'{emoji.notes.resin}全部恢復時間：{recover_time}\n'
         # 每日、週本
         if not shortForm:
-            result += f'{emoji.notes.commission}每日委託任務：{notes.completed_commissions} 已完成\n'
+            result += f'{emoji.notes.commission}每日委託任務：剩餘 {notes.max_commissions - notes.completed_commissions} 個\n'
             result += f'{emoji.notes.enemies_of_note}週本樹脂減半：剩餘 {notes.remaining_resin_discounts} 次\n'
         result += f'--------------------\n'
         # 洞天寶錢恢復時間
         result += f'{emoji.notes.realm_currency}當前洞天寶錢：{notes.current_realm_currency}/{notes.max_realm_currency}\n'
         if notes.max_realm_currency > 0:
-            if notes.current_realm_currency == notes.max_realm_currency:
+            if notes.current_realm_currency >= notes.max_realm_currency:
                 recover_time = '已額滿！'
             else:
                 day_msg = getDayOfWeek(notes.realm_currency_recovery_time)
@@ -522,16 +519,16 @@ class GenshinApp:
         if notes.transformer_recovery_time != None:
             t = notes.remaining_transformer_recovery_time
             if t.days > 0:
-                recover_time = f'{t.days} 天'
+                recover_time = f'剩餘 {t.days} 天'
             elif t.hours > 0:
-                recover_time = f'{t.hours} 小時'
+                recover_time = f'剩餘 {t.hours} 小時'
             elif t.minutes > 0:
-                recover_time = f'{t.minutes} 分'
+                recover_time = f'剩餘 {t.minutes} 分'
             elif t.seconds > 0:
-                recover_time = f'{t.seconds} 秒'
+                recover_time = f'剩餘 {t.seconds} 秒'
             else:
                 recover_time = '可使用'
-            result += f'{emoji.notes.transformer}參數質變儀剩餘時間：{recover_time}\n'
+            result += f'{emoji.notes.transformer}參數質變儀　：{recover_time}\n'
         # 探索派遣剩餘時間
         if not shortForm:
             result += f'--------------------\n'
