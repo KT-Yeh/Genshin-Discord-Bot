@@ -201,7 +201,7 @@ class GenshinApp:
             except genshin.errors.GenshinException as e:
                 log.info(f'[例外][{user_id}]claimDailyReward: {game_name[game]}[retcode]{e.retcode} [例外內容]{e.original}')
                 if e.retcode == 0 and retry > 0:
-                    return claimReward(game, retry - 1)
+                    return await claimReward(game, retry - 1)
                 if e.retcode == -10002 and game == genshin.Game.HONKAI:
                     return '崩壞3簽到失敗，未查詢到角色資訊，請確認艦長是否已綁定新HoYoverse通行證'
                 return f'{game_name[game]}簽到失敗：[retcode]{e.retcode} [內容]{e.original}'
