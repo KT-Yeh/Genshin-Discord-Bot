@@ -98,6 +98,11 @@ class GenshinApp:
             else:
                 log.info(f'[資訊][{user_id}]setUID: 找不到該UID的角色資料')
                 return f'找不到該UID的角色資料，請確認是否輸入正確'
+    
+    def getUID(self, user_id: str) -> Union[int, None]:
+        if user_id in self.__user_data.keys():
+            return int(self.__user_data[user_id].get('uid'))
+        return None
 
     async def getRealtimeNote(self, user_id: str, *, schedule = False) -> Union[None, str, discord.Embed]:
         """取得使用者即時便箋(樹脂、洞天寶錢、參數質變儀、派遣、每日、週本)
