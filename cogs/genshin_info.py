@@ -1,7 +1,7 @@
 import datetime
 import discord
 import genshin
-from typing import Sequence
+from typing import Optional, Sequence
 from discord import app_commands
 from discord.ext import commands
 from discord.app_commands import Choice
@@ -10,6 +10,7 @@ from utility.draw import drawRecordCard, drawAbyssCard
 from utility.utils import log
 from utility.config import config
 from utility.emoji import emoji
+from utility import Enka
 
 class GenshinInfo(commands.Cog, name='原神資訊'):
     def __init__(self, bot):
@@ -163,10 +164,39 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
             await interaction.edit_original_message(content=result)
             return
         
-        view = self.CharactersDropdownView(interaction ,result)
+        view = self.CharactersDropdownView(interaction, result)
         await interaction.edit_original_message(content='請選擇角色：', view=view)
         await view.wait()
         await interaction.edit_original_message(view=None)
+
+    # 角色展示櫃
+    @app_commands.command(name='showcase角色展示櫃', description='查詢指定UID玩家的公開角色展示櫃')
+    @app_commands.describe(uid='欲查詢的玩家UID，若小幫手已保存資料的話查自己不需要填本欄位')
+    async def slash_showcase(self, interaction: discord.Interaction, uid: Optional[int] = None):
+        await interaction.response.defer()
+        uid = uid or genshin_app.getUID(str(interaction.user.id))
+        log.info(f'[指令][{interaction.user.id}]showcase角色展示櫃: uid={uid}')
+        if uid == None:
+            await interaction.edit_original_message(content='小幫手內找不到使用者資料，請直接在指令uid參數中輸入欲查詢的UID')
+        elif len(str(uid)) != 9 or str(uid)[0] not in ['1', '2', '5', '6', '7', '8', '9']:
+            await interaction.edit_original_message(content='輸入的UID格式錯誤')
+        else:
+            showcase = Enka.Showcase()
+            try:
+                await showcase.getEnkaData(uid)
+            except Enka.ShowcaseNotPublic as e:
+                embed = showcase.getPlayerOverviewEmbed()
+                embed.description += f"\n{e}"
+                await interaction.edit_original_message(embed=embed)
+            except Exception as e:
+                await interaction.edit_original_message(content=f"{e}")
+                log.info(f'[例外][{interaction.user.id}]showcase角色展示櫃: {e}')
+            else:
+                view = Enka.ShowcaseView(showcase)
+                embed = showcase.getPlayerOverviewEmbed()
+                await interaction.edit_original_message(embed=embed, view=view)
+                await view.wait()
+                await interaction.edit_original_message(view=None)
 
 async def setup(client: commands.Bot):
     await client.add_cog(GenshinInfo(client))
