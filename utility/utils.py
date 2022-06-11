@@ -3,7 +3,7 @@ import genshin
 import re
 import json
 from datetime import datetime
-from data.character_names import character_names
+from data.game.characters import characters_map
 
 __file_handler = logging.FileHandler('data/error.log', encoding='utf-8')
 __file_handler.setLevel(logging.WARNING)
@@ -18,7 +18,9 @@ logging.getLogger().addHandler(__console_handler)
 log = logging
 
 def getCharacterName(character: genshin.models.BaseCharacter) -> str:
-    chinese_name = character_names.get(character.id)
+    chinese_name = None
+    if (id := str(character.id)) in characters_map:
+        chinese_name = characters_map[id].get('name')
     return chinese_name if chinese_name != None else character.name
 
 def trimCookie(cookie: str) -> str:
