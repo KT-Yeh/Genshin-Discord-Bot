@@ -149,7 +149,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
     class CharactersDropdownView(discord.ui.View):
         """顯示角色下拉選單的View，依照選單欄位上限25個分割選單"""
         def __init__(self, previous_interaction: discord.Interaction, characters: Sequence[genshin.models.Character]):
-            super().__init__(timeout=180)
+            super().__init__(timeout=600)
             max_row = 25
             for i in range(0, len(characters), max_row):
                 self.add_item(GenshinInfo.CharactersDropdown(previous_interaction, characters[i:i+max_row], i+1))
