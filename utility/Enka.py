@@ -7,10 +7,6 @@ from data.game.weapons import weapons_map
 from data.game.artifacts import artifcats_map
 from data.game.fight_prop import fight_prop_map, get_prop_name
 
-class ShowcaseNotPublic(Exception):
-    def __init__(self, message: str) -> None:
-        super().__init__(message)
-
 class Showcase:
     data: Dict[str, Any] = None
     uid: int = 0
@@ -26,12 +22,8 @@ class Showcase:
         async with aiohttp.request('GET', self.url + '/__data.json') as resp:
             if resp.status == 200:
                 self.data = await resp.json()
-                if 'avatarInfoList' not in self.data:
-                    raise ShowcaseNotPublic("遊戲內角色展示櫃不公開")
-            elif resp.status == 500:
-                raise Exception("此UID玩家資料不存在")
             else:
-                raise Exception("API資料取得失敗")
+                raise Exception(f"[{resp.status} {resp.reason}]API伺服器發生錯誤或是此玩家資料不存在")
 
     def getPlayerOverviewEmbed(self) -> discord.Embed:
         """取得玩家基本資料的嵌入訊息"""
@@ -45,19 +37,21 @@ class Showcase:
                 f"成就總數：{player.get('finishAchievementNum', 0)}\n"
                 f"深境螺旋：{player.get('towerFloorIndex', 0)}-{player.get('towerLevelIndex', 0)}"
         )
-        if 'profilePicture' in player and 'avatarId' in player['profilePicture']:
-            icon = characters_map[str(player['profilePicture']['avatarId'])]['icon']
+        if avatarId := player.get('profilePicture', { }).get('avatarId'):
+            icon = characters_map[str(avatarId)]['icon']
             embed.set_thumbnail(url=icon)
         embed.set_footer(text=f'UID: {self.uid}')
         return embed
 
     def getCharacterStatEmbed(self, index: int) -> discord.Embed:
         """取得角色面板的嵌入訊息"""
-        avatarInfo: Dict[str, Any] = self.data['avatarInfoList'][index]
-        id = str(avatarInfo['avatarId'])
+        id = str(self.data['playerInfo']['showAvatarInfoList'][index]['avatarId'])
         embed = self.__getDefaultEmbed(id)
         embed.title += ' 角色面板'
-
+        if 'avatarInfoList' not in self.data:
+            embed.description = '遊戲內角色詳情設定為不公開'
+            return embed
+        avatarInfo: Dict[str, Any] = self.data['avatarInfoList'][index]
         # 天賦等級[A, E, Q]
         skill_level = [0, 0, 0]
         for i in range(3):
@@ -105,14 +99,18 @@ class Showcase:
     
     def getArtifactStatEmbed(self, index: int) -> discord.Embed:
         """取得角色聖遺物的嵌入訊息"""
-        avatarInfo: Dict[str, Any] = self.data['avatarInfoList'][index]
-        id = str(avatarInfo['avatarId'])
+        id = str(self.data['playerInfo']['showAvatarInfoList'][index]['avatarId'])
         embed = self.__getDefaultEmbed(id)
         embed.title += ' 聖遺物'
 
+        if 'avatarInfoList' not in self.data:
+            embed.description = '遊戲內角色詳情設定為不公開'
+            return embed
+        avatarInfo: Dict[str, Any] = self.data['avatarInfoList'][index]
+        
         pos_name_map = {1: '花', 2: '羽', 3: '沙', 4: '杯', 5: '冠'}
         substat_sum: Dict[str, float] = dict() # 副詞條數量統計
-        
+
         equip: Dict[str, Any]
         for equip in avatarInfo['equipList']:
             if 'reliquary' not in equip:
@@ -175,18 +173,17 @@ class Showcase:
             return emoji_str + prop_name.replace('%', f'+{value}%')
         return emoji_str + prop_name + f'+{value}'
 
-
 class ShowcaseCharactersDropdown(discord.ui.Select):
     """展示櫃角色下拉選單"""
     showcase: Showcase
     
     def __init__(self, showcase: Showcase) -> None:
         self.showcase = showcase
-        avatarInfoList: List[Dict[str, Any]] = showcase.data["avatarInfoList"]
+        avatarInfoList: List[Dict[str, Any]] = showcase.data['playerInfo']['showAvatarInfoList']
         options = []
         for i, avatarInfo in enumerate(avatarInfoList):
             id = str(avatarInfo['avatarId'])
-            level: str = avatarInfo['propMap']['4001']['val']
+            level: str = avatarInfo['level']
             rarity: int = characters_map[id]['rarity']
             element: str = characters_map[id]['element']
             name: str = characters_map[id]['name']
@@ -237,4 +234,5 @@ class ShowcaseView(discord.ui.View):
         if character_index != None:
             self.add_item(CharacterStatButton(showcase, character_index))
             self.add_item(CharacterArtifactButton(showcase ,character_index))
-        self.add_item(ShowcaseCharactersDropdown(showcase))
+        if 'showAvatarInfoList' in showcase.data['playerInfo']:
+            self.add_item(ShowcaseCharactersDropdown(showcase))

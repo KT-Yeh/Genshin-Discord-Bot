@@ -184,10 +184,6 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
             showcase = Enka.Showcase()
             try:
                 await showcase.getEnkaData(uid)
-            except Enka.ShowcaseNotPublic as e:
-                embed = showcase.getPlayerOverviewEmbed()
-                embed.description += f"\n{e}"
-                await interaction.edit_original_message(embed=embed)
             except Exception as e:
                 await interaction.edit_original_message(content=f"{e}")
                 log.info(f'[例外][{interaction.user.id}]showcase角色展示櫃: {e}')
