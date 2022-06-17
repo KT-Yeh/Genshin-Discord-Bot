@@ -1,6 +1,7 @@
 import datetime
 import discord
 import genshin
+import asyncio
 from typing import Optional, Sequence
 from discord import app_commands
 from discord.ext import commands
@@ -43,7 +44,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
                Choice(name='[文字] 只顯示最後一層', value=1),
                Choice(name='[圖片] 只顯示最後一層', value=2)])
     async def slash_abyss(self, interaction: discord.Interaction, season: int = 1, floor: int = 2):
-        await interaction.response.defer()
+        asyncio.create_task(interaction.response.defer())
         previous = True if season == 0 else False
         result = await genshin_app.getSpiralAbyss(str(interaction.user.id), previous)
         if isinstance(result, str):
@@ -99,7 +100,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
     @app_commands.command(name='card紀錄卡片', description='產生原神個人遊戲紀錄卡片')
     @app_commands.checks.cooldown(1, config.slash_cmd_cooldown)
     async def slash_card(self, interaction: discord.Interaction):
-        await interaction.response.defer()
+        asyncio.create_task(interaction.response.defer())
         result = await genshin_app.getRecordCard(str(interaction.user.id))
 
         if isinstance(result, str):
@@ -139,7 +140,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
         
         async def callback(self, interaction: discord.Interaction):
             try:
-                await interaction.response.defer()
+                asyncio.create_task(interaction.response.defer())
                 embed = genshin_app.parseCharacter(self.characters[int(self.values[0])])
                 embed.title = f'{self.previous_interaction.user.display_name} 的角色一覽'
                 await self.previous_interaction.edit_original_message(content=None, embed=embed)
@@ -157,7 +158,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
     # 個人所有角色一覽
     @app_commands.command(name='character角色一覽', description='公開展示我的所有角色')
     async def slash_character(self, interaction: discord.Interaction):
-        await interaction.response.defer()
+        asyncio.create_task(interaction.response.defer())
         result = await genshin_app.getCharacters(str(interaction.user.id))
 
         if isinstance(result, str):
@@ -173,7 +174,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
     @app_commands.command(name='showcase角色展示櫃', description='查詢指定UID玩家的公開角色展示櫃')
     @app_commands.describe(uid='欲查詢的玩家UID，若小幫手已保存資料的話查自己不需要填本欄位')
     async def slash_showcase(self, interaction: discord.Interaction, uid: Optional[int] = None):
-        await interaction.response.defer()
+        asyncio.create_task(interaction.response.defer())
         uid = uid or genshin_app.getUID(str(interaction.user.id))
         log.info(f'[指令][{interaction.user.id}]showcase角色展示櫃: uid={uid}')
         if uid == None:
