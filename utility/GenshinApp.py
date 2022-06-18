@@ -250,6 +250,8 @@ class GenshinApp:
             return msg
         client = self.__getGenshinClient(user_id)
         try:
+            # 為了刷新戰鬥數據榜，需要先對record card發出請求
+            await client.get_record_cards()
             abyss = await client.get_genshin_spiral_abyss(int(self.__user_data[user_id]['uid']), previous=previous)
         except genshin.errors.GenshinException as e:
             log.error(f'[例外][{user_id}]getSpiralAbyss: [retcode]{e.retcode} [例外內容]{e.original}')
