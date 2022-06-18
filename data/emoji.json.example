@@ -40,5 +40,12 @@
         "FIGHT_PROP_WIND_ADD_HURT": "",
         "FIGHT_PROP_ROCK_ADD_HURT": "",
         "FIGHT_PROP_ICE_ADD_HURT": ""
+    },
+    "artifact_type": {
+        "花": "",
+        "羽": "",
+        "沙": "",
+        "杯": "",
+        "冠": ""
     }
 }

@@ -19,6 +19,7 @@ class Emoji(BaseModel):
     items: Items = Items()
     elements: typing.Dict[str, str] = { }
     fightprop: typing.Dict[str, str] = { }
+    artifact_type: typing.Dict[str, str] = { }
 
 path = Path('data/emoji.json')
 emoji = Emoji.parse_file(path) if path.exists() else Emoji()

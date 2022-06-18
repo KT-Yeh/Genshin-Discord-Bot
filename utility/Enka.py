@@ -80,7 +80,7 @@ class Showcase:
                 name=f"★{weapon['flat']['rankLevel']} {weapons_map[weapon['itemId']]['name']}",
                 value=f"精煉：{refinement} 階\n"
                       f"等級：Lv. {weapon['weapon']['level']}\n"
-                      f"{emoji.fightprop.get('FIGHT_PROP_ATTACK', '')}基礎攻擊力 +{weaponStats[0]['statValue']}\n"
+                      f"{emoji.fightprop.get('FIGHT_PROP_ATTACK', '')}基礎攻擊力+{weaponStats[0]['statValue']}\n"
                       f"{self.__getStatPropSentence(weaponStats[1]['appendPropId'], weaponStats[1]['statValue'])}"
             )
         # 人物面板
@@ -127,7 +127,7 @@ class Showcase:
                 embed_value += f"{self.__getStatPropSentence(prop, value)}\n"
                 substat_sum[prop] = substat_sum.get(prop, 0) + value
             
-            embed.add_field(name=f"{pos_name}：{artifcats_map[artifact_id]['name']}", value=embed_value)
+            embed.add_field(name=f"{emoji.artifact_type.get(pos_name, pos_name + '：')}{artifcats_map[artifact_id]['name']}", value=embed_value)
 
         # 副詞條數量統計
         def substatSummary(prop: str, name: str, base: float) -> str:
@@ -176,7 +176,6 @@ class Showcase:
 class ShowcaseCharactersDropdown(discord.ui.Select):
     """展示櫃角色下拉選單"""
     showcase: Showcase
-    
     def __init__(self, showcase: Showcase) -> None:
         self.showcase = showcase
         avatarInfoList: List[Dict[str, Any]] = showcase.data['playerInfo']['showAvatarInfoList']
@@ -204,7 +203,6 @@ class CharacterStatButton(discord.ui.Button):
     """角色面板按鈕"""
     showcase: Showcase
     character_index: int
-
     def __init__(self, showcase: Showcase, character_index: int):
         super().__init__(style=discord.ButtonStyle.green, label='角色面板')
         self.showcase = showcase
