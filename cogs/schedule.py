@@ -177,12 +177,19 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
                 count += 1
                 if result != None:
                     try:
+                        user = await self.bot.fetch_user(int(user_id))
                         if isinstance(result, str):
-                            await channel.send(f'<@{user_id}>，自動檢查樹脂時發生錯誤：{result}')
+                            message = await channel.send(f'{user.mention}，自動檢查樹脂時發生錯誤：{result}')
                         else:
-                            await channel.send(f'<@{user_id}>，樹脂(快要)溢出啦！', embed=result)
-                    except:
+                            message = await channel.send(f'{user.mention}，樹脂(快要)溢出啦！', embed=result)
+                    except Exception as e:
+                        log.info(f'[排程][{user_id}]檢查樹脂：{e}')
                         self.__remove_user(user_id, self.__resin_dict, self.__resin_notifi_filename)
+                    else:
+                        # 若使用者不在發送訊息的頻道則移除
+                        if user.mentioned_in(message) == False:
+                            log.info(f'[排程][{user_id}]檢查樹脂：使用者不在頻道')
+                            self.__remove_user(user_id, self.__resin_dict, self.__resin_notifi_filename)
                 await asyncio.sleep(config.auto_loop_delay)
             log.info(f'[排程][System]schedule: 自動檢查樹脂結束，{count} 人已檢查')
         
