@@ -2,6 +2,7 @@ import aiohttp
 import discord
 from typing import Any, Dict, List, Union, Optional
 from utility.emoji import emoji
+from utility.config import config
 from data.game.characters import characters_map
 from data.game.weapons import weapons_map
 from data.game.artifacts import artifcats_map
@@ -19,7 +20,8 @@ class Showcase:
         """從API取得指定UID玩家的角色展示櫃資料"""
         self.uid = uid
         self.url = f'https://enka.shinshin.moe/u/{uid}'
-        async with aiohttp.request('GET', self.url + '/__data.json') as resp:
+        api_url = self.url + '/__data.json' + (f"?key={config.enka_api_key}" if config.enka_api_key else '')
+        async with aiohttp.request('GET', api_url) as resp:
             if resp.status == 200:
                 self.data = await resp.json()
             else:
