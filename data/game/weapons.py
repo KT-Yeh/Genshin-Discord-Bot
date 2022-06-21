@@ -17,6 +17,7 @@ weapons_map = {
  11408: {'name': '黑岩長劍', 'rarity': 4},
  11409: {'name': '黑劍', 'rarity': 4},
  11410: {'name': '暗巷閃光', 'rarity': 4},
+ 11412: {'name': '降臨之劍', 'rarity': 4},
  11413: {'name': '腐殖之劍', 'rarity': 4},
  11414: {'name': '天目影打刀', 'rarity': 4},
  11415: {'name': '辰砂之紡錘', 'rarity': 4},
