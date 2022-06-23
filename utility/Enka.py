@@ -83,7 +83,7 @@ class Showcase:
                 value=f"精煉：{refinement} 階\n"
                       f"等級：Lv. {weapon['weapon']['level']}\n"
                       f"{emoji.fightprop.get('FIGHT_PROP_ATTACK', '')}基礎攻擊力+{weaponStats[0]['statValue']}\n"
-                      f"{self.__getStatPropSentence(weaponStats[1]['appendPropId'], weaponStats[1]['statValue'])}"
+                      f"{self.__getStatPropSentence(weaponStats[1]['appendPropId'], weaponStats[1]['statValue']) if len(weaponStats) > 1 else ''}"
             )
         # 人物面板
         prop: Dict[str, float] = avatarInfo['fightPropMap']
