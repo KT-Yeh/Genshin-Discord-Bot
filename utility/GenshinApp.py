@@ -199,7 +199,7 @@ class GenshinApp:
         client = self.__getGenshinClient(user_id)
         
         game_name = {genshin.Game.GENSHIN: '原神', genshin.Game.HONKAI: '崩壞3'}
-        async def claimReward(game: genshin.Game, retry: int = 3) -> str:
+        async def claimReward(game: genshin.Game, retry: int = 5) -> str:
             try:
                 reward = await client.claim_daily_reward(game=game)
             except genshin.errors.AlreadyClaimed:
