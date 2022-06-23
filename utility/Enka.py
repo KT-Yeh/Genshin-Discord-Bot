@@ -6,6 +6,7 @@ from utility.config import config
 from data.game.characters import characters_map
 from data.game.weapons import weapons_map
 from data.game.artifacts import artifcats_map
+from data.game.namecard import namecards_map
 from data.game.fight_prop import fight_prop_map, get_prop_name
 
 class Showcase:
@@ -42,6 +43,9 @@ class Showcase:
         if avatarId := player.get('profilePicture', { }).get('avatarId'):
             icon = characters_map[str(avatarId)]['icon']
             embed.set_thumbnail(url=icon)
+        icon = namecards_map[player['nameCardId']]['Card']
+        cardurl = f'https://enka.shinshin.moe/ui/{icon}.png'
+        embed.set_image(url=cardurl)
         embed.set_footer(text=f'UID: {self.uid}')
         return embed
 
