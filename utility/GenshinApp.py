@@ -2,7 +2,7 @@ import asyncio
 import json
 import discord
 import genshin
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Sequence, Union, Tuple
 from .emoji import emoji
 from .utils import log, getCharacterName, trimCookie, getServerName, getDayOfWeek,user_last_use_time
@@ -35,7 +35,7 @@ class GenshinApp:
         client = genshin.Client(lang='zh-tw')
         client.set_cookies(cookie)
         try:
-            accounts = await client.get_game_accounts()
+            accounts = await client.genshin_accounts()
         except genshin.errors.GenshinException as e:
             log.info(f'[例外][{user_id}]setCookie: [retcode]{e.retcode} [例外內容]{e.original}')
             result = e.original
@@ -49,55 +49,54 @@ class GenshinApp:
                 log.info(f'[資訊][{user_id}]setCookie: Cookie設置成功')
                 
                 if len(accounts) == 1 and len(str(accounts[0].uid)) == 9:
-                    await self.setUID(user_id, str(accounts[0].uid))
+                    self.setUID(user_id, str(accounts[0].uid))
                     result = f'Cookie已設定完成，角色UID: {accounts[0].uid} 已保存！'
                 else:
-                    result = f'帳號內共有{len(accounts)}個角色\n```'
-                    for account in accounts:
-                        result += f'UID:{account.uid} 等級:{account.level} 角色名字:{account.nickname}\n'
-                    result += f'```\n請用 `/uid設定` 指定要保存原神的角色(例: `/uid設定 812345678`)'
+                    result = f'Cookie已保存，你的Hoyolab帳號內共有{len(accounts)}名角色\n請使用指令 `/uid設定` 指定要保存的原神角色'
                     self.__saveUserData()
         finally:
             return result
+
+    async def getGameAccounts(self, user_id: str) -> Union[str, Sequence[genshin.models.GenshinAccount]]:
+        """取得同一個Hoyolab帳號下，各伺服器的原神角色
+
+        ------
+        Parameters
+        user_id `str`: 使用者Discord ID
+        ------
+        Returns
+        `str | Sequence[genshin.models.GenshinAccount]`: 發生例外回傳錯誤訊息`str`、正常情況回傳查詢結果`Sequence[genshin.models.GenshinAccount]`
+        """
+        check, msg = self.checkUserData(user_id, checkUID=False)
+        if check == False:
+            return msg
+        client = self.__getGenshinClient(user_id)
+        try:
+            accounts = await client.genshin_accounts()
+        except genshin.GenshinException as e:
+            log.info(f'[例外][{user_id}]getGameAccounts: [retcode]{e.retcode} [例外內容]{e.original}')
+            return e.original
+        except Exception as e:
+            log.info(f'[例外][{user_id}]getGameAccounts: {e}')
+            return str(e)
+        else:
+            return accounts
     
-    async def setUID(self, user_id: str, uid: str, *, check_uid: bool = False) -> str:
-        """設定原神UID，當帳號內有多名角色時，保存指定的UID
+    def setUID(self, user_id: str, uid: str) -> str:
+        """保存指定的UID
 
         ------
         Parameters
         user_id `str`: 使用者Discord ID
         uid `str`: 欲保存的原神UID
-        check_uid `bool`: `True`表示檢查此UID是否有效、`False`表示不檢查直接儲存
         ------
         Returns
         `str`: 回覆給使用者的訊息
         """
-        log.info(f'[指令][{user_id}]setUID: uid={uid}, check_uid={check_uid}')
-        if not check_uid:
-            self.__user_data[user_id]['uid'] = uid
-            self.__saveUserData()
-            return f'角色UID: {uid} 已設定完成'
-        check, msg = self.checkUserData(user_id, checkUID=False)
-        if check == False:
-            return msg
-        if len(uid) != 9:
-            return f'UID長度錯誤，請輸入正確的原神UID'
-        # 確認UID是否存在
-        client = self.__getGenshinClient(user_id)
-        try:
-            accounts = await client.get_game_accounts()
-        except Exception as e:
-            log.error(f'[例外][{user_id}]setUID: {e}')
-            return '確認帳號資料失敗，請重新設定Cookie或是稍後再試'
-        else:
-            if int(uid) in [account.uid for account in accounts]:
-                self.__user_data[user_id]['uid'] = uid
-                self.__saveUserData()
-                log.info(f'[資訊][{user_id}]setUID: {uid} 已設定完成')
-                return f'角色UID: {uid} 已設定完成'
-            else:
-                log.info(f'[資訊][{user_id}]setUID: 找不到該UID的角色資料')
-                return f'找不到該UID的角色資料，請確認是否輸入正確'
+        log.info(f'[指令][{user_id}]setUID: uid={uid}')
+        self.__user_data[user_id]['uid'] = uid
+        self.__saveUserData()
+        return f'角色UID: {uid} 已設定完成'
     
     def getUID(self, user_id: str) -> Union[int, None]:
         if user_id in self.__user_data.keys():

@@ -1,8 +1,10 @@
+import genshin
 import discord
+import asyncio
 from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands
-from typing import Optional
+from typing import Optional, Sequence
 from utility.GenshinApp import genshin_app
 
 class Setting(commands.Cog, name='設定'):
@@ -62,15 +64,41 @@ class Setting(commands.Cog, name='設定'):
             embed = discord.Embed(title='小幫手Cookie使用與保存告知', description=msg)
             await interaction.response.send_message(embed=embed)
 
+    # 選擇欲保存的UID按鈕
+    class UidButton(discord.ui.Button):
+        def __init__(self, uid: int):
+            super().__init__(style=discord.ButtonStyle.primary, label=str(uid))
+            self.uid = str(uid)
+        
+        async def callback(self, interaction: discord.Interaction) -> None:
+            msg = genshin_app.setUID(str(interaction.user.id), self.uid)
+            await interaction.response.edit_message(content=msg, view=None)
+    
+    # 添加UID按鈕的View
+    class UidView(discord.ui.View):
+        def __init__(self, accounts: Sequence[genshin.models.GenshinAccount]):
+            super().__init__(timeout=60)
+            for account in accounts:
+                self.add_item(Setting.UidButton(account.uid))
+
     # 設定原神UID，當帳號內有多名角色時，保存指定的UID
     @app_commands.command(
         name='uid設定',
         description='帳號內多角色時需保存指定的UID，只有單一角色不需要使用本指令')
-    @app_commands.describe(uid='請輸入要保存的「原神」主要角色UID')
-    async def slash_uid(self, interaction: discord.Interaction, uid: int):
-        await interaction.response.defer(ephemeral=True)
-        result = await genshin_app.setUID(str(interaction.user.id), str(uid), check_uid=True)
-        await interaction.edit_original_message(content=result)
+    async def slash_uid(self, interaction: discord.Interaction):
+        asyncio.create_task(interaction.response.defer(ephemeral=True))
+        result = await genshin_app.getGameAccounts(str(interaction.user.id))
+        if isinstance(result, str):
+            await interaction.edit_original_message(content=result)
+        else:
+            view = self.UidView(result)
+            msg = '```'
+            for account in result:
+                msg += f'UID:{account.uid} 等級:{account.level} 角色名字:{account.nickname}\n'
+            msg += '```\n請選擇要保存的UID：'
+            await interaction.edit_original_message(content=msg, view=view)
+            await view.wait()
+            await interaction.edit_original_message(view=None)
 
     # 清除資料確認按紐
     class ConfirmButton(discord.ui.View):
