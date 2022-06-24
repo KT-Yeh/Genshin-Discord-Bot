@@ -21,9 +21,9 @@ Use the Discord bot to directly query various information in Genshin Impact, inc
 ![](https://i.imgur.com/bNY19NW.png)
 
 ## public bots
-[![](https://i.imgur.com/ULhx0EP.png)](https://bit.ly/Invitation from Genshin Impact)
+[![](https://i.imgur.com/ULhx0EP.png)](https://bit.ly/原神小幫手邀請)
 
-#### Invitation link: https://bit.ly/Yuanshen Little Helper Invitation
+#### Invitation link: https://bit.ly/原神小幫手邀請
 - For multi-player servers, ask someone with administrative rights to invite the robot
 - Personal use can create a Discord server with only yourself, and then invite bots
 
