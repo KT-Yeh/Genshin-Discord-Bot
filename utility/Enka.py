@@ -234,7 +234,7 @@ class CharacterArtifactButton(discord.ui.Button):
 class ShowcaseView(discord.ui.View):
     """角色展示櫃View，顯示角色面板、聖遺物按鈕，以及角色下拉選單"""
     def __init__(self, showcase: Showcase, character_index: Optional[int] = None):
-        super().__init__(timeout=600)
+        super().__init__(timeout=config.discord_view_long_timeout)
         if character_index != None:
             self.add_item(CharacterStatButton(showcase, character_index))
             self.add_item(CharacterArtifactButton(showcase ,character_index))

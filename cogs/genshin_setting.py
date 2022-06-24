@@ -1,11 +1,10 @@
-import genshin
 import discord
 import asyncio
 from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands
-from typing import Optional, Sequence
 from utility.GenshinApp import genshin_app
+from utility.config import config
 
 class Setting(commands.Cog, name='設定'):
     def __init__(self, bot):
@@ -73,13 +72,6 @@ class Setting(commands.Cog, name='設定'):
         async def callback(self, interaction: discord.Interaction) -> None:
             msg = genshin_app.setUID(str(interaction.user.id), self.uid)
             await interaction.response.edit_message(content=msg, view=None)
-    
-    # 添加UID按鈕的View
-    class UidView(discord.ui.View):
-        def __init__(self, accounts: Sequence[genshin.models.GenshinAccount]):
-            super().__init__(timeout=60)
-            for account in accounts:
-                self.add_item(Setting.UidButton(account.uid))
 
     # 設定原神UID，當帳號內有多名角色時，保存指定的UID
     @app_commands.command(
@@ -91,9 +83,10 @@ class Setting(commands.Cog, name='設定'):
         if isinstance(result, str):
             await interaction.edit_original_message(content=result)
         else:
-            view = self.UidView(result)
+            view = discord.ui.View(timeout=config.discord_view_short_timeout)
             msg = '```'
             for account in result:
+                view.add_item(self.UidButton(account.uid))
                 msg += f'UID:{account.uid} 等級:{account.level} 角色名字:{account.nickname}\n'
             msg += '```\n請選擇要保存的UID：'
             await interaction.edit_original_message(content=msg, view=view)
@@ -102,8 +95,8 @@ class Setting(commands.Cog, name='設定'):
 
     # 清除資料確認按紐
     class ConfirmButton(discord.ui.View):
-        def __init__(self, *, timeout: Optional[float] = 30):
-            super().__init__(timeout=timeout)
+        def __init__(self):
+            super().__init__(timeout=config.discord_view_short_timeout)
             self.value = None
         
         @discord.ui.button(label='取消', style=discord.ButtonStyle.grey)

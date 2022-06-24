@@ -5,5 +5,7 @@
     "auto_daily_reward_time": 8,
     "auto_check_resin_threshold": 145,
     "auto_loop_delay": 2.0,
-    "slash_cmd_cooldown": 5.0
+    "slash_cmd_cooldown": 5.0,
+    "discord_view_long_timeout": 1800,
+    "discord_view_short_timeout": 60
 }

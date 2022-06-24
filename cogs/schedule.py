@@ -29,8 +29,8 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
     
     class ChooseGameButton(discord.ui.View):
         """選擇自動簽到遊戲的按鈕"""
-        def __init__(self, author: discord.Member, *, timeout: float = 30):
-            super().__init__(timeout=timeout)
+        def __init__(self, author: discord.Member):
+            super().__init__(timeout=config.discord_view_short_timeout)
             self.value = None
             self.author = author
         
@@ -51,8 +51,8 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
 
     class DailyMentionButton(discord.ui.View):
         """每日簽到是否要tag使用者"""
-        def __init__(self, author: discord.Member, *, timeout: float = 30):
-            super().__init__(timeout=timeout)
+        def __init__(self, author: discord.Member):
+            super().__init__(timeout=config.discord_view_short_timeout)
             self.value = True
             self.author = author
         
