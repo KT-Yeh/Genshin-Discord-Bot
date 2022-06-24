@@ -167,8 +167,6 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
         
         view = self.CharactersDropdownView(interaction, result)
         await interaction.edit_original_message(content='請選擇角色：', view=view)
-        await view.wait()
-        await interaction.edit_original_message(view=None)
 
     # 角色展示櫃
     @app_commands.command(name='showcase角色展示櫃', description='查詢指定UID玩家的公開角色展示櫃')
@@ -192,8 +190,6 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
                 view = Enka.ShowcaseView(showcase)
                 embed = showcase.getPlayerOverviewEmbed()
                 await interaction.edit_original_message(embed=embed, view=view)
-                await view.wait()
-                await interaction.edit_original_message(view=None)
 
 async def setup(client: commands.Bot):
     await client.add_cog(GenshinInfo(client))
