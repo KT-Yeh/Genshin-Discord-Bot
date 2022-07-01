@@ -22,11 +22,12 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
         name='notes即時便箋',
         description='查詢即時便箋，包含樹脂、洞天寶錢、探索派遣...等')
     async def slash_notes(self, interaction: discord.Interaction):
+        asyncio.create_task(interaction.response.defer())
         result = await genshin_app.getRealtimeNote(str(interaction.user.id))
         if isinstance(result, str):
-            await interaction.response.send_message(result)
+            await interaction.edit_original_message(content=result)
         else:
-            await interaction.response.send_message(embed=result)
+            await interaction.edit_original_message(embed=result)
     
     # 取得深境螺旋資訊
     @app_commands.command(
