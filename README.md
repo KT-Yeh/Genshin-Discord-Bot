@@ -1,6 +1,10 @@
 # 原神 Discord Bot
 本分支使用 discord.py v2.0 開發版本
 
+歡迎將本專案所有或部分程式碼放入你自己的機器人中，只需要在你專案的 README 說明文件或任何地方放入本專案的作者與連結即可
+
+You are welcome to add all or part of the code to your own bot, just put the author and URL of this project in your project's README or any documentation.
+
 ## 公共機器人
 [![](https://i.imgur.com/ULhx0EP.png)](https://bit.ly/原神小幫手邀請)
 
@@ -20,12 +24,13 @@
 - 採用新的斜線指令，輸入 / 自動彈出指令提示，不需要記憶任何指令的使用方式
 
 ## 展示
-更多展示圖片、GIF請參考巴哈文章：https://forum.gamer.com.tw/Co.php?bsn=36730&sn=162433
+更多展示圖片、GIF 請參考巴哈介紹文章：https://forum.gamer.com.tw/Co.php?bsn=36730&sn=162433
 
 <img src="https://i.imgur.com/LcNJ2as.png" width="400"/> <img src="https://i.imgur.com/oNTOam5.png" width="300"/>
 
 
 ## 自己安裝 & 架設機器人
+公共機器人運行的程式碼與此 Github 上的程式碼完全一樣，安裝前請先確認自己遇到基本的問題有 Google 解決的能力，任何不關於本專案程式碼的問題（例如：python 安裝、套件安裝...等），請不要來問我。舉例來說：你不會拿著食譜去問食譜作者你家的瓦斯爐要怎麼開、烤箱沒插電怎麼辦之類的問題。若是有功能或是程式碼上的問題與建議，歡迎來討論。
 
 ### 網頁端
 1. 到 [Discord Developer](https://discord.com/developers/applications "Discord Developer") 登入 Discord 帳號
@@ -70,7 +75,7 @@ pip3 install -U -r requirements.txt
 ```
 python .\main.py
 ```
-6. 若要在多個伺服器間使用，請在 Discord 測試伺服器的頻道內輸入 `/sync  範圍:全域伺服器`，並等待（約 1 小時）Discord 將指令推送
+6. 若要在多個伺服器間使用，請在 Discord 測試伺服器的頻道內輸入 `/sync  範圍:全域伺服器`，並等待（約 1 小時）Discord 將指令推送，稱為「全域同步」。
 
 註1：當運行後看到 `[資訊][System]on_ready: You have logged in as XXXXX` 表示參數設置正確並成功啟動，此時機器人會自動同步所有指令到你的測試伺服器，稱為「本地同步」。
 
@@ -85,7 +90,9 @@ python .\main.py
     "auto_daily_reward_time": 8,            # 每日 Hoyolab 自動簽到時間 (單位：時)
     "auto_check_resin_threshold": 145,      # 每兩小時檢查一次，當超過多少樹脂時發送提醒
     "auto_loop_delay": 2.0,                 # 排程執行時每位使用者之間的等待間隔（單位：秒）
-    "slash_cmd_cooldown": 5.0               # 使用者重複呼叫斜線指令的冷卻時間（單位：秒）
+    "slash_cmd_cooldown": 5.0,              # 使用者重複呼叫部分斜線指令的冷卻時間（單位：秒）
+    "discord_view_long_timeout": 1800,      # Discord 長時間互動介面（例：下拉選單） 的逾時時間
+    "discord_view_short_timeout": 60        # Discord 短時間互動介面（例：確認、選擇按鈕）的逾時時間
 }
 ```
 ## 表情符號配置說明 (data/emoji.json)
@@ -98,6 +105,7 @@ python .\main.py
 - 不配置表情符號也能正常運行機器人
 - Discord 表情符號格式：`<:表符名字:表符ID>`，例如：`<:Mora:979597026285200002>`
 - 可以在 Discord 訊息頻道輸入 `\:表符名字:` 取得上述格式
+- 若使用的表情符號不在同一個伺服器內，則機器人所在的頻道，「Everyone」身分組（不是機器人本身的身分組）需要有使用外部表情符號的權限
 
 ## Admin 管理指令說明
 管理指令只能在配置檔案內設定的伺服器才能使用
@@ -113,3 +121,4 @@ python .\main.py
 - 構想啟發自: https://github.com/Xm798/Genshin-Dailynote-Helper
 - 原神 API 使用自: https://github.com/thesadru/genshin.py
 - Discord API 使用自: https://github.com/Rapptz/discord.py
+- Enka Network API 使用自: https://github.com/EnkaNetwork/API-docs
