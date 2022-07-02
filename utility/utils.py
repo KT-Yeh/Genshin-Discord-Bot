@@ -4,6 +4,7 @@ import re
 import json
 from datetime import datetime
 from data.game.characters import characters_map
+from sentry_sdk.integrations.logging import LoggingIntegration
 
 logging.basicConfig(
     level=logging.INFO,
@@ -11,6 +12,11 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 log = logging
+
+sentry_logging = LoggingIntegration(
+    level=logging.INFO,
+    event_level=logging.CRITICAL
+)
 
 def getCharacterName(character: genshin.models.BaseCharacter) -> str:
     chinese_name = None

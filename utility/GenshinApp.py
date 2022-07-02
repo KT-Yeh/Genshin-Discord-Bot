@@ -260,7 +260,7 @@ class GenshinApp:
         if check == False:
             return msg
         client = self.__getGenshinClient(user_id)
-        diary = await client.get_diary(int(self.__user_data[user_id]['uid']), month=month+1)
+        diary = await client.get_diary(int(self.__user_data[user_id]['uid']), month=month)
         
         d = diary.data
         result = discord.Embed(

@@ -3,7 +3,7 @@ import sentry_sdk
 from discord.ext import commands
 from pathlib import Path
 from utility.config import config
-from utility.utils import log
+from utility.utils import log, sentry_logging
 
 intents = discord.Intents.default()
 class GenshinDiscordBot(commands.Bot):
@@ -32,7 +32,7 @@ class GenshinDiscordBot(commands.Bot):
     async def on_command_error(self, ctx: commands.Context, error):
         log.error(f'[例外][{ctx.author.id}]on_command_error: {error}')
 
-sentry_sdk.init(dsn=config.sentry_sdk_dsn, traces_sample_rate=1.0)
+sentry_sdk.init(dsn=config.sentry_sdk_dsn, integrations=[sentry_logging], traces_sample_rate=1.0)
 
 client = GenshinDiscordBot()
 @client.tree.error
