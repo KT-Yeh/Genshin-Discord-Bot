@@ -5,16 +5,11 @@ import json
 from datetime import datetime
 from data.game.characters import characters_map
 
-__file_handler = logging.FileHandler('data/error.log', encoding='utf-8')
-__file_handler.setLevel(logging.WARNING)
-__console_handler = logging.StreamHandler()
-__console_handler.setLevel(logging.INFO)
-__formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s', '%Y-%m-%d %H:%M:%S')
-__file_handler.setFormatter(__formatter)
-__console_handler.setFormatter(__formatter)
-logging.getLogger().setLevel(logging.INFO)
-logging.getLogger().addHandler(__file_handler)
-logging.getLogger().addHandler(__console_handler)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
 log = logging
 
 def getCharacterName(character: genshin.models.BaseCharacter) -> str:
@@ -78,10 +73,7 @@ class UserLastUseTime:
         return True if interval.days > diff_days else False
 
     def save(self) -> None:
-        try:
-            with open('data/last_use_time.json', 'w', encoding="utf-8") as f:
-                json.dump(self.data, f)
-        except Exception as e:
-            log.error(f'[例外][System]UserLastUseTime > save: {e}')
+        with open('data/last_use_time.json', 'w', encoding="utf-8") as f:
+            json.dump(self.data, f)
 
 user_last_use_time = UserLastUseTime()

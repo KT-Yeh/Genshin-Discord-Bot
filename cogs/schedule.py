@@ -9,7 +9,7 @@ from utility.config import config
 from utility.utils import log, user_last_use_time
 from utility.GenshinApp import genshin_app
 
-class Schedule(commands.Cog, name='自動化(BETA)'):
+class Schedule(commands.Cog, name='自動化'):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.__daily_reward_filename = 'data/schedule_daily_reward.json'
@@ -224,11 +224,8 @@ class Schedule(commands.Cog, name='自動化(BETA)'):
             self.__saveScheduleData(data, filename)
     
     def __saveScheduleData(self, data: dict, filename: str):
-        try:
-            with open(filename, 'w', encoding='utf-8') as f:
-                json.dump(data, f)
-        except:
-            log.error(f'[例外][System]Schedule > __saveScheduleData(filename={filename}): 存檔寫入失敗')
+        with open(filename, 'w', encoding='utf-8') as f:
+            json.dump(data, f)
 
 async def setup(client: commands.Bot):
     await client.add_cog(Schedule(client))

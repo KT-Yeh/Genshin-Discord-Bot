@@ -2,6 +2,7 @@ import datetime
 import discord
 import genshin
 import asyncio
+import sentry_sdk
 from typing import Optional, Sequence
 from discord import app_commands
 from discord.ext import commands
@@ -65,6 +66,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
                 fp = drawAbyssCard(result)
             except Exception as e:
                 log.error(f'[例外][{interaction.user.id}][slash_abyss]: {e}')
+                sentry_sdk.capture_exception(e)
                 await interaction.edit_original_message(content='發生錯誤，圖片製作失敗')
             else:
                 embed.set_thumbnail(url=interaction.user.display_avatar.url)
@@ -115,6 +117,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
             fp = drawRecordCard(avatar_bytes, card, userstats)
         except Exception as e:
             log.error(f'[例外][{interaction.user.id}][slash_card]: {e}')
+            sentry_sdk.capture_exception(e)
             await interaction.edit_original_message(content='發生錯誤，卡片製作失敗')
         else:
             fp.seek(0)
@@ -140,13 +143,10 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
             self.previous_interaction = previous_interaction
         
         async def callback(self, interaction: discord.Interaction):
-            try:
-                asyncio.create_task(interaction.response.defer())
-                embed = genshin_app.parseCharacter(self.characters[int(self.values[0])])
-                embed.title = f'{self.previous_interaction.user.display_name} 的角色一覽'
-                await self.previous_interaction.edit_original_message(content=None, embed=embed)
-            except Exception as e:
-                log.info(f'[例外][{interaction.user.id}]CharactersDropdown > callback: {e}')
+            asyncio.create_task(interaction.response.defer())
+            embed = genshin_app.parseCharacter(self.characters[int(self.values[0])])
+            embed.title = f'{self.previous_interaction.user.display_name} 的角色一覽'
+            await self.previous_interaction.edit_original_message(content=None, embed=embed)
     
     class CharactersDropdownView(discord.ui.View):
         """顯示角色下拉選單的View，依照選單欄位上限25個分割選單"""

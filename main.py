@@ -1,4 +1,5 @@
 import discord
+import sentry_sdk
 from discord.ext import commands
 from pathlib import Path
 from utility.config import config
@@ -31,9 +32,12 @@ class GenshinDiscordBot(commands.Bot):
     async def on_command_error(self, ctx: commands.Context, error):
         log.error(f'[例外][{ctx.author.id}]on_command_error: {error}')
 
+sentry_sdk.init(dsn=config.sentry_sdk_dsn, traces_sample_rate=1.0)
+
 client = GenshinDiscordBot()
 @client.tree.error
 async def on_error(interaction: discord.Interaction, error: discord.app_commands.AppCommandError) -> None:
     log.error(f'[例外][{interaction.user.id}]{type(error)}: {error}')
+    sentry_sdk.capture_exception(error)
 
 client.run(config.bot_token)

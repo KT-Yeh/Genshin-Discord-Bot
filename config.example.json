@@ -7,5 +7,6 @@
     "auto_loop_delay": 2.0,
     "slash_cmd_cooldown": 5.0,
     "discord_view_long_timeout": 1800,
-    "discord_view_short_timeout": 60
+    "discord_view_short_timeout": 60,
+    "sentry_sdk_dsn": null
 }
