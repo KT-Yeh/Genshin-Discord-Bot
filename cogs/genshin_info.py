@@ -143,11 +143,10 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
             self.previous_interaction = previous_interaction
         
         async def callback(self, interaction: discord.Interaction):
-            asyncio.create_task(interaction.response.defer())
             embed = genshin_app.parseCharacter(self.characters[int(self.values[0])])
             embed.title = f'{self.previous_interaction.user.display_name} 的角色一覽'
-            await self.previous_interaction.edit_original_message(content=None, embed=embed)
-    
+            await interaction.response.edit_message(content=None, embed=embed)
+
     class CharactersDropdownView(discord.ui.View):
         """顯示角色下拉選單的View，依照選單欄位上限25個分割選單"""
         def __init__(self, previous_interaction: discord.Interaction, characters: Sequence[genshin.models.Character]):
