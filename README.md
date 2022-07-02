@@ -3,7 +3,7 @@
 
 歡迎將本專案所有或部分程式碼放入你自己的機器人中，只需要在你專案的 README 說明文件或任何地方放入本專案的作者與連結即可
 
-You are welcome to add all or part of the code to your own bot, just put the author and URL of this project in your project's README or any documentation.
+Feel free to take all or part of the code to your own bot, just put the author and URL of this project in your project's README or any documentation.
 
 ## 公共機器人
 [![](https://i.imgur.com/ULhx0EP.png)](https://bit.ly/原神小幫手邀請)
@@ -91,21 +91,32 @@ python .\main.py
     "auto_check_resin_threshold": 145,      # 每兩小時檢查一次，當超過多少樹脂時發送提醒
     "auto_loop_delay": 2.0,                 # 排程執行時每位使用者之間的等待間隔（單位：秒）
     "slash_cmd_cooldown": 5.0,              # 使用者重複呼叫部分斜線指令的冷卻時間（單位：秒）
-    "discord_view_long_timeout": 1800,      # Discord 長時間互動介面（例：下拉選單） 的逾時時間
-    "discord_view_short_timeout": 60        # Discord 短時間互動介面（例：確認、選擇按鈕）的逾時時間
+    "discord_view_long_timeout": 1800,      # Discord 長時間互動介面（例：下拉選單） 的逾時時間（單位：秒）
+    "discord_view_short_timeout": 60,       # Discord 短時間互動介面（例：確認、選擇按鈕）的逾時時間（單位：秒）
+    "sentry_sdk_dsn": "https://XXX@XXX"     # Sentry DSN 位址設定，參考底下說明
 }
 ```
 ## 表情符號配置說明 (data/emoji.json)
-
+非必要，不配置表情符號也能正常運行機器人
 1. 將 `data/emoji.json.example` 重新命名為 `data/emoji.json`
 2. 自行上傳相關的表情符號至自己的伺服器
 3. 將相對應的表情符號依照 Discord 格式填入到 `emoji.json` 檔案裡
 
 註：
-- 不配置表情符號也能正常運行機器人
 - Discord 表情符號格式：`<:表符名字:表符ID>`，例如：`<:Mora:979597026285200002>`
 - 可以在 Discord 訊息頻道輸入 `\:表符名字:` 取得上述格式
 - 若使用的表情符號不在同一個伺服器內，則機器人所在的頻道，「Everyone」身分組（不是機器人本身的身分組）需要有使用外部表情符號的權限
+
+## Sentry 配置說明
+非必要，Sentry 是用來追蹤程式執行中沒接到的例外，並將發生例外當時的函式呼叫、變數、例外...等詳細資訊傳送到網頁上供開發者追蹤，若不需要此功能的話可以跳過此設定
+
+1. 到官網註冊帳號：https://sentry.io/
+2. 在帳號內建立一個 Python 專案，建立後可取得該專案的 DSN 網址（格式：`https://xxx@xxx.sentry.io/xxx`）
+3. 將此 DSN 網址貼到 `config.json` 檔案
+
+註：
+- 若沒有指定，Sentry 預設只發送沒有 try/except 的例外
+- 若要將特定接到的例外發送到 Sentry 的話，請在該 except 內使用 `sentry_sdk.capture_exception(exception)`
 
 ## Admin 管理指令說明
 管理指令只能在配置檔案內設定的伺服器才能使用
