@@ -30,14 +30,15 @@ class GenshinDiscordBot(commands.Bot):
         log.info(f'[資訊][System]on_ready: Total {len(self.guilds)} servers connected')
 
     async def on_command_error(self, ctx: commands.Context, error):
-        log.error(f'[例外][{ctx.author.id}]on_command_error: {error}')
+        log.warning(f'[例外][{ctx.author.id}]on_command_error: {error}')
+        sentry_sdk.capture_exception(error)
 
 sentry_sdk.init(dsn=config.sentry_sdk_dsn, integrations=[sentry_logging], traces_sample_rate=1.0)
 
 client = GenshinDiscordBot()
 @client.tree.error
 async def on_error(interaction: discord.Interaction, error: discord.app_commands.AppCommandError) -> None:
-    log.error(f'[例外][{interaction.user.id}]{type(error)}: {error}')
+    log.warning(f'[例外][{interaction.user.id}]{type(error)}: {error}')
     sentry_sdk.capture_exception(error)
 
 client.run(config.bot_token)

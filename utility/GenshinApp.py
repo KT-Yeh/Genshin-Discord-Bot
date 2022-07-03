@@ -201,7 +201,7 @@ class GenshinApp:
             except genshin.errors.AlreadyClaimed:
                 return f'{game_name[game]}今日獎勵已經領過了！'
             except genshin.errors.GenshinException as e:
-                log.error(f'[例外][{user_id}]claimDailyReward: {game_name[game]}[retcode]{e.retcode} [例外內容]{e.original}')
+                log.warning(f'[例外][{user_id}]claimDailyReward: {game_name[game]}[retcode]{e.retcode} [例外內容]{e.original}')
                 sentry_sdk.capture_exception(e)
                 if e.retcode == 0 and retry > 0:
                     await asyncio.sleep(0.5)
@@ -210,7 +210,7 @@ class GenshinApp:
                     return '崩壞3簽到失敗，未查詢到角色資訊，請確認艦長是否已綁定新HoYoverse通行證'
                 return f'{game_name[game]}簽到失敗：[retcode]{e.retcode} [內容]{e.original}'
             except Exception as e:
-                log.error(f'[例外][{user_id}]claimDailyReward: {game_name[game]}[例外內容]{e}')
+                log.warning(f'[例外][{user_id}]claimDailyReward: {game_name[game]}[例外內容]{e}')
                 sentry_sdk.capture_exception(e)
                 return f'{game_name[game]}簽到失敗：{e}'
             else:

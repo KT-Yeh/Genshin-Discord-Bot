@@ -67,7 +67,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
             try:
                 fp = drawAbyssCard(result)
             except Exception as e:
-                log.error(f'[例外][{interaction.user.id}][slash_abyss]: {e}')
+                log.warning(f'[例外][{interaction.user.id}][slash_abyss]: {e}')
                 sentry_sdk.capture_exception(e)
                 await interaction.edit_original_message(content='發生錯誤，圖片製作失敗')
             else:
@@ -117,7 +117,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
             avatar_bytes = await interaction.user.display_avatar.read()
             fp = drawRecordCard(avatar_bytes, card, userstats)
         except Exception as e:
-            log.error(f'[例外][{interaction.user.id}][slash_card]: {e}')
+            log.warning(f'[例外][{interaction.user.id}][slash_card]: {e}')
             sentry_sdk.capture_exception(e)
             await interaction.edit_original_message(content='發生錯誤，卡片製作失敗')
         else:

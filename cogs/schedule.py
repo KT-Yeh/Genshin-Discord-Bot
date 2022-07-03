@@ -157,7 +157,7 @@ class Schedule(commands.Cog, name='自動化'):
                     else:
                         await channel.send(f'[自動簽到] <@{user_id}> {result}')
                 except Exception as e:
-                    log.error(f'[排程][{user_id}]自動簽到：{e}')
+                    log.warning(f'[排程][{user_id}]自動簽到：{e}')
                     self.__remove_user(user_id, self.__daily_dict, self.__daily_reward_filename)
                 await asyncio.sleep(config.auto_loop_delay)
             log.info(f'[排程][System]schedule: 每日自動簽到結束，總共 {total} 人簽到，其中 {honkai_count} 人也簽到崩壞3')

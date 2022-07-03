@@ -15,7 +15,7 @@ log = logging
 
 sentry_logging = LoggingIntegration(
     level=logging.INFO,
-    event_level=logging.CRITICAL
+    event_level=logging.ERROR
 )
 
 def getCharacterName(character: genshin.models.BaseCharacter) -> str:
