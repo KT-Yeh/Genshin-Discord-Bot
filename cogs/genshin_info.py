@@ -24,9 +24,10 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
         description='查詢即時便箋，包含樹脂、洞天寶錢、探索派遣...等')
     async def slash_notes(self, interaction: discord.Interaction):
         asyncio.create_task(interaction.response.defer())
-        result = await genshin_app.getRealtimeNote(str(interaction.user.id))
-        if isinstance(result, str):
-            await interaction.edit_original_message(content=result)
+        try:
+            result = await genshin_app.getRealtimeNote(str(interaction.user.id))
+        except Exception as e:
+            await interaction.edit_original_message(content=str(e))
         else:
             await interaction.edit_original_message(embed=result)
     
@@ -48,9 +49,10 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
     async def slash_abyss(self, interaction: discord.Interaction, season: int = 1, floor: int = 2):
         asyncio.create_task(interaction.response.defer())
         previous = True if season == 0 else False
-        result = await genshin_app.getSpiralAbyss(str(interaction.user.id), previous)
-        if isinstance(result, str):
-            await interaction.edit_original_message(content=result)
+        try:
+            result = await genshin_app.getSpiralAbyss(str(interaction.user.id), previous)
+        except Exception as e:
+            await interaction.edit_original_message(content=str(e))
             return
 
         embed = genshin_app.parseAbyssOverview(result)
@@ -93,27 +95,26 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
     async def slash_diary(self, interaction: discord.Interaction, month: int):
         month = datetime.datetime.now().month + month
         month = month + 12 if month < 1 else month
-        result = await genshin_app.getTravelerDiary(str(interaction.user.id), month)
-        if type(result) == discord.Embed:
-            await interaction.response.send_message(embed=result)
+        try:
+            embed = await genshin_app.getTravelerDiary(str(interaction.user.id), month)
+        except Exception as e:
+            await interaction.response.send_message(str(e))
         else:
-            await interaction.response.send_message(result)
+            await interaction.response.send_message(embed=embed)
 
     # 產生個人紀錄卡片
     @app_commands.command(name='card紀錄卡片', description='產生原神個人遊戲紀錄卡片')
     @app_commands.checks.cooldown(1, config.slash_cmd_cooldown)
     async def slash_card(self, interaction: discord.Interaction):
         asyncio.create_task(interaction.response.defer())
-        result = await genshin_app.getRecordCard(str(interaction.user.id))
-
-        if isinstance(result, str):
-            await interaction.edit_original_message(content=result)
+        try:
+            card, userstats = await genshin_app.getRecordCard(str(interaction.user.id))
+        except Exception as e:
+            await interaction.edit_original_message(content=str(e))
             return
         
-        avatar_bytes = await interaction.user.display_avatar.read()
-        card = result[0]
-        userstats = result[1]
         try:
+            avatar_bytes = await interaction.user.display_avatar.read()
             fp = drawRecordCard(avatar_bytes, card, userstats)
         except Exception as e:
             log.error(f'[例外][{interaction.user.id}][slash_card]: {e}')
@@ -159,14 +160,13 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
     @app_commands.command(name='character角色一覽', description='公開展示我的所有角色')
     async def slash_character(self, interaction: discord.Interaction):
         asyncio.create_task(interaction.response.defer())
-        result = await genshin_app.getCharacters(str(interaction.user.id))
-
-        if isinstance(result, str):
-            await interaction.edit_original_message(content=result)
-            return
-        
-        view = self.CharactersDropdownView(interaction, result)
-        await interaction.edit_original_message(content='請選擇角色：', view=view)
+        try:
+            characters = await genshin_app.getCharacters(str(interaction.user.id))
+        except Exception as e:
+            await interaction.edit_original_message(content=str(e))
+        else:
+            view = self.CharactersDropdownView(interaction, characters)
+            await interaction.edit_original_message(content='請選擇角色：', view=view)
 
     # 角色展示櫃
     @app_commands.command(name='showcase角色展示櫃', description='查詢指定UID玩家的公開角色展示櫃')
@@ -184,8 +184,8 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
             try:
                 await showcase.getEnkaData(uid)
             except Exception as e:
-                await interaction.edit_original_message(content=f"{e}")
                 log.info(f'[例外][{interaction.user.id}]showcase角色展示櫃: {e}')
+                await interaction.edit_original_message(content=f"{e}")
             else:
                 view = Enka.ShowcaseView(showcase)
                 embed = showcase.getPlayerOverviewEmbed()

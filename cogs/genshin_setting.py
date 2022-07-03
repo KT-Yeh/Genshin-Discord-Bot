@@ -1,5 +1,6 @@
 import discord
 import asyncio
+import sentry_sdk
 from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands
@@ -21,10 +22,14 @@ class Setting(commands.Cog, name='設定'):
             max_length=1500
         )
         async def on_submit(self, interaction: discord.Interaction):
-            result = await genshin_app.setCookie(str(interaction.user.id), self.cookie.value)
-            await interaction.response.send_message(result, ephemeral=True)
+            try:
+                msg = await genshin_app.setCookie(str(interaction.user.id), self.cookie.value)
+            except Exception as e:
+                msg = str(e)
+            await interaction.response.send_message(msg, ephemeral=True)
         
-        async def on_error(self, error: Exception, interaction: discord.Interaction):
+        async def on_error(self, interaction: discord.Interaction, error: Exception):
+            sentry_sdk.capture_exception(error)
             await interaction.response.send_message('發生未知錯誤', ephemeral=True)
 
     # 設定使用者Cookie
@@ -79,13 +84,14 @@ class Setting(commands.Cog, name='設定'):
         description='帳號內多角色時需保存指定的UID，只有單一角色不需要使用本指令')
     async def slash_uid(self, interaction: discord.Interaction):
         asyncio.create_task(interaction.response.defer(ephemeral=True))
-        result = await genshin_app.getGameAccounts(str(interaction.user.id))
-        if isinstance(result, str):
-            await interaction.edit_original_message(content=result)
+        try:
+            accounts = await genshin_app.getGameAccounts(str(interaction.user.id))
+        except Exception as e:
+            await interaction.edit_original_message(content=str(e))
         else:
             view = discord.ui.View(timeout=config.discord_view_short_timeout)
             msg = '```'
-            for account in result:
+            for account in accounts:
                 view.add_item(self.UidButton(account.uid))
                 msg += f'UID:{account.uid} 等級:{account.level} 角色名字:{account.nickname}\n'
             msg += '```\n請選擇要保存的UID：'

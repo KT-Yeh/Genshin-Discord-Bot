@@ -9,28 +9,34 @@ from .emoji import emoji
 from .utils import log, getCharacterName, trimCookie, getServerName, getDayOfWeek,user_last_use_time
 from .config import config
 
+class UserDataNotFound(Exception):
+    pass
+
 def generalErrorHandler(func):
     """對於使用genshin.py函式的通用例外處理裝飾器"""
     async def wrapper(*args, **kwargs):
         try:
             return await func(*args, **kwargs)
         except genshin.errors.DataNotPublic as e:
-            log.info(f"[例外]{func.__name__}: [retcode]{e.retcode} [內容]{e.original}")
-            return '此功能權限未開啟，請先從Hoyolab網頁或App上的個人戰績->設定，將此功能啟用'
+            log.info(f"[例外]{func.__name__}: [retcode]{e.retcode} [原始內容]{e.original} [錯誤訊息]{e.msg}")
+            raise Exception('此功能權限未開啟，請先從Hoyolab網頁或App上的個人戰績->設定，將此功能啟用')
         except genshin.errors.InvalidCookies as e:
-            log.info(f"[例外]{func.__name__}: [retcode]{e.retcode} [內容]{e.original}")
-            return 'Cookie已失效，請從Hoyolab重新取得新Cookie'
+            log.info(f"[例外]{func.__name__}: [retcode]{e.retcode} [原始內容]{e.original} [錯誤訊息]{e.msg}")
+            raise Exception('Cookie已失效，請從Hoyolab重新取得新Cookie')
         except genshin.errors.RedemptionException as e:
-            log.info(f"[例外]{func.__name__}: [retcode]{e.retcode} [內容]{e.original}")
-            return e.original
+            log.info(f"[例外]{func.__name__}: [retcode]{e.retcode} [原始內容]{e.original} [錯誤訊息]{e.msg}")
+            raise Exception(e.original)
         except genshin.errors.GenshinException as e:
-            log.error(f"[例外]{func.__name__}: [retcode]{e.retcode} [內容]{e.original}")
+            log.warning(f"[例外]{func.__name__}: [retcode]{e.retcode} [原始內容]{e.original} [錯誤訊息]{e.msg}")
             sentry_sdk.capture_exception(e)
-            return e.original
+            raise Exception(e.original)
+        except UserDataNotFound as e:
+            log.info(f"[例外]{func.__name__}: [錯誤訊息]{e}")
+            raise Exception(str(e))
         except Exception as e:
-            log.error(f"[例外]{func.__name__}: [內容]{e}")
+            log.warning(f"[例外]{func.__name__}: [錯誤訊息]{e}")
             sentry_sdk.capture_exception(e)
-            return str(e)
+            raise Exception(str(e))
     return wrapper
 
 class GenshinApp:
@@ -78,19 +84,19 @@ class GenshinApp:
         return result
 
     @generalErrorHandler
-    async def getGameAccounts(self, user_id: str) -> Union[str, Sequence[genshin.models.GenshinAccount]]:
-        """取得同一個Hoyolab帳號下，各伺服器的原神角色
+    async def getGameAccounts(self, user_id: str) -> Sequence[genshin.models.GenshinAccount]:
+        """取得同一個Hoyolab帳號下，各伺服器的原神帳號
 
         ------
         Parameters
         user_id `str`: 使用者Discord ID
         ------
         Returns
-        `str | Sequence[genshin.models.GenshinAccount]`: 發生例外回傳錯誤訊息`str`、正常情況回傳查詢結果`Sequence[genshin.models.GenshinAccount]`
+        Sequence[genshin.models.GenshinAccount]`: 查詢結果
         """
         check, msg = self.checkUserData(user_id, checkUID=False)
         if check == False:
-            return msg
+            raise UserDataNotFound(msg)
         client = self.__getGenshinClient(user_id)
         return await client.genshin_accounts()
     
@@ -117,7 +123,7 @@ class GenshinApp:
         return None
 
     @generalErrorHandler
-    async def getRealtimeNote(self, user_id: str, *, schedule = False) -> Union[None, str, discord.Embed]:
+    async def getRealtimeNote(self, user_id: str, *, schedule = False) -> Union[None, discord.Embed]:
         """取得使用者即時便箋(樹脂、洞天寶錢、參數質變儀、派遣、每日、週本)
         
         ------
@@ -126,13 +132,13 @@ class GenshinApp:
         schedule `bool`: 是否為排程檢查樹脂，設為`True`時，只有當樹脂超過設定標準時才會回傳即時便箋結果
         ------
         Returns
-        `None | str | Embed`: 自動檢查樹脂時，在正常未溢出的情況下回傳`None`；發生例外回傳錯誤訊息`str`、正常情況回傳查詢結果`discord.Embed`
+        `None | Embed`: 自動檢查樹脂時，未溢出的情況下回傳`None`；正常情況回傳查詢結果`discord.Embed`
         """
         if not schedule:
             log.info(f'[指令][{user_id}]getRealtimeNote')
         check, msg = self.checkUserData(user_id, update_use_time=(not schedule))
         if check == False:
-            return msg
+            raise UserDataNotFound(msg)
         uid = self.__user_data[user_id]['uid']
         client = self.__getGenshinClient(user_id)
         notes = await client.get_genshin_notes(int(uid))
@@ -164,7 +170,7 @@ class GenshinApp:
         log.info(f'[指令][{user_id}]redeemCode: code={code}')
         check, msg = self.checkUserData(user_id)
         if check == False:
-            return msg
+            raise UserDataNotFound(msg)
         client = self.__getGenshinClient(user_id)
         await client.redeem_code(code, int(self.__user_data[user_id]['uid']))
         return f'兌換碼 {code} 使用成功！'
@@ -223,7 +229,7 @@ class GenshinApp:
         return result
 
     @generalErrorHandler
-    async def getSpiralAbyss(self, user_id: str, previous: bool = False) -> Union[str, genshin.models.SpiralAbyss]:
+    async def getSpiralAbyss(self, user_id: str, previous: bool = False) -> genshin.models.SpiralAbyss:
         """取得深境螺旋資訊
 
         ------
@@ -232,19 +238,19 @@ class GenshinApp:
         previous `bool`: `True`查詢前一期的資訊、`False`查詢本期資訊
         ------
         Returns
-        `Union[str, SpiralAbyss]`: 發生例外回傳錯誤訊息`str`、正常情況回傳查詢結果`SpiralAbyss`
+        `SpiralAbyss`: 查詢結果
         """
         log.info(f'[指令][{user_id}]getSpiralAbyss: previous={previous}')
         check, msg = self.checkUserData(user_id)
         if check == False:
-            return msg
+            raise UserDataNotFound(msg)
         client = self.__getGenshinClient(user_id)
         # 為了刷新戰鬥數據榜，需要先對record card發出請求
         await client.get_record_cards()
         return await client.get_genshin_spiral_abyss(int(self.__user_data[user_id]['uid']), previous=previous)
 
     @generalErrorHandler
-    async def getTravelerDiary(self, user_id: str, month: int) -> Union[str, discord.Embed]:
+    async def getTravelerDiary(self, user_id: str, month: int) -> discord.Embed:
         """取得使用者旅行者札記
 
         ------
@@ -253,12 +259,12 @@ class GenshinApp:
         month `int`: 欲查詢的月份
         ------
         Returns:
-        `Union[str, discord.Embed]`: 發生例外回傳錯誤訊息`str`、正常情況回傳查詢結果`discord.Embed`
+        `discord.Embed`: 查詢結果，已包裝成 discord 嵌入格式
         """
         log.info(f'[指令][{user_id}]getTravelerDiary: month={month}')
         check, msg = self.checkUserData(user_id)
         if check == False:
-            return msg
+            raise UserDataNotFound(msg)
         client = self.__getGenshinClient(user_id)
         diary = await client.get_diary(int(self.__user_data[user_id]['uid']), month=month)
         
@@ -281,11 +287,11 @@ class GenshinApp:
             for j in range(round(length/2*i), round(length/2*(i+1))):
                 msg += f'{d.categories[j].name[0:2]}：{d.categories[j].percentage}%\n'
             result.add_field(name=f'原石收入組成 ({i+1})', value=msg, inline=True)
-        # finally:
+
         return result
 
     @generalErrorHandler
-    async def getRecordCard(self, user_id: str) -> Union[str, Tuple[genshin.models.RecordCard, genshin.models.PartialGenshinUserStats]]:
+    async def getRecordCard(self, user_id: str) -> Tuple[genshin.models.RecordCard, genshin.models.PartialGenshinUserStats]:
         """取得使用者記錄卡片
 
         ------
@@ -293,12 +299,12 @@ class GenshinApp:
         user_id `str`: 使用者Discord ID
         ------
         Returns:
-        `str | (RecordCard, PartialGenshinUserStats)`: 發生例外回傳錯誤訊息`str`、正常情況回傳查詢結果`(RecordCard, PartialGenshinUserStats)`
+        `(RecordCard, PartialGenshinUserStats)`: 查詢結果，包含紀錄卡片與部分原神使用者資料
         """
         log.info(f'[指令][{user_id}]getRecordCard')
         check, msg = self.checkUserData(user_id)
         if check == False:
-            return msg
+            raise UserDataNotFound(msg)
         client = self.__getGenshinClient(user_id)
         cards = await client.get_record_cards()
         userstats = await client.get_partial_genshin_user(int(self.__user_data[user_id]['uid']))
@@ -306,10 +312,10 @@ class GenshinApp:
         for card in cards:
             if card.uid == int(self.__user_data[user_id]['uid']):
                 return (card, userstats)
-        return '找不到原神紀錄卡片'
+        raise UserDataNotFound('找不到原神紀錄卡片')
 
     @generalErrorHandler
-    async def getCharacters(self, user_id: str) -> Union[str, Sequence[genshin.models.Character]]:
+    async def getCharacters(self, user_id: str) -> Sequence[genshin.models.Character]:
         """取得使用者所有角色資料
 
         ------
@@ -317,12 +323,12 @@ class GenshinApp:
         user_id `str`: 使用者Discord ID
         ------
         Returns:
-        `str | Sequence[Character]`: 發生例外回傳錯誤訊息`str`、正常情況回傳查詢結果`Sequence[Character]`
+        `Sequence[Character]`: 查詢結果
         """
         log.info(f'[指令][{user_id}]getCharacters')
         check, msg = self.checkUserData(user_id)
         if check == False:
-            return msg
+            raise UserDataNotFound(msg)
         client = self.__getGenshinClient(user_id)
         return await client.get_genshin_characters(int(self.__user_data[user_id]['uid']))
 

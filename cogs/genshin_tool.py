@@ -17,13 +17,17 @@ class GenshinTool(commands.Cog, name='原神工具'):
     @app_commands.describe(code='請輸入要使用的兌換碼')
     async def slash_redeem(self, interaction: discord.Interaction, code: str):
         asyncio.create_task(interaction.response.defer())
-        result = await genshin_app.redeemCode(str(interaction.user.id), code)
-        if len(result) == 0:
+        try:
+            msg = await genshin_app.redeemCode(str(interaction.user.id), code)
+        except Exception as e:
+            msg = str(e)
+        # 兌換網頁無任何回應訊息時，則新增連結按鈕至官網兌換
+        if len(msg) == 0:
             view = discord.ui.View()
             view.add_item(discord.ui.Button(label=code, url=f"https://genshin.hoyoverse.com/gift?code={code}"))
             await interaction.edit_original_message(content='發生未知錯誤，請直接點擊按鈕至官網兌換', view=view)
         else:
-            await interaction.edit_original_message(content=result)
+            await interaction.edit_original_message(content=msg)
 
     # 為使用者在Hoyolab簽到
     @app_commands.command(

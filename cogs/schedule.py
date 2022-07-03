@@ -173,21 +173,25 @@ class Schedule(commands.Cog, name='自動化'):
                 if channel == None or check == False:
                     self.__remove_user(user_id, self.__resin_dict, self.__resin_notifi_filename)
                     continue
-                result = await genshin_app.getRealtimeNote(user_id, schedule=True)
+                try:
+                    result = await genshin_app.getRealtimeNote(user_id, schedule=True)
+                except Exception as e:
+                    msg = f"自動檢查樹脂時發生錯誤：{str(e)}"
+                    result = None
+                else:
+                    msg = None if result == None else f"樹脂(快要)溢出啦！"
                 count += 1
-                if result != None:
+                # 當有錯誤訊息或是樹脂快要溢出時，向使用者發送訊息
+                if msg != None:
                     try:
                         user = await self.bot.fetch_user(int(user_id))
-                        if isinstance(result, str):
-                            message = await channel.send(f'{user.mention}，自動檢查樹脂時發生錯誤：{result}')
-                        else:
-                            message = await channel.send(f'{user.mention}，樹脂(快要)溢出啦！', embed=result)
+                        msg_sent = await channel.send(f"{user.mention}，{msg}", embed=result)
                     except Exception as e:
-                        log.info(f'[排程][{user_id}]檢查樹脂：{e}')
+                        log.info(f'[例外][{user_id}]排程檢查樹脂發送訊息：{e}')
                         self.__remove_user(user_id, self.__resin_dict, self.__resin_notifi_filename)
                     else:
                         # 若使用者不在發送訊息的頻道則移除
-                        if user.mentioned_in(message) == False:
+                        if user.mentioned_in(msg_sent) == False:
                             log.info(f'[排程][{user_id}]檢查樹脂：使用者不在頻道')
                             self.__remove_user(user_id, self.__resin_dict, self.__resin_notifi_filename)
                 await asyncio.sleep(config.auto_loop_delay)
