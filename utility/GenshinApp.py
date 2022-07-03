@@ -15,26 +15,27 @@ class UserDataNotFound(Exception):
 def generalErrorHandler(func):
     """對於使用genshin.py函式的通用例外處理裝飾器"""
     async def wrapper(*args, **kwargs):
+        user_id = args[1] if (len(args) >= 2 and isinstance(args[1], str) and len(args[1]) >= 17) else ''
         try:
             return await func(*args, **kwargs)
         except genshin.errors.DataNotPublic as e:
-            log.info(f"[例外]{func.__name__}: [retcode]{e.retcode} [原始內容]{e.original} [錯誤訊息]{e.msg}")
+            log.info(f"[例外][{user_id}]{func.__name__}: [retcode]{e.retcode} [原始內容]{e.original} [錯誤訊息]{e.msg}")
             raise Exception('此功能權限未開啟，請先從Hoyolab網頁或App上的個人戰績->設定，將此功能啟用')
         except genshin.errors.InvalidCookies as e:
-            log.info(f"[例外]{func.__name__}: [retcode]{e.retcode} [原始內容]{e.original} [錯誤訊息]{e.msg}")
+            log.info(f"[例外][{user_id}]{func.__name__}: [retcode]{e.retcode} [原始內容]{e.original} [錯誤訊息]{e.msg}")
             raise Exception('Cookie已失效，請從Hoyolab重新取得新Cookie')
         except genshin.errors.RedemptionException as e:
-            log.info(f"[例外]{func.__name__}: [retcode]{e.retcode} [原始內容]{e.original} [錯誤訊息]{e.msg}")
+            log.info(f"[例外][{user_id}]{func.__name__}: [retcode]{e.retcode} [原始內容]{e.original} [錯誤訊息]{e.msg}")
             raise Exception(e.original)
         except genshin.errors.GenshinException as e:
-            log.warning(f"[例外]{func.__name__}: [retcode]{e.retcode} [原始內容]{e.original} [錯誤訊息]{e.msg}")
+            log.warning(f"[例外][{user_id}]{func.__name__}: [retcode]{e.retcode} [原始內容]{e.original} [錯誤訊息]{e.msg}")
             sentry_sdk.capture_exception(e)
             raise Exception(e.original)
         except UserDataNotFound as e:
-            log.info(f"[例外]{func.__name__}: [錯誤訊息]{e}")
+            log.info(f"[例外][{user_id}]{func.__name__}: [錯誤訊息]{e}")
             raise Exception(str(e))
         except Exception as e:
-            log.warning(f"[例外]{func.__name__}: [錯誤訊息]{e}")
+            log.warning(f"[例外][{user_id}]{func.__name__}: [錯誤訊息]{e}")
             sentry_sdk.capture_exception(e)
             raise Exception(str(e))
     return wrapper
