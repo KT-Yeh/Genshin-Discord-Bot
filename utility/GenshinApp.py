@@ -174,7 +174,7 @@ class GenshinApp:
             raise UserDataNotFound(msg)
         client = self.__getGenshinClient(user_id)
         await client.redeem_code(code, int(self.__user_data[user_id]['uid']))
-        return f'兌換碼 {code} 使用成功！'
+        return '兌換碼使用成功！'
 
     async def claimDailyReward(self, user_id: str, *, honkai: bool = False, schedule = False) -> str:
         """為使用者在Hoyolab簽到
