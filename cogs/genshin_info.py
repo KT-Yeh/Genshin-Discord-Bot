@@ -184,7 +184,8 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
             try:
                 await showcase.getEnkaData(uid)
             except Exception as e:
-                log.info(f'[例外][{interaction.user.id}]showcase角色展示櫃: {e}')
+                log.warning(f'[例外][{interaction.user.id}]showcase角色展示櫃: {e}')
+                sentry_sdk.capture_exception(e)
                 await interaction.edit_original_message(content=f"{e}")
             else:
                 view = Enka.ShowcaseView(showcase)
