@@ -80,9 +80,10 @@ class Schedule(commands.Cog, name='自動化'):
         function='選擇要執行自動化的功能',
         switch='選擇開啟或關閉此功能')
     @app_commands.choices(
-        function=[Choice(name='顯示使用說明', value='help'),
-                  Choice(name='每日自動簽到', value='daily'),
-                  Choice(name='樹脂額滿提醒', value='resin')],
+        function=[Choice(name='① 顯示使用說明', value='help'),
+                  Choice(name='② 訊息推送測試', value='test'),
+                  Choice(name='★ 每日自動簽到', value='daily'),
+                  Choice(name='★ 樹脂額滿提醒', value='resin')],
         switch=[Choice(name='開啟功能', value=1),
                 Choice(name='關閉功能', value=0)])
     async def slash_schedule(self, interaction: discord.Interaction, function: str, switch: int):
@@ -93,7 +94,17 @@ class Schedule(commands.Cog, name='自動化'):
             '· 若要更改推送頻道，請在新的頻道重新設定指令一次\n\n'
             f'· 每日簽到：每日 {config.auto_daily_reward_time}~{config.auto_daily_reward_time+1} 點之間自動論壇簽到，設定前請先使用 `/daily每日簽到` 指令確認小幫手能正確幫你簽到\n'
             f'· 樹脂提醒：每二小時檢查一次，當樹脂超過 {config.auto_check_resin_threshold} 會發送提醒，設定前請先用 `/notes即時便箋` 指令確認小幫手能讀到你的樹脂資訊\n')
-            await interaction.response.send_message(embed=discord.Embed(title='排程功能使用說明', description=msg))
+            await interaction.response.send_message(embed=discord.Embed(title='排程功能使用說明', description=msg), ephemeral=True)
+            return
+        
+        if function == 'test': # 測試機器人是否能在該頻道推送訊息
+            try:
+                msg_sent = await interaction.channel.send('測試推送訊息...')
+            except:
+                await interaction.response.send_message('小幫手無法在本頻道推送訊息，請管理員檢查身分組的權限設定')
+            else:
+                await interaction.response.send_message('測試完成，小幫手可以在本頻道推送訊息')
+                await msg_sent.delete()
             return
         
         # 設定前先確認使用者是否有Cookie資料
