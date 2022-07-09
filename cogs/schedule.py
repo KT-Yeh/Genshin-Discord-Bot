@@ -141,81 +141,90 @@ class Schedule(commands.Cog, name='自動化'):
                 self.__remove_user(str(interaction.user.id), self.__resin_dict, self.__resin_notifi_filename)
                 await interaction.response.send_message('樹脂額滿提醒已關閉')
 
-    loop_interval = 10
+    loop_interval = 10 # 循環間隔10分鐘
     @tasks.loop(minutes=loop_interval)
     async def schedule(self):
         now = datetime.now()
         # 每日 {config.auto_daily_reward_time} 點自動簽到
         if now.hour == config.auto_daily_reward_time and now.minute < self.loop_interval:
-            log.info('[排程][System]schedule: 每日自動簽到開始')
-            # 複製一份避免衝突
-            daily_dict = dict(self.__daily_dict)
-            total, honkai_count = 0, 0
-            for user_id, value in daily_dict.items():
-                channel = self.bot.get_channel(int(value['channel']))
-                has_honkai = False if value.get('honkai') == None else True
-                check, msg = genshin_app.checkUserData(user_id, update_use_time=False)
-                if channel == None or check == False:
-                    self.__remove_user(user_id, self.__daily_dict, self.__daily_reward_filename)
-                    continue
-                result = await genshin_app.claimDailyReward(user_id, honkai=has_honkai, schedule=True)
-                total += 1
-                honkai_count += int(has_honkai)
-                try:
-                    if value.get('mention') == 'False':
-                        user = await self.bot.fetch_user(int(user_id))
-                        await channel.send(f'[自動簽到] {user.display_name}：{result}')
-                    else:
-                        await channel.send(f'[自動簽到] <@{user_id}> {result}')
-                except Exception as e:
-                    log.warning(f'[排程][{user_id}]自動簽到：{e}')
-                    self.__remove_user(user_id, self.__daily_dict, self.__daily_reward_filename)
-                await asyncio.sleep(config.auto_loop_delay)
-            log.info(f'[排程][System]schedule: 每日自動簽到結束，總共 {total} 人簽到，其中 {honkai_count} 人也簽到崩壞3')
-        
+            await self.autoClaimDailyReward()
+
         # 每二小時檢查一次樹脂，並且與每日簽到時間錯開
         if abs(now.hour - config.auto_daily_reward_time) % 2 == 1 and now.minute < self.loop_interval:
-            log.info('[排程][System]schedule: 自動檢查樹脂開始')
-            resin_dict = dict(self.__resin_dict)
-            count = 0
-            for user_id, value in resin_dict.items():
-                channel = self.bot.get_channel(int(value['channel']))
-                check, msg = genshin_app.checkUserData(user_id, update_use_time=False)
-                if channel == None or check == False:
-                    self.__remove_user(user_id, self.__resin_dict, self.__resin_notifi_filename)
-                    continue
-                try:
-                    result = await genshin_app.getRealtimeNote(user_id, schedule=True)
-                except Exception as e:
-                    msg = f"自動檢查樹脂時發生錯誤：{str(e)}"
-                    result = None
-                else:
-                    msg = None if result == None else f"樹脂(快要)溢出啦！"
-                count += 1
-                # 當有錯誤訊息或是樹脂快要溢出時，向使用者發送訊息
-                if msg != None:
-                    try:
-                        user = await self.bot.fetch_user(int(user_id))
-                        msg_sent = await channel.send(f"{user.mention}，{msg}", embed=result)
-                    except Exception as e:
-                        log.info(f'[例外][{user_id}]排程檢查樹脂發送訊息：{e}')
-                        self.__remove_user(user_id, self.__resin_dict, self.__resin_notifi_filename)
-                    else:
-                        # 若使用者不在發送訊息的頻道則移除
-                        if user.mentioned_in(msg_sent) == False:
-                            log.info(f'[排程][{user_id}]檢查樹脂：使用者不在頻道')
-                            self.__remove_user(user_id, self.__resin_dict, self.__resin_notifi_filename)
-                await asyncio.sleep(config.auto_loop_delay)
-            log.info(f'[排程][System]schedule: 自動檢查樹脂結束，{count} 人已檢查')
-        
-        user_last_use_time.save() # 定時儲存使用者最後使用時間資料
-        # 每日刪除過期使用者資料
+            await self.autoCheckResin()
+
+        # 定時儲存使用者最後使用時間資料
+        user_last_use_time.save()
+        # 每日凌晨一點刪除過期使用者資料
         if now.hour == 1 and now.minute < self.loop_interval:
             genshin_app.deleteExpiredUserData()
 
     @schedule.before_loop
     async def before_schedule(self):
         await self.bot.wait_until_ready()
+
+    async def autoClaimDailyReward(self):
+        log.info('[排程][System]schedule: 每日自動簽到開始')
+        daily_dict = dict(self.__daily_dict) # 複製一份避免衝突
+        total, honkai_count = 0, 0 # 統計簽到人數
+        for user_id, value in daily_dict.items():
+            channel = self.bot.get_channel(int(value['channel'])) # 取得要發送的頻道
+            has_honkai = False if value.get('honkai') == None else True # 是否要簽到崩壞3
+            check, msg = genshin_app.checkUserData(user_id, update_use_time=False)
+            # 若發送頻道或使用者資料不存在，則移除此使用者
+            if channel == None or check == False:
+                self.__remove_user(user_id, self.__daily_dict, self.__daily_reward_filename)
+                continue
+            result = await genshin_app.claimDailyReward(user_id, honkai=has_honkai, schedule=True)
+            total += 1
+            honkai_count += int(has_honkai)
+            try:
+                # 若不用@提及使用者，則先取得此使用者的暱稱然後發送訊息
+                if value.get('mention') == 'False':
+                    user = await self.bot.fetch_user(int(user_id))
+                    await channel.send(f'[自動簽到] {user.display_name}：{result}')
+                else:
+                    await channel.send(f'[自動簽到] <@{user_id}> {result}')
+            except Exception as e: # 發送訊息失敗，移除此使用者
+                log.warning(f'[排程][{user_id}]自動簽到：{e}')
+                self.__remove_user(user_id, self.__daily_dict, self.__daily_reward_filename)
+            await asyncio.sleep(config.auto_loop_delay)
+        log.info(f'[排程][System]schedule: 每日自動簽到結束，總共 {total} 人簽到，其中 {honkai_count} 人也簽到崩壞3')
+
+    async def autoCheckResin(self):
+        log.info('[排程][System]schedule: 自動檢查樹脂開始')
+        resin_dict = dict(self.__resin_dict)
+        count = 0 # 統計人數
+        for user_id, value in resin_dict.items():
+            # 取得要發送訊息的頻道與確認使用者資料，若頻道或使用者資料不存在，則移除此使用者
+            channel = self.bot.get_channel(int(value['channel']))
+            check, msg = genshin_app.checkUserData(user_id, update_use_time=False)
+            if channel == None or check == False:
+                self.__remove_user(user_id, self.__resin_dict, self.__resin_notifi_filename)
+                continue
+            try:
+                result = await genshin_app.getRealtimeNote(user_id, schedule=True)
+            except Exception as e:
+                msg = f"自動檢查樹脂時發生錯誤：{str(e)}"
+                result = None
+            else:
+                msg = None if result == None else f"樹脂(快要)溢出啦！"
+            count += 1
+            # 當有錯誤訊息或是樹脂快要溢出時，向使用者發送訊息
+            if msg != None:
+                try: # 發送訊息提醒使用者
+                    user = await self.bot.fetch_user(int(user_id))
+                    msg_sent = await channel.send(f"{user.mention}，{msg}", embed=result)
+                except Exception as e: # 發送訊息失敗，移除此使用者
+                    log.info(f'[例外][{user_id}]排程檢查樹脂發送訊息：{e}')
+                    self.__remove_user(user_id, self.__resin_dict, self.__resin_notifi_filename)
+                else:
+                    # 若使用者不在發送訊息的頻道則移除
+                    if user.mentioned_in(msg_sent) == False:
+                        log.info(f'[排程][{user_id}]檢查樹脂：使用者不在頻道')
+                        self.__remove_user(user_id, self.__resin_dict, self.__resin_notifi_filename)
+            await asyncio.sleep(config.auto_loop_delay)
+        log.info(f'[排程][System]schedule: 自動檢查樹脂結束，{count} 人已檢查')
 
     def __add_user(self, user_id: str, channel: str, data: dict, filename: str, *, mention: bool = True) -> None:
         data[user_id] = { }
