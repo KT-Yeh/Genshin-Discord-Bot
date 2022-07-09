@@ -26,7 +26,7 @@ class Showcase:
             if resp.status == 200:
                 self.data = await resp.json()
             else:
-                raise Exception(f"[{resp.status} {resp.reason}]API伺服器發生錯誤或是此玩家資料不存在")
+                raise Exception(f"[{resp.status} {resp.reason}]從API伺服器取得資料時發生錯誤或是此玩家資料不存在")
 
     def getPlayerOverviewEmbed(self) -> discord.Embed:
         """取得玩家基本資料的嵌入訊息"""
@@ -61,8 +61,8 @@ class Showcase:
         # 天賦等級[A, E, Q]
         skill_level = [0, 0, 0]
         for i in range(3):
-            if 'skillOrder' in characters_map[id]:
-                skillId = characters_map[id]['skillOrder'][i]
+            if skillOrder := characters_map.get(id, { }).get('skillOrder'):
+                skillId = skillOrder[i]
             else:
                 skillId = list(avatarInfo['skillLevelMap'])[i]
             skill_level[i] = avatarInfo['skillLevelMap'][str(skillId)]
@@ -83,7 +83,7 @@ class Showcase:
             if 'affixMap' in weapon['weapon']:
                 refinement += list(weapon['weapon']['affixMap'].values())[0]
             embed.add_field(
-                name=f"★{weapon['flat']['rankLevel']} {weapons_map[weapon['itemId']]['name']}",
+                name=f"★{weapon['flat']['rankLevel']} {weapons_map.get(weapon['itemId'], { }).get('name', weapon['itemId'])}",
                 value=f"精煉：{refinement} 階\n"
                       f"等級：Lv. {weapon['weapon']['level']}\n"
                       f"{emoji.fightprop.get('FIGHT_PROP_ATTACK', '')}基礎攻擊力+{weaponStats[0]['statValue']}\n"
@@ -123,7 +123,7 @@ class Showcase:
                 continue
             artifact_id: int = equip['itemId'] // 10
             flat = equip['flat']
-            pos_name = pos_name_map[artifcats_map[artifact_id]['pos']]
+            pos_name = pos_name_map.get(artifcats_map.get(artifact_id, { }).get('pos'), '未知')
             # 主詞條屬性
             embed_value = f"__**{self.__getStatPropSentence(flat['reliquaryMainstat']['mainPropId'], flat['reliquaryMainstat']['statValue'])}**__\n"
             # 副詞條屬性
@@ -133,7 +133,7 @@ class Showcase:
                 embed_value += f"{self.__getStatPropSentence(prop, value)}\n"
                 substat_sum[prop] = substat_sum.get(prop, 0) + value
             
-            embed.add_field(name=f"{emoji.artifact_type.get(pos_name, pos_name + '：')}{artifcats_map[artifact_id]['name']}", value=embed_value)
+            embed.add_field(name=f"{emoji.artifact_type.get(pos_name, pos_name + '：')}{artifcats_map.get(artifact_id, { }).get('name', artifact_id)}", value=embed_value)
 
         # 副詞條數量統計
         def substatSummary(prop: str, name: str, base: float) -> str:
@@ -155,11 +155,12 @@ class Showcase:
     def __getDefaultEmbed(self, character_id: str) -> discord.Embed:
         id = character_id
         color = {'pyro': 0xfb4120, 'electro': 0xbf73e7, 'hydro': 0x15b1ff, 'cryo': 0x70daf1, 'dendro': 0xa0ca22, 'anemo': 0x5cd4ac, 'geo': 0xfab632}
+        character_map = characters_map.get(id, { })
         embed = discord.Embed(
-            title=f"★{characters_map[id]['rarity']} {characters_map[id]['name']}",
-            color=color.get(characters_map[id]['element'].lower())
+            title=f"★{character_map.get('rarity', '?')} {character_map.get('name', id)}",
+            color=color.get(character_map.get('element', '').lower())
         )
-        embed.set_thumbnail(url=characters_map[id]['icon'])
+        embed.set_thumbnail(url=character_map.get('icon'))
         embed.set_author(name=f"{self.data['playerInfo']['nickname']} 的角色展示櫃", url=self.url)
         embed.set_footer(text=f"{self.data['playerInfo']['nickname']}．Lv. {self.data['playerInfo']['level']}．UID: {self.uid}")
 
@@ -189,9 +190,10 @@ class ShowcaseCharactersDropdown(discord.ui.Select):
         for i, avatarInfo in enumerate(avatarInfoList):
             id = str(avatarInfo['avatarId'])
             level: str = avatarInfo['level']
-            rarity: int = characters_map[id]['rarity']
-            element: str = characters_map[id]['element']
-            name: str = characters_map[id]['name']
+            character_map = characters_map.get(id, { })
+            rarity: int = character_map.get('rarity', '?')
+            element: str = character_map.get('element', '')
+            name: str = character_map.get('name', id)
             options.append(discord.SelectOption(
                 label=f'★{rarity} Lv.{level} {name}',
                 value=str(i),
