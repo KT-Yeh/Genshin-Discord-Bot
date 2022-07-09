@@ -8,6 +8,7 @@ class Notes(BaseModel):
     commission: str = ''
     enemies_of_note: str = ''
     transformer: str = ''
+    expedition: str = ''
 
 class Items(BaseModel):
     mora: str = ''

@@ -203,18 +203,22 @@ class Schedule(commands.Cog, name='自動化'):
                 self.__remove_user(user_id, self.__resin_dict, self.__resin_notifi_filename)
                 continue
             try:
-                result = await genshin_app.getRealtimeNote(user_id, schedule=True)
+                notes = await genshin_app.getRealtimeNote(user_id, schedule=True)
             except Exception as e:
                 msg = f"自動檢查樹脂時發生錯誤：{str(e)}"
-                result = None
+                embed = None
             else:
-                msg = None if result == None else f"樹脂(快要)溢出啦！"
+                if notes.current_resin >= config.auto_check_resin_threshold:
+                    msg = "樹脂(快要)溢出啦！"
+                    embed = genshin_app.parseNotes(notes, shortForm=True)
+                else:
+                    msg = None
             count += 1
             # 當有錯誤訊息或是樹脂快要溢出時，向使用者發送訊息
             if msg != None:
                 try: # 發送訊息提醒使用者
                     user = await self.bot.fetch_user(int(user_id))
-                    msg_sent = await channel.send(f"{user.mention}，{msg}", embed=result)
+                    msg_sent = await channel.send(f"{user.mention}，{msg}", embed=embed)
                 except Exception as e: # 發送訊息失敗，移除此使用者
                     log.info(f'[例外][{user_id}]排程檢查樹脂發送訊息：{e}')
                     self.__remove_user(user_id, self.__resin_dict, self.__resin_notifi_filename)

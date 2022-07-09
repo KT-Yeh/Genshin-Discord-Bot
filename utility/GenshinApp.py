@@ -4,10 +4,9 @@ import discord
 import genshin
 import sentry_sdk
 from datetime import datetime
-from typing import Sequence, Union, Tuple
+from typing import Sequence, Union, Tuple, Optional
 from .emoji import emoji
 from .utils import log, getCharacterName, trimCookie, getServerName, getDayOfWeek,user_last_use_time
-from .config import config
 
 class UserDataNotFound(Exception):
     pass
@@ -124,16 +123,16 @@ class GenshinApp:
         return None
 
     @generalErrorHandler
-    async def getRealtimeNote(self, user_id: str, *, schedule = False) -> Union[None, discord.Embed]:
-        """取得使用者即時便箋(樹脂、洞天寶錢、參數質變儀、派遣、每日、週本)
+    async def getRealtimeNote(self, user_id: str, *, schedule = False) -> genshin.models.Notes:
+        """取得使用者的即時便箋
         
         ------
         Parameters
         user_id `str`: 使用者Discord ID
-        schedule `bool`: 是否為排程檢查樹脂，設為`True`時，只有當樹脂超過設定標準時才會回傳即時便箋結果
+        schedule `bool`: 是否為排程檢查樹脂
         ------
         Returns
-        `None | Embed`: 自動檢查樹脂時，未溢出的情況下回傳`None`；正常情況回傳查詢結果`discord.Embed`
+        `Notes`: 查詢結果
         """
         if not schedule:
             log.info(f'[指令][{user_id}]getRealtimeNote')
@@ -142,19 +141,7 @@ class GenshinApp:
             raise UserDataNotFound(msg)
         uid = self.__user_data[user_id]['uid']
         client = self.__getGenshinClient(user_id)
-        notes = await client.get_genshin_notes(int(uid))
-        
-        if schedule == True and notes.current_resin < config.auto_check_resin_threshold:
-            return None
-        else:
-            msg = f'{getServerName(uid[0])} {uid.replace(uid[3:-3], "***", 1)}\n'
-            msg += f'--------------------\n'
-            msg += self.__parseNotes(notes, shortForm=schedule)
-            # 根據樹脂數量，以80作分界，embed顏色從綠色(0x28c828)漸變到黃色(0xc8c828)，再漸變到紅色(0xc82828)
-            r = notes.current_resin
-            color = 0x28c828 + 0x010000 * int(0xa0 * r / 80) if r < 80 else 0xc8c828 - 0x000100 * int(0xa0 * (r - 80) / 80)
-            embed = discord.Embed(description=msg, color=color)
-            return embed
+        return await client.get_genshin_notes(int(uid))
 
     @generalErrorHandler
     async def redeemCode(self, user_id: str, code: str) -> str:
@@ -469,30 +456,40 @@ class GenshinApp:
 
         return embed
 
-    def __parseNotes(self, notes: genshin.models.Notes, shortForm: bool = False) -> str:
-        result = ''
+    def parseNotes(self, notes: genshin.models.Notes, *, user: Optional[discord.User] = None, shortForm: bool = False) -> discord.Embed:
+        """解析即時便箋的資料，將內容排版成discord嵌入格式回傳
+        
+        ------
+        Parameters
+        notes `Notes`: 即時便箋的資料
+        user `discord.User`: Discord使用者
+        shortForm `bool`: 設為`False`，完整顯示樹脂、寶錢、參數質變儀、派遣、每日、週本；設為`True`，只顯示樹脂、寶錢、參數質變儀
+        ------
+        Returns
+        `discord.Embed`: discord嵌入格式
+        """
         # 原粹樹脂
-        result += f'{emoji.notes.resin}當前原粹樹脂：{notes.current_resin}/{notes.max_resin}\n'
+        msg = f'{emoji.notes.resin}當前原粹樹脂：{notes.current_resin}/{notes.max_resin}\n'
         if notes.current_resin >= notes.max_resin:
             recover_time = '已額滿！'
         else:
             day_msg = getDayOfWeek(notes.resin_recovery_time)
             recover_time = f'{day_msg} {notes.resin_recovery_time.strftime("%H:%M")}'
-        result += f'{emoji.notes.resin}全部恢復時間：{recover_time}\n'
+        msg += f'{emoji.notes.resin}全部恢復時間：{recover_time}\n'
         # 每日、週本
         if not shortForm:
-            result += f'{emoji.notes.commission}每日委託任務：剩餘 {notes.max_commissions - notes.completed_commissions} 個\n'
-            result += f'{emoji.notes.enemies_of_note}週本樹脂減半：剩餘 {notes.remaining_resin_discounts} 次\n'
-        result += f'--------------------\n'
+            msg += f'{emoji.notes.commission}每日委託任務：剩餘 {notes.max_commissions - notes.completed_commissions} 個\n'
+            msg += f'{emoji.notes.enemies_of_note}週本樹脂減半：剩餘 {notes.remaining_resin_discounts} 次\n'
+        msg += f'--------------------\n'
         # 洞天寶錢恢復時間
-        result += f'{emoji.notes.realm_currency}當前洞天寶錢：{notes.current_realm_currency}/{notes.max_realm_currency}\n'
+        msg += f'{emoji.notes.realm_currency}當前洞天寶錢：{notes.current_realm_currency}/{notes.max_realm_currency}\n'
         if notes.max_realm_currency > 0:
             if notes.current_realm_currency >= notes.max_realm_currency:
                 recover_time = '已額滿！'
             else:
                 day_msg = getDayOfWeek(notes.realm_currency_recovery_time)
                 recover_time = f'{day_msg} {notes.realm_currency_recovery_time.strftime("%H:%M")}'
-            result += f'{emoji.notes.realm_currency}全部恢復時間：{recover_time}\n'
+            msg += f'{emoji.notes.realm_currency}全部恢復時間：{recover_time}\n'
         # 參數質變儀剩餘時間
         if notes.transformer_recovery_time != None:
             t = notes.remaining_transformer_recovery_time
@@ -506,24 +503,34 @@ class GenshinApp:
                 recover_time = f'剩餘 {t.seconds} 秒'
             else:
                 recover_time = '可使用'
-            result += f'{emoji.notes.transformer}參數質變儀　：{recover_time}\n'
+            msg += f'{emoji.notes.transformer}參數質變儀　：{recover_time}\n'
         # 探索派遣剩餘時間
+        exped_finished = 0
+        exped_msg = ''
+        for expedition in notes.expeditions:
+            exped_msg += f'· {getCharacterName(expedition.character)}：'
+            if expedition.finished:
+                exped_finished += 1
+                exped_msg += '已完成\n'
+            else:
+                day_msg = getDayOfWeek(expedition.completion_time)
+                exped_msg += f'{day_msg} {expedition.completion_time.strftime("%H:%M")}\n'
         if not shortForm:
-            result += f'--------------------\n'
-            exped_finished = 0
-            exped_msg = ''
-            for expedition in notes.expeditions:
-                exped_msg += f'· {getCharacterName(expedition.character)}'
-                if expedition.finished:
-                    exped_finished += 1
-                    exped_msg += '：已完成\n'
-                else:
-                    day_msg = getDayOfWeek(expedition.completion_time)
-                    exped_msg += f' 完成時間：{day_msg} {expedition.completion_time.strftime("%H:%M")}\n'
-            result += f'探索派遣已完成/總數量：{exped_finished}/{len(notes.expeditions)}\n'
-            result += exped_msg
+            msg += '--------------------\n'
+            msg += f'{emoji.notes.expedition}探索派遣結果：{exped_finished}/{len(notes.expeditions)}\n'
+            msg += exped_msg
+        else: # shortForm
+            msg += f'{emoji.notes.expedition}探索派遣結果：{exped_finished}/{len(notes.expeditions)}\n'
+
+        # 根據樹脂數量，以80作分界，embed顏色從綠色(0x28c828)漸變到黃色(0xc8c828)，再漸變到紅色(0xc82828)
+        r = notes.current_resin
+        color = 0x28c828 + 0x010000 * int(0xa0 * r / 80) if r < 80 else 0xc8c828 - 0x000100 * int(0xa0 * (r - 80) / 80)
         
-        return result
+        embed = discord.Embed(description=msg, color=color)
+        if user != None:
+            uid = str(self.getUID(str(user.id)))
+            embed.set_author(name=f'{getServerName(uid[0])} {uid}', icon_url=user.display_avatar.url)
+        return embed
 
     def __saveUserData(self) -> None:
         with open('data/user_data.json', 'w', encoding='utf-8') as f:

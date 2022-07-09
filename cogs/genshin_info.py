@@ -22,14 +22,21 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
     @app_commands.command(
         name='notes即時便箋',
         description='查詢即時便箋，包含樹脂、洞天寶錢、探索派遣...等')
-    async def slash_notes(self, interaction: discord.Interaction):
+    @app_commands.rename(shortForm='顯示格式')
+    @app_commands.describe(
+        shortForm='選擇顯示完整或簡約格式(省略每日、週本、探索派遣)')
+    @app_commands.choices(
+        shortForm=[Choice(name='完整', value=0),
+                   Choice(name='簡約', value=1)])
+    async def slash_notes(self, interaction: discord.Interaction, shortForm: int = 0):
         asyncio.create_task(interaction.response.defer())
         try:
-            result = await genshin_app.getRealtimeNote(str(interaction.user.id))
+            notes = await genshin_app.getRealtimeNote(str(interaction.user.id))
         except Exception as e:
             await interaction.edit_original_message(content=str(e))
         else:
-            await interaction.edit_original_message(embed=result)
+            embed = genshin_app.parseNotes(notes, user=interaction.user, shortForm=bool(shortForm))
+            await interaction.edit_original_message(embed=embed)
     
     # 取得深境螺旋資訊
     @app_commands.command(
