@@ -29,9 +29,11 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
         shortForm=[Choice(name='完整', value=0),
                    Choice(name='簡約', value=1)])
     async def slash_notes(self, interaction: discord.Interaction, shortForm: int = 0):
-        asyncio.create_task(interaction.response.defer())
         try:
-            notes = await genshin_app.getRealtimeNote(str(interaction.user.id))
+            defer, notes = await asyncio.gather(
+                interaction.response.defer(),
+                genshin_app.getRealtimeNote(str(interaction.user.id))
+            )
         except Exception as e:
             await interaction.edit_original_message(embed=EmbedTemplate.error(str(e)))
         else:
@@ -54,10 +56,12 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
                Choice(name='[文字] 只顯示最後一層', value=1),
                Choice(name='[圖片] 只顯示最後一層', value=2)])
     async def slash_abyss(self, interaction: discord.Interaction, season: int = 1, floor: int = 2):
-        asyncio.create_task(interaction.response.defer())
         previous = True if season == 0 else False
         try:
-            result = await genshin_app.getSpiralAbyss(str(interaction.user.id), previous)
+            defer, result = await asyncio.gather(
+                interaction.response.defer(),
+                genshin_app.getSpiralAbyss(str(interaction.user.id), previous)
+            )
         except Exception as e:
             await interaction.edit_original_message(embed=EmbedTemplate.error(str(e)))
             return
@@ -103,19 +107,24 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
         month = datetime.datetime.now().month + month
         month = month + 12 if month < 1 else month
         try:
-            embed = await genshin_app.getTravelerDiary(str(interaction.user.id), month)
+            defer, embed = await asyncio.gather(
+                interaction.response.defer(),
+                genshin_app.getTravelerDiary(str(interaction.user.id), month)
+            )
         except Exception as e:
-            await interaction.response.send_message(embed=EmbedTemplate.error(str(e)))
+            await interaction.edit_original_message(embed=EmbedTemplate.error(str(e)))
         else:
-            await interaction.response.send_message(embed=embed)
+            await interaction.edit_original_message(embed=embed)
 
     # 產生個人紀錄卡片
     @app_commands.command(name='card紀錄卡片', description='產生原神個人遊戲紀錄卡片')
     @app_commands.checks.cooldown(1, config.slash_cmd_cooldown)
     async def slash_card(self, interaction: discord.Interaction):
-        asyncio.create_task(interaction.response.defer())
         try:
-            card, userstats = await genshin_app.getRecordCard(str(interaction.user.id))
+            defer, (card, userstats) = await asyncio.gather(
+                interaction.response.defer(),
+                genshin_app.getRecordCard(str(interaction.user.id))
+            )
         except Exception as e:
             await interaction.edit_original_message(embed=EmbedTemplate.error(str(e)))
             return
@@ -166,9 +175,11 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
     # 個人所有角色一覽
     @app_commands.command(name='character角色一覽', description='公開展示我的所有角色')
     async def slash_character(self, interaction: discord.Interaction):
-        asyncio.create_task(interaction.response.defer())
         try:
-            characters = await genshin_app.getCharacters(str(interaction.user.id))
+            defer, characters = await asyncio.gather(
+                interaction.response.defer(),
+                genshin_app.getCharacters(str(interaction.user.id))
+            )
         except Exception as e:
             await interaction.edit_original_message(embed=EmbedTemplate.error(str(e)))
         else:
@@ -179,7 +190,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
     @app_commands.command(name='showcase角色展示櫃', description='查詢指定UID玩家的公開角色展示櫃')
     @app_commands.describe(uid='欲查詢的玩家UID，若小幫手已保存資料的話查自己不需要填本欄位')
     async def slash_showcase(self, interaction: discord.Interaction, uid: Optional[int] = None):
-        asyncio.create_task(interaction.response.defer())
+        await interaction.response.defer()
         uid = uid or genshin_app.getUID(str(interaction.user.id))
         log.info(f'[指令][{interaction.user.id}]showcase角色展示櫃: uid={uid}')
         if uid == None:

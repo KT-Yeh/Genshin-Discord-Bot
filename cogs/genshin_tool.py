@@ -23,7 +23,7 @@ class GenshinTool(commands.Cog, name='原神工具'):
         if len(codes) == 0:
             await interaction.response.send_message(embed=EmbedTemplate.error('沒有偵測到兌換碼，請重新輸入'))
             return
-        asyncio.create_task(interaction.response.defer())
+        await interaction.response.defer()
         codes = codes[:5] if len(codes) > 5 else codes  # 避免使用者輸入過多內容
         msg = ''
         for i, code in enumerate(codes):
@@ -55,8 +55,10 @@ class GenshinTool(commands.Cog, name='原神工具'):
         Choice(name='原神', value=0), 
         Choice(name='原神 + 崩壞3', value=1)])
     async def slash_daily(self, interaction: discord.Interaction, game: int = 0):
-        asyncio.create_task(interaction.response.defer())
-        result = await genshin_app.claimDailyReward(str(interaction.user.id), honkai=bool(game))
+        defer, result = await asyncio.gather(
+            interaction.response.defer(),
+            genshin_app.claimDailyReward(str(interaction.user.id), honkai=bool(game))
+        )
         await interaction.edit_original_message(content=result)
 
 async def setup(client: commands.Bot):

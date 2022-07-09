@@ -94,9 +94,11 @@ class Setting(commands.Cog, name='設定'):
         name='uid設定',
         description='帳號內多角色時需保存指定的UID，只有單一角色不需要使用本指令')
     async def slash_uid(self, interaction: discord.Interaction):
-        asyncio.create_task(interaction.response.defer(ephemeral=True))
         try:
-            accounts = await genshin_app.getGameAccounts(str(interaction.user.id))
+            defer, accounts = await asyncio.gather(
+                interaction.response.defer(ephemeral=True),
+                genshin_app.getGameAccounts(str(interaction.user.id))
+            )
         except Exception as e:
             await interaction.edit_original_message(embed=EmbedTemplate.error(str(e)))
         else:
