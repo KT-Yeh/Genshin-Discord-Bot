@@ -14,17 +14,18 @@ class Schedule(commands.Cog, name='自動化'):
         self.bot = bot
         self.__daily_reward_filename = 'data/schedule_daily_reward.json'
         self.__resin_notifi_filename = 'data/schedule_resin_notification.json'
-        try:
+        try: # 開啟每日簽到使用者資料
             with open(self.__daily_reward_filename, 'r', encoding='utf-8') as f:
                 self.__daily_dict: dict[str, dict[str, str]] = json.load(f)
         except:
             self.__daily_dict: dict[str, dict[str, str]] = { }
-        try:
+        try: # 開啟樹脂提醒使用者資料
             with open(self.__resin_notifi_filename, 'r', encoding='utf-8') as f:
                 self.__resin_dict: dict[str, dict[str, str]] = json.load(f)
         except:
             self.__resin_dict: dict[str, dict[str, str]] = { }
         
+        self.__resin_check_cooldown: dict[str, int] = { } # {使用者ID:冷卻次數}，當冷卻次數大於0表示冷卻中，跳過檢查
         self.schedule.start()
     
     class ChooseGameButton(discord.ui.View):
@@ -196,6 +197,10 @@ class Schedule(commands.Cog, name='自動化'):
         resin_dict = dict(self.__resin_dict)
         count = 0 # 統計人數
         for user_id, value in resin_dict.items():
+            # 當冷卻次數大於0，則減1並跳過
+            if self.__resin_check_cooldown.get(user_id, 0) > 0:
+                self.__resin_check_cooldown[user_id] -= 1
+                continue
             # 取得要發送訊息的頻道與確認使用者資料，若頻道或使用者資料不存在，則移除此使用者
             channel = self.bot.get_channel(int(value['channel']))
             check, msg = genshin_app.checkUserData(user_id, update_use_time=False)
@@ -213,6 +218,9 @@ class Schedule(commands.Cog, name='自動化'):
                     embed = genshin_app.parseNotes(notes, shortForm=True)
                 else:
                     msg = None
+                # 當樹脂完全額滿時，冷卻次數設為2，否則依照(樹脂差額 * 8分鐘恢復1點樹脂 // 120分鐘檢查一次 - 1)設定冷卻次數
+                cooldown = 2 if notes.current_resin >= notes.max_resin else (notes.max_resin - 1 - notes.current_resin) * 8 // 120 - 1
+                self.__resin_check_cooldown[user_id] = max(cooldown, 0)
             count += 1
             # 當有錯誤訊息或是樹脂快要溢出時，向使用者發送訊息
             if msg != None:
