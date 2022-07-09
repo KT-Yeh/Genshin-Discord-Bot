@@ -1,4 +1,5 @@
 import logging
+import discord
 import genshin
 import re
 import json
@@ -49,6 +50,15 @@ def getDayOfWeek(time: datetime) -> str:
     elif delta.days == 1:
         return '明天'
     return __weekday_dict.get(time.weekday())
+
+class EmbedTemplate:
+    @staticmethod
+    def normal(message: str, **kwargs):
+        return discord.Embed(color=0x7289da, description=message, **kwargs)
+    
+    @staticmethod
+    def error(message: str, **kwargs):
+        return discord.Embed(color=0xb54031, description=message, **kwargs)
 
 class UserLastUseTime:
     def __init__(self) -> None:

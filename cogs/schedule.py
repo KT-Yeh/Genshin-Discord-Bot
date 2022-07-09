@@ -6,7 +6,7 @@ from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands, tasks
 from utility.config import config
-from utility.utils import log, user_last_use_time
+from utility.utils import log, user_last_use_time, EmbedTemplate
 from utility.GenshinApp import genshin_app
 
 class Schedule(commands.Cog, name='自動化'):
@@ -95,23 +95,23 @@ class Schedule(commands.Cog, name='自動化'):
             '· 若要更改推送頻道，請在新的頻道重新設定指令一次\n\n'
             f'· 每日簽到：每日 {config.auto_daily_reward_time}~{config.auto_daily_reward_time+1} 點之間自動論壇簽到，設定前請先使用 `/daily每日簽到` 指令確認小幫手能正確幫你簽到\n'
             f'· 樹脂提醒：每二小時檢查一次，當樹脂超過 {config.auto_check_resin_threshold} 會發送提醒，設定前請先用 `/notes即時便箋` 指令確認小幫手能讀到你的樹脂資訊\n')
-            await interaction.response.send_message(embed=discord.Embed(title='排程功能使用說明', description=msg), ephemeral=True)
+            await interaction.response.send_message(embed=EmbedTemplate.normal(msg, title='排程功能使用說明'), ephemeral=True)
             return
         
         if function == 'test': # 測試機器人是否能在該頻道推送訊息
             try:
                 msg_sent = await interaction.channel.send('測試推送訊息...')
             except:
-                await interaction.response.send_message('小幫手無法在本頻道推送訊息，請管理員檢查身分組的權限設定')
+                await interaction.response.send_message(embed=EmbedTemplate.error('小幫手無法在本頻道推送訊息，請管理員檢查身分組的權限設定'))
             else:
-                await interaction.response.send_message('測試完成，小幫手可以在本頻道推送訊息')
+                await interaction.response.send_message(embed=EmbedTemplate.normal('測試完成，小幫手可以在本頻道推送訊息'))
                 await msg_sent.delete()
             return
         
         # 設定前先確認使用者是否有Cookie資料
         check, msg = genshin_app.checkUserData(str(interaction.user.id))
         if check == False:
-            await interaction.response.send_message(msg)
+            await interaction.response.send_message(embed=EmbedTemplate.error(msg))
             return
         if function == 'daily': # 每日自動簽到
             if switch == 1: # 開啟簽到功能
@@ -119,7 +119,7 @@ class Schedule(commands.Cog, name='自動化'):
                 await interaction.response.send_message('請選擇要自動簽到的遊戲：', view=choose_game_btn)
                 await choose_game_btn.wait()
                 if choose_game_btn.value == None: 
-                    await interaction.edit_original_message(content='已取消', view=None)
+                    await interaction.edit_original_message(embed=EmbedTemplate.normal('已取消') ,content=None, view=None)
                     return
                 
                 daily_mention_btn = self.DailyMentionButton(interaction.user)
@@ -130,17 +130,18 @@ class Schedule(commands.Cog, name='自動化'):
                 self.__add_user(str(interaction.user.id), str(interaction.channel_id), self.__daily_dict, self.__daily_reward_filename, mention=daily_mention_btn.value)
                 if choose_game_btn.value == '原神+崩3': # 新增崩壞3使用者
                     self.__add_honkai_user(str(interaction.user.id), self.__daily_dict, self.__daily_reward_filename)
-                await interaction.edit_original_message(content=f'{choose_game_btn.value}每日自動簽到已開啟，簽到時小幫手{"會" if daily_mention_btn.value else "不會"}tag你', view=None)
+                await interaction.edit_original_message(embed=EmbedTemplate.normal(
+                    f'{choose_game_btn.value}每日自動簽到已開啟，簽到時小幫手{"會" if daily_mention_btn.value else "不會"}tag你'), content=None, view=None)
             elif switch == 0: # 關閉簽到功能
                 self.__remove_user(str(interaction.user.id), self.__daily_dict, self.__daily_reward_filename)
-                await interaction.response.send_message('每日自動簽到已關閉')
+                await interaction.response.send_message(embed=EmbedTemplate.normal('每日自動簽到已關閉'))
         elif function == 'resin': # 樹脂額滿提醒
             if switch == 1: # 開啟檢查樹脂功能
                 self.__add_user(str(interaction.user.id), str(interaction.channel_id), self.__resin_dict, self.__resin_notifi_filename)
-                await interaction.response.send_message('樹脂額滿提醒已開啟')
+                await interaction.response.send_message(embed=EmbedTemplate.normal('樹脂額滿提醒已開啟'))
             elif switch == 0: # 關閉檢查樹脂功能
                 self.__remove_user(str(interaction.user.id), self.__resin_dict, self.__resin_notifi_filename)
-                await interaction.response.send_message('樹脂額滿提醒已關閉')
+                await interaction.response.send_message(embed=EmbedTemplate.normal('樹脂額滿提醒已關閉'))
 
     loop_interval = 10 # 循環間隔10分鐘
     @tasks.loop(minutes=loop_interval)

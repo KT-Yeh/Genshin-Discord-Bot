@@ -9,7 +9,7 @@ from discord.ext import commands
 from discord.app_commands import Choice
 from utility.GenshinApp import genshin_app
 from utility.draw import drawRecordCard, drawAbyssCard
-from utility.utils import log
+from utility.utils import log, EmbedTemplate
 from utility.config import config
 from utility.emoji import emoji
 from utility import Enka
@@ -33,7 +33,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
         try:
             notes = await genshin_app.getRealtimeNote(str(interaction.user.id))
         except Exception as e:
-            await interaction.edit_original_message(content=str(e))
+            await interaction.edit_original_message(embed=EmbedTemplate.error(str(e)))
         else:
             embed = genshin_app.parseNotes(notes, user=interaction.user, shortForm=bool(shortForm))
             await interaction.edit_original_message(embed=embed)
@@ -59,7 +59,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
         try:
             result = await genshin_app.getSpiralAbyss(str(interaction.user.id), previous)
         except Exception as e:
-            await interaction.edit_original_message(content=str(e))
+            await interaction.edit_original_message(embed=EmbedTemplate.error(str(e)))
             return
 
         embed = genshin_app.parseAbyssOverview(result)
@@ -76,7 +76,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
             except Exception as e:
                 log.warning(f'[例外][{interaction.user.id}][slash_abyss]: {e}')
                 sentry_sdk.capture_exception(e)
-                await interaction.edit_original_message(content='發生錯誤，圖片製作失敗')
+                await interaction.edit_original_message(embed=EmbedTemplate.error('發生錯誤，圖片製作失敗'))
             else:
                 embed.set_thumbnail(url=interaction.user.display_avatar.url)
                 fp.seek(0)
@@ -87,7 +87,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
     @slash_abyss.error
     async def on_slash_abyss_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
         if isinstance(error, app_commands.CommandOnCooldown):
-            await interaction.response.send_message(f'使用指令的間隔為{config.slash_cmd_cooldown}秒，請稍後再使用~', ephemeral=True)
+            await interaction.response.send_message(embed=EmbedTemplate.error(f'使用指令的間隔為{config.slash_cmd_cooldown}秒，請稍後再使用~'), ephemeral=True)
 
     # 取得使用者旅行者札記
     @app_commands.command(
@@ -105,7 +105,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
         try:
             embed = await genshin_app.getTravelerDiary(str(interaction.user.id), month)
         except Exception as e:
-            await interaction.response.send_message(str(e))
+            await interaction.response.send_message(embed=EmbedTemplate.error(str(e)))
         else:
             await interaction.response.send_message(embed=embed)
 
@@ -117,7 +117,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
         try:
             card, userstats = await genshin_app.getRecordCard(str(interaction.user.id))
         except Exception as e:
-            await interaction.edit_original_message(content=str(e))
+            await interaction.edit_original_message(embed=EmbedTemplate.error(str(e)))
             return
         
         try:
@@ -126,7 +126,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
         except Exception as e:
             log.warning(f'[例外][{interaction.user.id}][slash_card]: {e}')
             sentry_sdk.capture_exception(e)
-            await interaction.edit_original_message(content='發生錯誤，卡片製作失敗')
+            await interaction.edit_original_message(embed=EmbedTemplate.error('發生錯誤，卡片製作失敗'))
         else:
             fp.seek(0)
             await interaction.edit_original_message(attachments=[discord.File(fp=fp, filename='image.jpeg')])
@@ -135,7 +135,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
     @slash_card.error
     async def on_slash_card_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
         if isinstance(error, app_commands.CommandOnCooldown):
-            await interaction.response.send_message(f'產生卡片的間隔為{config.slash_cmd_cooldown}秒，請稍後再使用~', ephemeral=True)
+            await interaction.response.send_message(embed=EmbedTemplate.error(f'產生卡片的間隔為{config.slash_cmd_cooldown}秒，請稍後再使用~'), ephemeral=True)
 
     class CharactersDropdown(discord.ui.Select):
         """選擇角色的下拉選單"""
@@ -170,7 +170,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
         try:
             characters = await genshin_app.getCharacters(str(interaction.user.id))
         except Exception as e:
-            await interaction.edit_original_message(content=str(e))
+            await interaction.edit_original_message(embed=EmbedTemplate.error(str(e)))
         else:
             view = self.CharactersDropdownView(interaction, characters)
             await interaction.edit_original_message(content='請選擇角色：', view=view)
@@ -183,9 +183,9 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
         uid = uid or genshin_app.getUID(str(interaction.user.id))
         log.info(f'[指令][{interaction.user.id}]showcase角色展示櫃: uid={uid}')
         if uid == None:
-            await interaction.edit_original_message(content='小幫手內找不到使用者資料，請直接在指令uid參數中輸入欲查詢的UID')
+            await interaction.edit_original_message(embed=EmbedTemplate.error('小幫手內找不到使用者資料，請直接在指令uid參數中輸入欲查詢的UID'))
         elif len(str(uid)) != 9 or str(uid)[0] not in ['1', '2', '5', '6', '7', '8', '9']:
-            await interaction.edit_original_message(content='輸入的UID格式錯誤')
+            await interaction.edit_original_message(embed=EmbedTemplate.error('輸入的UID格式錯誤'))
         else:
             showcase = Enka.Showcase()
             try:
@@ -193,7 +193,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
             except Exception as e:
                 log.warning(f'[例外][{interaction.user.id}]showcase角色展示櫃: {e}')
                 sentry_sdk.capture_exception(e)
-                await interaction.edit_original_message(content=f"{e}")
+                await interaction.edit_original_message(embed=EmbedTemplate.error(str(e)))
             else:
                 view = Enka.ShowcaseView(showcase)
                 embed = showcase.getPlayerOverviewEmbed()

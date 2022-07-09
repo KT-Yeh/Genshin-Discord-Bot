@@ -5,6 +5,7 @@ from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands
 from utility.GenshinApp import genshin_app
+from utility.utils import EmbedTemplate
 
 class GenshinTool(commands.Cog, name='原神工具'):
     def __init__(self, bot):
@@ -20,7 +21,7 @@ class GenshinTool(commands.Cog, name='原神工具'):
         # 匹配多組兌換碼並存成list
         codes = re.findall(r"[A-Za-z0-9]{3,30}", code)
         if len(codes) == 0:
-            await interaction.response.send_message('沒有偵測到兌換碼，請重新輸入')
+            await interaction.response.send_message(embed=EmbedTemplate.error('沒有偵測到兌換碼，請重新輸入'))
             return
         asyncio.create_task(interaction.response.defer())
         codes = codes[:5] if len(codes) > 5 else codes  # 避免使用者輸入過多內容

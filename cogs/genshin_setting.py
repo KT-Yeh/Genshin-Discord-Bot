@@ -8,7 +8,7 @@ from discord.app_commands import Choice
 from discord.ext import commands
 from utility.GenshinApp import genshin_app
 from utility.config import config
-from utility.utils import getServerName
+from utility.utils import getServerName, EmbedTemplate
 
 class Setting(commands.Cog, name='設定'):
     def __init__(self, bot):
@@ -28,12 +28,13 @@ class Setting(commands.Cog, name='設定'):
             try:
                 msg = await genshin_app.setCookie(str(interaction.user.id), self.cookie.value)
             except Exception as e:
-                msg = str(e)
-            await interaction.response.send_message(msg, ephemeral=True)
+                await interaction.response.send_message(embed=EmbedTemplate.error(str(e)), ephemeral=True)
+            else:
+                await interaction.response.send_message(embed=EmbedTemplate.normal(msg), ephemeral=True)
         
         async def on_error(self, interaction: discord.Interaction, error: Exception):
             sentry_sdk.capture_exception(error)
-            await interaction.response.send_message('發生未知錯誤', ephemeral=True)
+            await interaction.response.send_message(embed=EmbedTemplate.error('發生未知錯誤'), ephemeral=True)
 
     # 設定使用者Cookie
     @app_commands.command(
@@ -46,7 +47,7 @@ class Setting(commands.Cog, name='設定'):
         Choice(name='③ 顯示小幫手Cookie使用與保存告知', value=2)])
     async def slash_cookie(self, interaction: discord.Interaction, option: int):
         if option == 0:
-            embed = discord.Embed(color=0x7289da, description=
+            embed = EmbedTemplate.normal(
                 "1.先複製本文最底下整段程式碼\n"
                 "2.PC或手機使用Chrome開啟 [Hoyolab網頁](https://www.hoyolab.com) 並登入帳號\n"
                 "3.在網址列先輸入 `java`，然後貼上程式碼，確保網址開頭變成 `javascript:`\n"
@@ -69,7 +70,7 @@ class Setting(commands.Cog, name='設定'):
                 '· 更詳細說明可以到 [巴哈說明文](https://forum.gamer.com.tw/Co.php?bsn=36730&sn=162433) 查看，若仍有疑慮請不要使用小幫手\n'
                 '· 當提交Cookie給小幫手時，表示你已同意小幫手保存並使用你的資料\n'
                 '· 你可以隨時刪除保存在小幫手的資料，請使用 `/清除資料` 指令\n')
-            embed = discord.Embed(title='小幫手Cookie使用與保存告知', color=0x7289da, description=msg)
+            embed = EmbedTemplate.normal(msg, title='小幫手Cookie使用與保存告知')
             await interaction.response.send_message(embed=embed, ephemeral=True)
     
     # 選擇欲保存UID的下拉選單
@@ -86,7 +87,7 @@ class Setting(commands.Cog, name='設定'):
         
         async def callback(self, interaction: discord.Interaction):
             msg = genshin_app.setUID(str(interaction.user.id), str(self.accounts[int(self.values[0])].uid))
-            await interaction.response.edit_message(content=msg, view=None)
+            await interaction.response.edit_message(embed=EmbedTemplate.normal(msg), view=None)
 
     # 設定原神UID，當帳號內有多名角色時，保存指定的UID
     @app_commands.command(
@@ -97,7 +98,7 @@ class Setting(commands.Cog, name='設定'):
         try:
             accounts = await genshin_app.getGameAccounts(str(interaction.user.id))
         except Exception as e:
-            await interaction.edit_original_message(content=str(e))
+            await interaction.edit_original_message(embed=EmbedTemplate.error(str(e)))
         else:
             view = discord.ui.View(timeout=config.discord_view_short_timeout)
             view.add_item(self.UidDropdown(accounts))
