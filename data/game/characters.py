@@ -265,6 +265,12 @@ characters_map = {
               'proudMap': {'10581': 5831, '10582': 5832, '10585': 5839},
               'rarity': 5,
               'skillOrder': [10581, 10582, 10585]},
+ '10000059': {'element': 'Anemo',
+              'icon': 'https://upload-os-bbs.mihoyo.com/game_record/genshin/character_icon/UI_AvatarIcon_Heizo.png',
+              'name': '鹿野院平藏',
+              'proudMap': {'10591': 5931, '10592': 5932, '10595': 5939},
+              'rarity': 4,
+              'skillOrder': [10591, 10592, 10595]},
  '10000060': {'element': 'Hydro',
               'icon': 'https://upload-os-bbs.mihoyo.com/game_record/genshin/character_icon/UI_AvatarIcon_Yelan.png',
               'name': '夜蘭',
@@ -300,4 +306,5 @@ characters_map = {
               'name': '神里綾人',
               'proudMap': {'10661': 6631, '10662': 6632, '10665': 6639},
               'rarity': 5,
-              'skillOrder': [10661, 10662, 10665]}}
+              'skillOrder': [10661, 10662, 10665]}
+}

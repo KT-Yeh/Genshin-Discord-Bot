@@ -21,6 +21,7 @@ weapons_map = {
  11413: {'name': '腐殖之劍', 'rarity': 4},
  11414: {'name': '天目影打刀', 'rarity': 4},
  11415: {'name': '辰砂之紡錘', 'rarity': 4},
+ 11416: {'name': '籠釣瓶一心', 'rarity': 4},
  11501: {'name': '風鷹劍', 'rarity': 5},
  11502: {'name': '天空之刃', 'rarity': 5},
  11503: {'name': '蒼古自由之誓', 'rarity': 5},
@@ -131,4 +132,5 @@ weapons_map = {
  15503: {'name': '終末嗟嘆之詩', 'rarity': 5},
  15507: {'name': '冬極白星', 'rarity': 5},
  15508: {'name': '若水', 'rarity': 5},
- 15509: {'name': '飛雷之弦振', 'rarity': 5}}
+ 15509: {'name': '飛雷之弦振', 'rarity': 5}
+}

@@ -115,4 +115,7 @@ namecards_map = {
     210118: {'Card': 'UI_NameCardPic_Bp14_P'},
     210119: {'Card': 'UI_NameCardPic_Yelan_P'},
     210120: {'Card': 'UI_NameCardPic_Shinobu_P'},
-    210121: {'Card': 'UI_NameCardPic_Bp15_P'}}
+    210121: {'Card': 'UI_NameCardPic_Bp15_P'},
+    210122: {'Card': 'UI_NameCardPic_Heizo_P'},
+    210123: {'Card': 'UI_NameCardPic_Bp16_P'}
+}
