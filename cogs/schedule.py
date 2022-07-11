@@ -237,7 +237,7 @@ class Schedule(commands.Cog, name='自動化'):
                         log.info(f'[排程][{user_id}]檢查樹脂：使用者不在頻道')
                         self.__remove_user(user_id, self.__resin_dict, self.__resin_notifi_filename)
             await asyncio.sleep(config.auto_loop_delay)
-        log.info(f'[排程][System]schedule: 自動檢查樹脂結束，{count} 人已檢查')
+        log.info(f'[排程][System]schedule: 自動檢查樹脂結束，{count}/{len(resin_dict)} 人已檢查')
 
     def __add_user(self, user_id: str, channel: str, data: dict, filename: str, *, mention: bool = True) -> None:
         data[user_id] = { }

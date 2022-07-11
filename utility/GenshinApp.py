@@ -258,7 +258,7 @@ class GenshinApp:
         
         d = diary.data
         result = discord.Embed(
-            title=f'{diary.nickname}的旅行者札記：{month}月',
+            title=f'{diary.nickname} 的旅行者札記：{month}月',
             description=f'原石收入比上個月{"增加" if d.primogems_rate > 0 else "減少"}了{abs(d.primogems_rate)}%，摩拉收入比上個月{"增加" if d.mora_rate > 0 else "減少"}了{abs(d.mora_rate)}%',
             color=0xfd96f4
         )
@@ -480,7 +480,7 @@ class GenshinApp:
         if not shortForm:
             msg += f'{emoji.notes.commission}每日委託任務：剩餘 {notes.max_commissions - notes.completed_commissions} 個\n'
             msg += f'{emoji.notes.enemies_of_note}週本樹脂減半：剩餘 {notes.remaining_resin_discounts} 次\n'
-        msg += f'--------------------\n'
+            msg += f'--------------------\n'
         # 洞天寶錢恢復時間
         msg += f'{emoji.notes.realm_currency}當前洞天寶錢：{notes.current_realm_currency}/{notes.max_realm_currency}\n'
         if notes.max_realm_currency > 0:

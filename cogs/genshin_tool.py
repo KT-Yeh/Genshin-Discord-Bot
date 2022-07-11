@@ -59,7 +59,7 @@ class GenshinTool(commands.Cog, name='原神工具'):
             interaction.response.defer(),
             genshin_app.claimDailyReward(str(interaction.user.id), honkai=bool(game))
         )
-        await interaction.edit_original_message(content=result)
+        await interaction.edit_original_message(embed=EmbedTemplate.normal(result))
 
 async def setup(client: commands.Bot):
     await client.add_cog(GenshinTool(client))
