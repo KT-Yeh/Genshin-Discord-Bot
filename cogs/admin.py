@@ -1,5 +1,6 @@
 import discord
 import random
+import typing
 from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands, tasks
@@ -17,7 +18,7 @@ class Admin(commands.Cog):
     @app_commands.command(name='sync', description='同步Slash commands到全域或是當前伺服器')
     @app_commands.rename(area='範圍')
     @app_commands.choices(area=[Choice(name='當前伺服器', value=0), Choice(name='全域伺服器', value=1)])
-    async def sync(self, interaction: discord.Interaction, area: int = 0):
+    async def slash_sync(self, interaction: discord.Interaction, area: int = 0):
         if area == 0: # 複製全域指令，同步到當前伺服器，不需等待
             self.bot.tree.copy_global_to(guild=interaction.guild)
             result = await self.bot.tree.sync(guild=interaction.guild)
@@ -31,7 +32,7 @@ class Admin(commands.Cog):
     # 廣播訊息到所有的伺服器
     @app_commands.command(name='broadcast', description='廣播訊息到所有的伺服器')
     @app_commands.rename(message='訊息')
-    async def broadcast(self, interaction: discord.Interaction, message: str):
+    async def slash_broadcast(self, interaction: discord.Interaction, message: str):
         await interaction.response.defer()
         count = 0
         for guild in self.bot.guilds:
@@ -54,7 +55,7 @@ class Admin(commands.Cog):
         Choice(name='延遲', value=0),
         Choice(name='已連接伺服器數量', value=1),
         Choice(name='已連接伺服器名稱', value=2)])
-    async def status(self, interaction: discord.Interaction, option: int):
+    async def slash_status(self, interaction: discord.Interaction, option: int):
         if option == 0:
             await interaction.response.send_message(f'延遲：{round(self.bot.latency*1000)} 毫秒')
         elif option == 1:
@@ -68,36 +69,57 @@ class Admin(commands.Cog):
                 await interaction.followup.send(embed=embed)
     
     # 使用系統命令
-    @app_commands.command(name='system', description='使用系統命令')
+    @app_commands.command(name='system', description='使用系統命令(操作cog、更改機器人狀態)')
     @app_commands.rename(option='選項', param='參數')
-    @app_commands.choices(option=[Choice(name='reload', value=0), Choice(name='presence', value=1)])
-    async def system(self, interaction: discord.Interaction, option: int, param: str = None):
-        # Reload cogs
-        if option == 0:
-            if param != None:
-                try:
-                    await self.bot.reload_extension(f'cogs.{param}')
-                except Exception as e:
-                    log.error(f'[例外][Admin]system reload {param}: {e}')
-                    await interaction.response.send_message(f'[例外][Admin]system reload {param}: {e}')
-                else:
-                    await interaction.response.send_message(f'指令集 {param} 重新載入完成')
-            else:
-                # 從cogs資料夾載入所有cog
-                try:
-                    for filepath in Path('./cogs').glob('**/*.py'):
-                        cog_name = Path(filepath).stem
-                        await self.bot.reload_extension(f'cogs.{cog_name}')
-                except Exception as e:
-                    log.error(f'[例外][Admin]system reload all: {e}')
-                    await interaction.response.send_message(f'[例外][Admin]system reload all: {e}')
-                else:
-                    await interaction.response.send_message('全部指令集重新載入完成')
-        # Change presence string
-        elif option == 1:
+    @app_commands.choices(option=[
+        Choice(name='load', value=0),
+        Choice(name='unload', value=1),
+        Choice(name='reload', value=2),
+        Choice(name='presence', value=3)
+    ])
+    async def slash_system(self, interaction: discord.Interaction, option: int, param: str = None):
+        async def operateCogs(func: typing.Callable[[str], typing.Awaitable[None]], param: typing.Optional[str] = None, *, pass_self: bool = False):
+            if param == None: # 操作全部cog
+                for filepath in Path('./cogs').glob('**/*.py'):
+                    cog_name = Path(filepath).stem
+                    if pass_self and cog_name == 'admin':
+                        continue
+                    await func(f"cogs.{cog_name}")
+            else: # 操作單一cog
+                await func(f"cogs.{param}")
+        
+        if option == 0: # Load cogs
+            await operateCogs(self.bot.load_extension, param, pass_self=True)
+            await interaction.response.send_message(f"{param or '全部'}指令集載入完成")
+        
+        elif option == 1: # Unload cogs
+            await operateCogs(self.bot.unload_extension, param, pass_self=True)
+            await interaction.response.send_message(f"{param or '全部'}指令集卸載完成")
+        
+        elif option == 2: # Reload cogs
+            await operateCogs(self.bot.reload_extension, param)
+            await interaction.response.send_message(f"{param or '全部'}指令集重新載入完成")
+        
+        elif option == 3: # Change presence string
             self.presence_string = param.split(',')
             await interaction.response.send_message(f'Presence list已變更為：{self.presence_string}')
+    
+    # 設定config配置檔案的參數值
+    @app_commands.command(name='config', description='更改config配置內容')
+    @app_commands.rename(option='選項', value='值')
+    @app_commands.choices(option=[
+        Choice(name='auto_daily_reward_time', value='auto_daily_reward_time'),
+        Choice(name='auto_check_resin_threshold', value='auto_check_resin_threshold'),
+        Choice(name='auto_loop_delay', value='auto_loop_delay')
+    ])
+    async def slash_config(self, interaction: discord.Interaction, option: str, value: str):
+        if option in ['auto_daily_reward_time', 'auto_check_resin_threshold']:
+            setattr(config, option, int(value))
+        elif option in ['auto_loop_delay']:
+            setattr(config, option, float(value))
+        await interaction.response.send_message(f"已將{option}的值設為: {value}")
 
+    # 每一定時間更改機器人狀態
     @tasks.loop(minutes=5)
     async def change_presence(self):
         l = len(self.presence_string)
@@ -110,18 +132,6 @@ class Admin(commands.Cog):
     @change_presence.before_loop
     async def before_change_presence(self):
         await self.bot.wait_until_ready()
-    
-    # 測試伺服器是否有 applications.commands 的 scope
-    async def __hasAppCmdScope(self, guild: discord.Guild) -> bool:
-        try:
-            await self.bot.tree.sync(guild=guild)
-        except discord.Forbidden:
-            return False
-        except Exception as e:
-            log.error(f'[例外][Admin]Admin > __hasAppCmdScope: [伺服器]{guild} [例外內容]{e}')
-            return False
-        else:
-            return True
 
 async def setup(client: commands.Bot):
     await client.add_cog(Admin(client), guild=discord.Object(id=config.test_server_id))
