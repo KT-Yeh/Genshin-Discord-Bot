@@ -28,6 +28,9 @@ class Schedule(commands.Cog, name='自動化'):
         self.__resin_check_cooldown: dict[str, int] = { } # {使用者ID:冷卻次數}，當冷卻次數大於0表示冷卻中，跳過檢查
         self.schedule.start()
     
+    async def cog_unload(self) -> None:
+        self.schedule.stop()
+
     class ChooseGameButton(discord.ui.View):
         """選擇自動簽到遊戲的按鈕"""
         def __init__(self, author: discord.Member):
@@ -138,6 +141,7 @@ class Schedule(commands.Cog, name='自動化'):
         elif function == 'resin': # 樹脂額滿提醒
             if switch == 1: # 開啟檢查樹脂功能
                 self.__add_user(str(interaction.user.id), str(interaction.channel_id), self.__resin_dict, self.__resin_notifi_filename)
+                self.__resin_check_cooldown[str(interaction.user.id)] = 0
                 await interaction.response.send_message(embed=EmbedTemplate.normal('樹脂額滿提醒已開啟'))
             elif switch == 0: # 關閉檢查樹脂功能
                 self.__remove_user(str(interaction.user.id), self.__resin_dict, self.__resin_notifi_filename)
@@ -212,6 +216,7 @@ class Schedule(commands.Cog, name='自動化'):
                 notes = await genshin_app.getRealtimeNote(user_id, schedule=True)
             except Exception as e:
                 msg = f"自動檢查樹脂時發生錯誤：{str(e)}"
+                self.__resin_check_cooldown[user_id] = 1 # 當發生錯誤時，冷卻次數設為1
                 embed = None
             else:
                 if notes.current_resin >= config.auto_check_resin_threshold:
