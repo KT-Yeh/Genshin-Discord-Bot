@@ -1,5 +1,6 @@
 import aiohttp
 import discord
+import sentry_sdk
 from typing import Any, Dict, List, Union, Optional
 from utility.emoji import emoji
 from utility.config import config
@@ -203,9 +204,13 @@ class ShowcaseCharactersDropdown(discord.ui.Select):
     
     async def callback(self, interaction: discord.Interaction) -> None:
         character_index = int(self.values[0])
-        embed = self.showcase.getCharacterStatEmbed(character_index)
-        view = ShowcaseView(self.showcase, character_index)
-        await interaction.response.edit_message(embed=embed, view=view)
+        try:
+            embed = self.showcase.getCharacterStatEmbed(character_index)
+        except Exception as e:
+            sentry_sdk.capture_exception(e)
+        else:
+            view = ShowcaseView(self.showcase, character_index)
+            await interaction.response.edit_message(embed=embed, view=view)
 
 class CharacterStatButton(discord.ui.Button):
     """角色面板按鈕"""
