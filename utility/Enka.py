@@ -21,7 +21,7 @@ class Showcase:
     async def getEnkaData(self, uid: int) -> None:
         """從API取得指定UID玩家的角色展示櫃資料"""
         self.uid = uid
-        self.url = f'https://enka.shinshin.moe/u/{uid}'
+        self.url = f'https://enka.network/u/{uid}'
         api_url = self.url + '/__data.json' + (f"?key={config.enka_api_key}" if config.enka_api_key else '')
         async with aiohttp.request('GET', api_url) as resp:
             if resp.status == 200:
