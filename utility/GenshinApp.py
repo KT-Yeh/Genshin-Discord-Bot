@@ -401,31 +401,21 @@ class GenshinApp:
         )
         return result
     
-    def parseAbyssFloor(self, embed: discord.Embed, abyss: genshin.models.SpiralAbyss, full_data: bool = False) -> discord.Embed:
-        """解析深淵每一樓層，將每層的星數、所使用的人物資料加到embed中
+    def parseAbyssChamber(self, chamber: genshin.models.Chamber) -> str:
+        """取得深淵某一間的角色名字
         
         ------
         Parameters
-        embed `discord.Embed`: 從`parseAbyssOverview`函式取得的嵌入資料
-        abyss `SpiralAbyss`: 深境螺旋資料
-        full_data `bool`: `True`表示解析所有樓層；`False`表示只解析最後一層
+        chamber `Chamber`: 深淵某一間的資料
         ------
         Returns
-        `discord.Embed`: discord嵌入格式
+        `str`: 角色名字組成的字串
         """
-        for floor in abyss.floors:
-            if full_data == False and floor is not abyss.floors[-1]:
-                continue
-            for chamber in floor.chambers:
-                name = f'{floor.floor}-{chamber.chamber}　★{chamber.stars}'
-                # 取得深淵上下半層角色名字
-                chara_list = [[], []]
-                for i, battle in enumerate(chamber.battles):
-                    for chara in battle.characters:
-                        chara_list[i].append(getCharacterName(chara))
-                value = f'[{".".join(chara_list[0])}]／\n[{".".join(chara_list[1])}]'
-                embed.add_field(name=name, value=value)
-        return embed
+        chara_list = [[], []] # 分成上下半間
+        for i, battle in enumerate(chamber.battles):
+            for chara in battle.characters:
+                chara_list[i].append(getCharacterName(chara))
+        return f'{".".join(chara_list[0])} ／\n{".".join(chara_list[1])}'
     
     def parseCharacter(self, character: genshin.models.Character) -> discord.Embed:
         """解析角色，包含命座、等級、好感、武器、聖遺物

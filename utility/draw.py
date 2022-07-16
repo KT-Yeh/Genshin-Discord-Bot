@@ -73,7 +73,7 @@ def drawRecordCard(avatar_bytes: bytes, record_card: genshin.models.RecordCard, 
     return fp
 
 def drawCharacter(img: Image.Image, character: genshin.models.AbyssCharacter, size: Tuple[int, int], pos: Tuple[float, float]):
-    """畫角色頭像，包含背景框、角色等級
+    """畫角色頭像，包含背景框
     
     ------
     Parameters
@@ -105,12 +105,12 @@ def drawAbyssStar(img: Image.Image, number: int, size: Tuple[int, int], pos: Tup
     for i in range(0, number):
         img.paste(star, (int(upper_left[0] + i * (size[0] + 2 * pad)), int(upper_left[1])), star)
 
-def drawAbyssCard(abyss: genshin.models.SpiralAbyss) -> BytesIO:
+def drawAbyssCard(abyss_floor: genshin.models.Floor) -> BytesIO:
     """繪製深淵樓層紀錄圖，包含每一間星數以及上下半所使用的角色和等級
 
     ------
     Parameters
-    abyss `SpiralAbyss`: 從Hoyolab取得的深境螺旋資料
+    abyss_floor `Floor`: 深境螺旋某一樓層的資料
     ------
     Returns
     `BytesIO`: 製作完成的圖片存在記憶體，回傳file pointer，存取前需要先`seek(0)`
@@ -120,24 +120,21 @@ def drawAbyssCard(abyss: genshin.models.SpiralAbyss) -> BytesIO:
     
     character_size = (172, 210)
     character_pad = 8
-    for floor in abyss.floors:
-        if floor is not abyss.floors[-1]:
-            continue
-        # 顯示第幾層深淵
-        drawText(img, (1050, 145), f'{floor.floor}', 'SourceHanSansTC-Bold.otf', 85, (50, 50, 50), 'mm')
-        # 第幾間
-        for i, chamber in enumerate(floor.chambers):
-            # 顯示此層星星數
-            drawAbyssStar(img, chamber.stars, (70, 70), (1050, 500 + i * 400))
-            # 上下半層
-            for j, battle in enumerate(chamber.battles):
-                middle = 453 + j * 1196
-                left_upper = (int(middle - len(battle.characters) / 2 * character_size[0] - (len(battle.characters) - 1) * character_pad), 395 + i * 400)
-                for k, character in enumerate(battle.characters):
-                    x = left_upper[0] + k * (character_size[0] + 2 * character_pad)
-                    y = left_upper[1]
-                    drawCharacter(img, character, (172, 210), (x, y))
-                    drawText(img, (x + character_size[0] / 2, y + character_size[1] * 0.90), f'{character.level}級', 'SourceHanSansTC-Regular.otf', 30, (50, 50, 50), 'mm')
+    # 顯示第幾層深淵
+    drawText(img, (1050, 145), f'{abyss_floor.floor}', 'SourceHanSansTC-Bold.otf', 85, (50, 50, 50), 'mm')
+    # 繪製每一間
+    for i, chamber in enumerate(abyss_floor.chambers):
+        # 顯示此間星星數
+        drawAbyssStar(img, chamber.stars, (70, 70), (1050, 500 + i * 400))
+        # 上下半間
+        for j, battle in enumerate(chamber.battles):
+            middle = 453 + j * 1196
+            left_upper = (int(middle - len(battle.characters) / 2 * character_size[0] - (len(battle.characters) - 1) * character_pad), 395 + i * 400)
+            for k, character in enumerate(battle.characters):
+                x = left_upper[0] + k * (character_size[0] + 2 * character_pad)
+                y = left_upper[1]
+                drawCharacter(img, character, (172, 210), (x, y))
+                drawText(img, (x + character_size[0] / 2, y + character_size[1] * 0.90), f'{character.level}級', 'SourceHanSansTC-Regular.otf', 30, (50, 50, 50), 'mm')
     img = img.convert('RGB')
     fp = BytesIO()
     img.save(fp, 'jpeg', optimize=True, quality=40)

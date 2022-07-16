@@ -40,53 +40,61 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
             embed = genshin_app.parseNotes(notes, user=interaction.user, shortForm=bool(shortForm))
             await interaction.edit_original_message(embed=embed)
     
+    class AuthorOnlyView(discord.ui.View):
+        """只有原本Interaction使用者才能使用的View"""
+        def __init__(self, author: discord.Member, timeout: float):
+            self.author = author
+            super().__init__(timeout=timeout)
+        
+        async def interaction_check(self, interaction: discord.Interaction) -> bool:
+            return interaction.user.id == self.author.id
+    
+    class AbyssFloorDropdown(discord.ui.Select):
+        """選擇深淵樓層的下拉選單"""
+        def __init__(self, overview: discord.Embed, floors: Sequence[genshin.models.Floor]):
+            options = [discord.SelectOption(
+                    label=f"[★{floor.stars}] 第 {floor.floor} 層",
+                    description=genshin_app.parseAbyssChamber(floor.chambers[-1]),
+                    value=str(i)
+                ) for i, floor in enumerate(floors)
+            ]
+            super().__init__(placeholder='選擇樓層：', options=options)
+            self.embed = overview
+            self.floors = floors
+        
+        async def callback(self, interaction: discord.Interaction):
+            fp = drawAbyssCard(self.floors[int(self.values[0])])
+            fp.seek(0)
+            self.embed.set_image(url="attachment://image.jpeg")
+            await interaction.response.edit_message(embed=self.embed, attachments=[discord.File(fp, "image.jpeg")])
+    
     # 取得深境螺旋資訊
     @app_commands.command(
         name='abyss深淵紀錄',
         description='查詢深境螺旋紀錄')
     @app_commands.checks.cooldown(1, config.slash_cmd_cooldown)
-    @app_commands.rename(season='時間', floor='樓層')
-    @app_commands.describe(
-        season='選擇本期或是上期紀錄',
-        floor='選擇樓層人物紀錄顯示方式')
+    @app_commands.rename(season='時間')
+    @app_commands.describe(season='選擇本期或是上期紀錄')
     @app_commands.choices(
-        season=[Choice(name='上期紀錄', value=0),
-                Choice(name='本期紀錄', value=1)],
-        floor=[Choice(name='[文字] 顯示全部樓層', value=0),
-               Choice(name='[文字] 只顯示最後一層', value=1),
-               Choice(name='[圖片] 只顯示最後一層', value=2)])
-    async def slash_abyss(self, interaction: discord.Interaction, season: int = 1, floor: int = 2):
-        previous = True if season == 0 else False
+        season=[Choice(name='本期紀錄', value=0),
+                Choice(name='上期紀錄', value=1)])
+    async def slash_abyss(self, interaction: discord.Interaction, season: int):
         try:
-            defer, result = await asyncio.gather(
+            defer, abyss = await asyncio.gather(
                 interaction.response.defer(),
-                genshin_app.getSpiralAbyss(str(interaction.user.id), previous)
+                genshin_app.getSpiralAbyss(str(interaction.user.id), bool(season))
             )
         except Exception as e:
             await interaction.edit_original_message(embed=EmbedTemplate.error(str(e)))
-            return
-
-        embed = genshin_app.parseAbyssOverview(result)
-        embed.title = f'{interaction.user.display_name} 的深境螺旋戰績'
-        if floor == 0: # [文字] 顯示全部樓層
-            embed = genshin_app.parseAbyssFloor(embed, result, True)
-            await interaction.edit_original_message(embed=embed)
-        elif floor == 1: # [文字] 只顯示最後一層
-            embed = genshin_app.parseAbyssFloor(embed, result, False)
-            await interaction.edit_original_message(embed=embed)
-        elif floor == 2: # [圖片] 只顯示最後一層
-            try:
-                fp = drawAbyssCard(result)
-            except Exception as e:
-                log.warning(f'[例外][{interaction.user.id}][slash_abyss]: {e}')
-                sentry_sdk.capture_exception(e)
-                await interaction.edit_original_message(embed=EmbedTemplate.error('發生錯誤，圖片製作失敗'))
-            else:
-                embed.set_thumbnail(url=interaction.user.display_avatar.url)
-                fp.seek(0)
-                file = discord.File(fp, filename='image.jpeg')
-                embed.set_image(url='attachment://image.jpeg')
-                await interaction.edit_original_message(embed=embed, attachments=[file])
+        else:
+            embed = genshin_app.parseAbyssOverview(abyss)
+            embed.title = f'{interaction.user.display_name} 的深境螺旋戰績'
+            embed.set_thumbnail(url=interaction.user.display_avatar.url)
+            view = None
+            if len(abyss.floors) > 0:
+                view = self.AuthorOnlyView(interaction.user, config.discord_view_long_timeout)
+                view.add_item(self.AbyssFloorDropdown(embed, abyss.floors))
+            await interaction.edit_original_message(embed=embed, view=view)
     
     @slash_abyss.error
     async def on_slash_abyss_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
