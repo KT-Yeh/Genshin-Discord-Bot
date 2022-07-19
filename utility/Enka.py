@@ -1,3 +1,4 @@
+import asyncio
 import aiohttp
 import discord
 import sentry_sdk
@@ -10,24 +11,40 @@ from data.game.artifacts import artifcats_map
 from data.game.namecards import namecards_map
 from data.game.fight_prop import fight_prop_map, get_prop_name
 
+class EnkaAPI:
+    BASE_URL = 'https://enka.network'
+    USER_URL = BASE_URL + '/u/' + '{uid}'
+    IMAGE_URL = BASE_URL + '/ui/' + '{image_name}' + '.png'
+    USER_DATA_URL = USER_URL + '/__data.json'
+
+    @classmethod
+    def get_user_url(cls, uid: int) -> str:
+        return cls.USER_URL.format(uid=uid)
+    
+    @classmethod
+    def get_user_data_url(cls, uid: int) -> str:
+        return cls.USER_DATA_URL.format(uid=uid) + (f"?key={config.enka_api_key}" if config.enka_api_key else '')
+    
+    @classmethod
+    def get_image_url(cls, name: str) -> str:
+        return cls.IMAGE_URL.format(image_name=name)
+
 class Showcase:
-    data: Dict[str, Any] = None
-    uid: int = 0
-    url: str = ''
+    def __init__(self, uid: int) -> None:
+        self.data: Dict[str, Any] = None
+        self.uid: int = uid
+        self.url: str = EnkaAPI.get_user_url(uid)
 
-    def __init__(self) -> None:
-        pass
-
-    async def getEnkaData(self, uid: int) -> None:
-        """從API取得指定UID玩家的角色展示櫃資料"""
-        self.uid = uid
-        self.url = f'https://enka.network/u/{uid}'
-        api_url = self.url + '/__data.json' + (f"?key={config.enka_api_key}" if config.enka_api_key else '')
-        async with aiohttp.request('GET', api_url) as resp:
+    async def getEnkaData(self, *, retry: int = 1) -> None:
+        """從API取得玩家的角色展示櫃資料"""
+        async with aiohttp.request('GET', EnkaAPI.get_user_data_url(self.uid)) as resp:
             if resp.status == 200:
                 self.data = await resp.json()
+            elif retry > 0:
+                await asyncio.sleep(0.5)
+                await self.getEnkaData(retry=retry-1)
             else:
-                raise Exception(f"[{resp.status} {resp.reason}]從API伺服器取得資料時發生錯誤或是此玩家資料不存在")
+                raise Exception(f"[{resp.status} {resp.reason}]目前無法從API伺服器取得資料或是此玩家不存在")
 
     def getPlayerOverviewEmbed(self) -> discord.Embed:
         """取得玩家基本資料的嵌入訊息"""
@@ -45,7 +62,7 @@ class Showcase:
             avatar_url = characters_map.get(str(avatarId), { }).get('icon')
             embed.set_thumbnail(url=avatar_url)
         if namecard := namecards_map.get(player.get('nameCardId', 0), { }).get('Card'):
-            card_url = f'https://enka.shinshin.moe/ui/{namecard}.png'
+            card_url = EnkaAPI.get_image_url(namecard)
             embed.set_image(url=card_url)
         embed.set_footer(text=f'UID: {self.uid}')
         return embed
@@ -123,12 +140,13 @@ class Showcase:
             if 'reliquary' not in equip:
                 continue
             artifact_id: int = equip['itemId'] // 10
-            flat = equip['flat']
+            flat: Dict[str, Any] = equip['flat']
             pos_name = pos_name_map.get(artifcats_map.get(artifact_id, { }).get('pos'), '未知')
             # 主詞條屬性
             embed_value = f"__**{self.__getStatPropSentence(flat['reliquaryMainstat']['mainPropId'], flat['reliquaryMainstat']['statValue'])}**__\n"
             # 副詞條屬性
-            for substat in flat['reliquarySubstats']:
+            substat: Dict[str, Union[str, int, float]]
+            for substat in flat.get('reliquarySubstats', [ ]):
                 prop: str = substat['appendPropId']
                 value: Union[int, float] = substat['statValue']
                 embed_value += f"{self.__getStatPropSentence(prop, value)}\n"

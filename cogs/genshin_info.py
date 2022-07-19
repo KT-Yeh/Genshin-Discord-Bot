@@ -206,13 +206,13 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
         elif len(str(uid)) != 9 or str(uid)[0] not in ['1', '2', '5', '6', '7', '8', '9']:
             await interaction.edit_original_message(embed=EmbedTemplate.error('輸入的UID格式錯誤'))
         else:
-            showcase = Enka.Showcase()
+            showcase = Enka.Showcase(uid)
             try:
-                await showcase.getEnkaData(uid)
+                await showcase.getEnkaData()
             except Exception as e:
                 log.warning(f'[例外][{interaction.user.id}]showcase角色展示櫃: {e}')
                 sentry_sdk.capture_exception(e)
-                await interaction.edit_original_message(embed=EmbedTemplate.error(str(e)))
+                await interaction.edit_original_message(embed=EmbedTemplate.error(f"{e}，你可以點擊 [連結]({showcase.url}) 查看網站狀態"))
             else:
                 view = Enka.ShowcaseView(showcase)
                 embed = showcase.getPlayerOverviewEmbed()
