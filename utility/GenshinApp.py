@@ -259,13 +259,14 @@ class GenshinApp:
         d = diary.data
         result = discord.Embed(
             title=f'{diary.nickname} 的旅行者札記：{month}月',
-            description=f'原石收入比上個月{"增加" if d.primogems_rate > 0 else "減少"}了{abs(d.primogems_rate)}%，摩拉收入比上個月{"增加" if d.mora_rate > 0 else "減少"}了{abs(d.mora_rate)}%',
+            description=f'原石收入比上個月{"增加" if d.current_primogems >= d.last_primogems else "減少"}了{abs(d.primogems_rate)}%，'
+                        f'摩拉收入比上個月{"增加" if d.current_mora >= d.last_mora else "減少"}了{abs(d.mora_rate)}%',
             color=0xfd96f4
         )
         result.add_field(
             name='當月共獲得', 
             value=f'{emoji.items.primogem}原石：{d.current_primogems} ({round(d.current_primogems/160)}{emoji.items.intertwined_fate})　上個月：{d.last_primogems} ({round(d.last_primogems/160)}{emoji.items.intertwined_fate})\n'
-                f'{emoji.items.mora}摩拉：{format(d.current_mora, ",")}　上個月：{format(d.last_mora, ",")}',
+                  f'{emoji.items.mora}摩拉：{format(d.current_mora, ",")}　上個月：{format(d.last_mora, ",")}',
             inline=False
         )
         # 將札記原石組成平分成兩個field
