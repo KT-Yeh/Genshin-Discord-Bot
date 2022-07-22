@@ -153,11 +153,11 @@ class Schedule(commands.Cog, name='自動化'):
         now = datetime.now()
         # 每日 {config.auto_daily_reward_time} 點自動簽到
         if now.hour == config.auto_daily_reward_time and now.minute < self.loop_interval:
-            await self.autoClaimDailyReward()
+            asyncio.create_task(self.autoClaimDailyReward())
 
         # 每二小時檢查一次樹脂，並且與每日簽到時間錯開
         if abs(now.hour - config.auto_daily_reward_time) % 2 == 1 and now.minute < self.loop_interval:
-            await self.autoCheckResin()
+            asyncio.create_task(self.autoCheckResin())
 
         # 定時儲存使用者最後使用時間資料
         user_last_use_time.save()
