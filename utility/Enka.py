@@ -2,7 +2,7 @@ import asyncio
 import aiohttp
 import discord
 import sentry_sdk
-from typing import Any, Dict, List, Union, Optional
+from typing import Any, Dict, List, Union, Optional, Callable
 from utility.emoji import emoji
 from utility.config import config
 from data.game.characters import characters_map
@@ -34,6 +34,7 @@ class Showcase:
         self.data: Dict[str, Any] = None
         self.uid: int = uid
         self.url: str = EnkaAPI.get_user_url(uid)
+        self.avatar_url: Optional[str] = None
 
     async def getEnkaData(self, *, retry: int = 1) -> None:
         """從API取得玩家的角色展示櫃資料"""
@@ -59,8 +60,8 @@ class Showcase:
                 f"深境螺旋：{player.get('towerFloorIndex', 0)}-{player.get('towerLevelIndex', 0)}"
         )
         if avatarId := player.get('profilePicture', { }).get('avatarId'):
-            avatar_url = characters_map.get(str(avatarId), { }).get('icon')
-            embed.set_thumbnail(url=avatar_url)
+            self.avatar_url = characters_map.get(str(avatarId), { }).get('icon')
+            embed.set_thumbnail(url=self.avatar_url)
         if namecard := namecards_map.get(player.get('nameCardId', 0), { }).get('Card'):
             card_url = EnkaAPI.get_image_url(namecard)
             embed.set_image(url=card_url)
@@ -121,7 +122,7 @@ class Showcase:
         )
         return embed
     
-    def getArtifactStatEmbed(self, index: int) -> discord.Embed:
+    def getArtifactStatEmbed(self, index: int, *, short_form: bool = False) -> discord.Embed:
         """取得角色聖遺物的嵌入訊息"""
         id = str(self.data['playerInfo']['showAvatarInfoList'][index]['avatarId'])
         embed = self.__getDefaultEmbed(id)
@@ -149,7 +150,8 @@ class Showcase:
             for substat in flat.get('reliquarySubstats', [ ]):
                 prop: str = substat['appendPropId']
                 value: Union[int, float] = substat['statValue']
-                embed_value += f"{self.__getStatPropSentence(prop, value)}\n"
+                if not short_form:
+                    embed_value += f"{self.__getStatPropSentence(prop, value)}\n"
                 substat_sum[prop] = substat_sum.get(prop, 0) + value
             
             embed.add_field(name=f"{emoji.artifact_type.get(pos_name, pos_name + '：')}{artifcats_map.get(artifact_id, { }).get('name', artifact_id)}", value=embed_value)
@@ -180,7 +182,7 @@ class Showcase:
             color=color.get(character_map.get('element', '').lower())
         )
         embed.set_thumbnail(url=character_map.get('icon'))
-        embed.set_author(name=f"{self.data['playerInfo']['nickname']} 的角色展示櫃", url=self.url)
+        embed.set_author(name=f"{self.data['playerInfo']['nickname']} 的角色展示櫃", url=self.url, icon_url=self.avatar_url)
         embed.set_footer(text=f"{self.data['playerInfo']['nickname']}．Lv. {self.data['playerInfo']['level']}．UID: {self.uid}")
 
         return embed
@@ -230,30 +232,16 @@ class ShowcaseCharactersDropdown(discord.ui.Select):
             view = ShowcaseView(self.showcase, character_index)
             await interaction.response.edit_message(embed=embed, view=view)
 
-class CharacterStatButton(discord.ui.Button):
-    """角色面板按鈕"""
-    showcase: Showcase
-    character_index: int
-    def __init__(self, showcase: Showcase, character_index: int):
-        super().__init__(style=discord.ButtonStyle.green, label='角色面板')
-        self.showcase = showcase
-        self.character_index = character_index
+class ShowcaseButton(discord.ui.Button):
+    """角色展示櫃按鈕"""
+    def __init__(self, label: str, function: Callable[..., discord.Embed], *args, **kwargs):
+        super().__init__(style=discord.ButtonStyle.primary, label=label)
+        self.callback_func = function
+        self.callback_args = args
+        self.callback_kwargs = kwargs
     
     async def callback(self, interaction: discord.Interaction) -> Any:
-        embed = self.showcase.getCharacterStatEmbed(self.character_index)
-        await interaction.response.edit_message(embed=embed)
-
-class CharacterArtifactButton(discord.ui.Button):
-    """角色聖遺物按鈕"""
-    showcase: Showcase
-    character_index: int
-    def __init__(self, showcase: Showcase, character_index: int):
-        super().__init__(style=discord.ButtonStyle.primary, label='聖遺物資料')
-        self.showcase = showcase
-        self.character_index = character_index
-    
-    async def callback(self, interaction: discord.Interaction) -> Any:
-        embed = self.showcase.getArtifactStatEmbed(self.character_index)
+        embed = self.callback_func(*self.callback_args, **self.callback_kwargs)
         await interaction.response.edit_message(embed=embed)
 
 class ShowcaseView(discord.ui.View):
@@ -261,7 +249,8 @@ class ShowcaseView(discord.ui.View):
     def __init__(self, showcase: Showcase, character_index: Optional[int] = None):
         super().__init__(timeout=config.discord_view_long_timeout)
         if character_index != None:
-            self.add_item(CharacterStatButton(showcase, character_index))
-            self.add_item(CharacterArtifactButton(showcase ,character_index))
+            self.add_item(ShowcaseButton('角色面板', showcase.getCharacterStatEmbed, character_index))
+            self.add_item(ShowcaseButton('聖遺物(精簡)', showcase.getArtifactStatEmbed, character_index, short_form=True))
+            self.add_item(ShowcaseButton('聖遺物(完整)', showcase.getArtifactStatEmbed, character_index))
         if 'showAvatarInfoList' in showcase.data['playerInfo']:
             self.add_item(ShowcaseCharactersDropdown(showcase))
