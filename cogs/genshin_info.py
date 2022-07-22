@@ -158,7 +158,8 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
         """選擇角色的下拉選單"""
         def __init__(self, previous_interaction: discord.Interaction, characters: Sequence[genshin.models.Character], index: int = 1):
             options = [discord.SelectOption(
-                    label=f'★{character.rarity} Lv.{character.level} {character.name}',
+                    label=f'★{character.rarity} C{character.constellation} Lv.{character.level} {character.name}',
+                    description=f'★{character.weapon.rarity} R{character.weapon.refinement} Lv.{character.weapon.level} {character.weapon.name}',
                     value=str(i),
                     emoji=emoji.elements.get(character.element.lower())
                 ) for i, character in enumerate(characters)
