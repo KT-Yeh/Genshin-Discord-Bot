@@ -188,14 +188,19 @@ class GenshinApp:
                 reward = await client.claim_daily_reward(game=game)
             except genshin.errors.AlreadyClaimed:
                 return f'{game_name[game]}今日獎勵已經領過了！'
+            except genshin.errors.InvalidCookies:
+                return 'Cookie已失效，請從Hoyolab重新取得新Cookie'
             except genshin.errors.GenshinException as e:
-                log.warning(f'[例外][{user_id}]claimDailyReward: {game_name[game]}[retcode]{e.retcode} [例外內容]{e.original}')
-                sentry_sdk.capture_exception(e)
-                if e.retcode == 0 and retry > 0:
-                    await asyncio.sleep(0.5)
-                    return await claimReward(game, retry - 1)
                 if e.retcode == -10002 and game == genshin.Game.HONKAI:
                     return '崩壞3簽到失敗，未查詢到角色資訊，請確認艦長是否已綁定新HoYoverse通行證'
+                
+                log.info(f'[例外][{user_id}]claimDailyReward: {game_name[game]}[retcode]{e.retcode} [例外內容]{e.original}')
+                if retry > 0:
+                    await asyncio.sleep(1)
+                    return await claimReward(game, retry - 1)
+                
+                log.warning(f'[例外][{user_id}]claimDailyReward: {game_name[game]}[retcode]{e.retcode} [例外內容]{e.original}')
+                sentry_sdk.capture_exception(e)
                 return f'{game_name[game]}簽到失敗：[retcode]{e.retcode} [內容]{e.original}'
             except Exception as e:
                 log.warning(f'[例外][{user_id}]claimDailyReward: {game_name[game]}[例外內容]{e}')
@@ -212,7 +217,8 @@ class GenshinApp:
         try:
             await client.check_in_community()
         except genshin.errors.GenshinException as e:
-            log.info(f'[例外][{user_id}]claimDailyReward: Hoyolab[retcode]{e.retcode} [例外內容]{e.original}')
+            if e.retcode != 2001:
+                log.warning(f'[例外][{user_id}]claimDailyReward: Hoyolab[retcode]{e.retcode} [例外內容]{e.original}')
         
         return result
 
