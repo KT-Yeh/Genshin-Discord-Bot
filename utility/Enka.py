@@ -135,6 +135,7 @@ class Showcase:
         
         pos_name_map = {1: '花', 2: '羽', 3: '沙', 4: '杯', 5: '冠'}
         substat_sum: Dict[str, float] = dict() # 副詞條數量統計
+        crit_value: float = 0.0 # 雙爆分
 
         equip: Dict[str, Any]
         for equip in avatarInfo['equipList']:
@@ -144,7 +145,11 @@ class Showcase:
             flat: Dict[str, Any] = equip['flat']
             pos_name = pos_name_map.get(artifcats_map.get(artifact_id, { }).get('pos'), '未知')
             # 主詞條屬性
-            embed_value = f"__**{self.__getStatPropSentence(flat['reliquaryMainstat']['mainPropId'], flat['reliquaryMainstat']['statValue'])}**__\n"
+            prop: str = flat['reliquaryMainstat']['mainPropId']
+            value: Union[int, float] = flat['reliquaryMainstat']['statValue']
+            embed_value = f"__**{self.__getStatPropSentence(prop, value)}**__\n"
+            crit_value += (value * 2 if prop == 'FIGHT_PROP_CRITICAL' else value if prop == 'FIGHT_PROP_CRITICAL_HURT' else 0)
+
             # 副詞條屬性
             substat: Dict[str, Union[str, int, float]]
             for substat in flat.get('reliquarySubstats', [ ]):
@@ -169,7 +174,8 @@ class Showcase:
         embed_value += substatSummary('FIGHT_PROP_CRITICAL', '暴擊率　', 3.3)
         embed_value += substatSummary('FIGHT_PROP_CRITICAL_HURT', '暴擊傷害', 6.6)
         if embed_value != '':
-            embed.add_field(name='副詞條數量統計', value=embed_value)
+            crit_value += substat_sum.get('FIGHT_PROP_CRITICAL', 0) * 2 + substat_sum.get('FIGHT_PROP_CRITICAL_HURT', 0)
+            embed.add_field(name='詞條數' + (f" (雙爆{round(crit_value)})" if crit_value > 100 else ''), value=embed_value)
         
         return embed
 
