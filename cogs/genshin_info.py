@@ -90,6 +90,7 @@ class TravelerDiary:
         except Exception as e:
             await interaction.edit_original_message(embed=EmbedTemplate.error(str(e)))
         else:
+            embed.set_thumbnail(url=user.display_avatar.url)
             await interaction.edit_original_message(embed=embed)
 
 class RecordCard:

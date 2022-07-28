@@ -270,19 +270,26 @@ class GenshinApp:
             color=0xfd96f4
         )
         result.add_field(
-            name='當月共獲得', 
-            value=f'{emoji.items.primogem}原石：{d.current_primogems} ({round(d.current_primogems/160)}{emoji.items.intertwined_fate})　上個月：{d.last_primogems} ({round(d.last_primogems/160)}{emoji.items.intertwined_fate})\n'
-                  f'{emoji.items.mora}摩拉：{format(d.current_mora, ",")}　上個月：{format(d.last_mora, ",")}',
-            inline=False
+            name='當月共獲得',
+            value=f'{emoji.items.primogem}原石：{d.current_primogems} ({round(d.current_primogems/160)}{emoji.items.intertwined_fate})\n'
+                  f'{emoji.items.mora}摩拉：{format(d.current_mora, ",")}',
         )
+        result.add_field(
+            name='上個月獲得',
+            value=f'{emoji.items.primogem}原石：{d.last_primogems} ({round(d.last_primogems/160)}{emoji.items.intertwined_fate})\n'
+                  f'{emoji.items.mora}摩拉：{format(d.last_mora, ",")}'
+        )
+        result.add_field(name='\u200b', value='\u200b') # 空白行
+
         # 將札記原石組成平分成兩個field
         for i in range(0, 2):
             msg = ''
             length = len(d.categories)
             for j in range(round(length/2*i), round(length/2*(i+1))):
-                msg += f'{d.categories[j].name[0:2]}：{d.categories[j].percentage}%\n'
-            result.add_field(name=f'原石收入組成 ({i+1})', value=msg, inline=True)
-
+                msg += f'{d.categories[j].name[0:2]}：{d.categories[j].amount} ({d.categories[j].percentage}%)\n'
+            result.add_field(name=f'原石收入組成 {i+1}', value=msg, inline=True)
+        
+        result.add_field(name='\u200b', value='\u200b') # 空白行
         return result
 
     @generalErrorHandler
@@ -466,27 +473,26 @@ class GenshinApp:
         `discord.Embed`: discord嵌入格式
         """
         # 原粹樹脂
-        msg = f'{emoji.notes.resin}當前原粹樹脂：{notes.current_resin}/{notes.max_resin}\n'
+        resin_title = f'{emoji.notes.resin}當前原粹樹脂：{notes.current_resin}/{notes.max_resin}\n'
         if notes.current_resin >= notes.max_resin:
             recover_time = '已額滿！'
         else:
             day_msg = getDayOfWeek(notes.resin_recovery_time)
             recover_time = f'{day_msg} {notes.resin_recovery_time.strftime("%H:%M")}'
-        msg += f'{emoji.notes.resin}全部恢復時間：{recover_time}\n'
+        resin_msg = f'{emoji.notes.resin}全部恢復時間：{recover_time}\n'
         # 每日、週本
         if not shortForm:
-            msg += f'{emoji.notes.commission}每日委託任務：剩餘 {notes.max_commissions - notes.completed_commissions} 個\n'
-            msg += f'{emoji.notes.enemies_of_note}週本樹脂減半：剩餘 {notes.remaining_resin_discounts} 次\n'
-            msg += f'--------------------\n'
+            resin_msg += f'{emoji.notes.commission}每日委託任務：剩餘 {notes.max_commissions - notes.completed_commissions} 個\n'
+            resin_msg += f'{emoji.notes.enemies_of_note}週本樹脂減半：剩餘 {notes.remaining_resin_discounts} 次\n'
         # 洞天寶錢恢復時間
-        msg += f'{emoji.notes.realm_currency}當前洞天寶錢：{notes.current_realm_currency}/{notes.max_realm_currency}\n'
+        resin_msg += f'{emoji.notes.realm_currency}當前洞天寶錢：{notes.current_realm_currency}/{notes.max_realm_currency}\n'
         if notes.max_realm_currency > 0:
             if notes.current_realm_currency >= notes.max_realm_currency:
                 recover_time = '已額滿！'
             else:
                 day_msg = getDayOfWeek(notes.realm_currency_recovery_time)
                 recover_time = f'{day_msg} {notes.realm_currency_recovery_time.strftime("%H:%M")}'
-            msg += f'{emoji.notes.realm_currency}全部恢復時間：{recover_time}\n'
+            resin_msg += f'{emoji.notes.realm_currency}全部恢復時間：{recover_time}\n'
         # 參數質變儀剩餘時間
         if notes.transformer_recovery_time != None:
             t = notes.remaining_transformer_recovery_time
@@ -500,7 +506,7 @@ class GenshinApp:
                 recover_time = f'剩餘 {t.seconds} 秒'
             else:
                 recover_time = '可使用'
-            msg += f'{emoji.notes.transformer}參數質變儀　：{recover_time}\n'
+            resin_msg += f'{emoji.notes.transformer}參數質變儀　：{recover_time}\n'
         # 探索派遣剩餘時間
         exped_finished = 0
         exped_msg = ''
@@ -512,18 +518,20 @@ class GenshinApp:
             else:
                 day_msg = getDayOfWeek(expedition.completion_time)
                 exped_msg += f'{day_msg} {expedition.completion_time.strftime("%H:%M")}\n'
-        if not shortForm:
-            msg += '--------------------\n'
-            msg += f'{emoji.notes.expedition}探索派遣結果：{exped_finished}/{len(notes.expeditions)}\n'
-            msg += exped_msg
-        else: # shortForm
-            msg += f'{emoji.notes.expedition}探索派遣結果：{exped_finished}/{len(notes.expeditions)}\n'
 
+        exped_title = f'{emoji.notes.expedition}探索派遣結果：{exped_finished}/{len(notes.expeditions)}\n'
+ 
         # 根據樹脂數量，以80作分界，embed顏色從綠色(0x28c828)漸變到黃色(0xc8c828)，再漸變到紅色(0xc82828)
         r = notes.current_resin
         color = 0x28c828 + 0x010000 * int(0xa0 * r / 80) if r < 80 else 0xc8c828 - 0x000100 * int(0xa0 * (r - 80) / 80)
-        
-        embed = discord.Embed(description=msg, color=color)
+        embed = discord.Embed(color=color)
+
+        if not shortForm:
+            embed.add_field(name=resin_title, value=resin_msg)
+            embed.add_field(name=exped_title, value=exped_msg)
+        else:
+            embed.add_field(name=resin_title, value=(resin_msg + exped_title))
+
         if user != None:
             uid = str(self.getUID(str(user.id)))
             embed.set_author(name=f'{getServerName(uid[0])} {uid}', icon_url=user.display_avatar.url)
