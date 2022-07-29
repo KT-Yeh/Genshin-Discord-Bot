@@ -213,7 +213,7 @@ class ShowcaseCharactersDropdown(discord.ui.Select):
     def __init__(self, showcase: Showcase) -> None:
         self.showcase = showcase
         avatarInfoList: List[Dict[str, Any]] = showcase.data['playerInfo']['showAvatarInfoList']
-        options = []
+        options = [discord.SelectOption(label='玩家資料一覽', value='-1', emoji='📜')]
         for i, avatarInfo in enumerate(avatarInfoList):
             id = str(avatarInfo['avatarId'])
             level: str = avatarInfo['level']
@@ -229,13 +229,13 @@ class ShowcaseCharactersDropdown(discord.ui.Select):
         super().__init__(placeholder=f'選擇展示櫃角色：', options=options)
     
     async def callback(self, interaction: discord.Interaction) -> None:
-        character_index = int(self.values[0])
+        index = int(self.values[0])
         try:
-            embed = self.showcase.getCharacterStatEmbed(character_index)
+            embed = self.showcase.getCharacterStatEmbed(index) if index >= 0 else self.showcase.getPlayerOverviewEmbed()
         except Exception as e:
             sentry_sdk.capture_exception(e)
         else:
-            view = ShowcaseView(self.showcase, character_index)
+            view = ShowcaseView(self.showcase, index if index >= 0 else None)
             await interaction.response.edit_message(embed=embed, view=view)
 
 class ShowcaseButton(discord.ui.Button):
