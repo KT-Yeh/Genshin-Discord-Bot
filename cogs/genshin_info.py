@@ -201,7 +201,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
     @app_commands.choices(
         shortForm=[Choice(name='完整', value=0),
                    Choice(name='簡約', value=1)])
-    async def slash_notes(self, interaction: discord.Interaction, shortForm: int = 0, user: discord.Member = None):
+    async def slash_notes(self, interaction: discord.Interaction, shortForm: int = 0, user: discord.User = None):
         await RealtimeNotes.notes(interaction, user or interaction.user, shortForm=bool(shortForm))
     
     #-------------------------------------------------------------
@@ -217,7 +217,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
     @app_commands.choices(
         season=[Choice(name='本期紀錄', value=0),
                 Choice(name='上期紀錄', value=1)])
-    async def slash_abyss(self, interaction: discord.Interaction, season: int, user: discord.Member = None):
+    async def slash_abyss(self, interaction: discord.Interaction, season: int, user: discord.User = None):
         await SpiralAbyss.abyss(interaction, user or interaction.user, previous=bool(season))
 
     @slash_abyss.error
@@ -247,7 +247,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
     @app_commands.rename(user='使用者')
     @app_commands.describe(user='查詢其他成員的資料，不填寫則查詢自己')
     @app_commands.checks.cooldown(1, config.slash_cmd_cooldown)
-    async def slash_card(self, interaction: discord.Interaction, user: discord.Member = None):
+    async def slash_card(self, interaction: discord.Interaction, user: discord.User = None):
         await RecordCard.card(interaction, user or interaction.user)
 
     @slash_card.error
@@ -268,7 +268,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
     @app_commands.describe(
         uid='欲查詢的玩家UID，若小幫手已保存資料的話查自己不需要填本欄位',
         user='查詢其他成員的資料，不填寫則查詢自己')
-    async def slash_showcase(self, interaction: discord.Interaction, uid: Optional[int] = None, user: discord.Member = None):
+    async def slash_showcase(self, interaction: discord.Interaction, uid: Optional[int] = None, user: discord.User = None):
         await Showcase.showcase(interaction, user or interaction.user, uid)
 
 async def setup(client: commands.Bot):
