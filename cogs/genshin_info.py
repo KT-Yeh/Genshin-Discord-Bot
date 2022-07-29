@@ -280,7 +280,11 @@ async def setup(client: commands.Bot):
     async def context_notes(interaction: discord.Interaction, user: discord.User):
         await RealtimeNotes.notes(interaction, user)
 
-    @client.tree.context_menu(name='深淵紀錄')
+    @client.tree.context_menu(name='深淵紀錄(上期)')
+    async def context_abyss_previous(interaction: discord.Interaction, user: discord.User):
+        await SpiralAbyss.abyss(interaction, user, previous=True)
+
+    @client.tree.context_menu(name='深淵紀錄(本期)')
     async def context_abyss(interaction: discord.Interaction, user: discord.User):
         await SpiralAbyss.abyss(interaction, user)
 
