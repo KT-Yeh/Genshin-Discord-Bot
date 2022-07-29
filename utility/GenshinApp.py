@@ -511,7 +511,7 @@ class GenshinApp:
         exped_finished = 0
         exped_msg = ''
         for expedition in notes.expeditions:
-            exped_msg += f'· {getCharacterName(expedition.character)}：'
+            exped_msg += f'． {getCharacterName(expedition.character)}：'
             if expedition.finished:
                 exped_finished += 1
                 exped_msg += '已完成\n'
@@ -526,7 +526,7 @@ class GenshinApp:
         color = 0x28c828 + 0x010000 * int(0xa0 * r / 80) if r < 80 else 0xc8c828 - 0x000100 * int(0xa0 * (r - 80) / 80)
         embed = discord.Embed(color=color)
 
-        if not shortForm:
+        if (not shortForm) and (exped_msg != ''):
             embed.add_field(name=resin_title, value=resin_msg)
             embed.add_field(name=exped_title, value=exped_msg)
         else:
