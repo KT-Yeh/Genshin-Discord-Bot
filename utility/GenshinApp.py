@@ -119,7 +119,8 @@ class GenshinApp:
     def getUID(self, user_id: str) -> Union[int, None]:
         if user_id in self.__user_data.keys():
             user_last_use_time.update(user_id)
-            return int(self.__user_data[user_id].get('uid'))
+            if (uid :=self.__user_data[user_id].get('uid')) != None:
+                return int(uid)
         return None
 
     @generalErrorHandler
