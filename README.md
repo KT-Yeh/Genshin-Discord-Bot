@@ -1,5 +1,4 @@
 # 原神 Discord Bot
-本分支使用 discord.py v2.0 開發版本
 
 歡迎將本專案所有或部分程式碼放入你自己的機器人中，只需要在你專案的 README 說明文件或任何地方放入本專案的作者與連結即可
 
@@ -9,24 +8,23 @@ Feel free to take all or part of the code to your own bot, just put the author a
 [![](https://i.imgur.com/ULhx0EP.png)](https://bit.ly/原神小幫手邀請)
 
 #### 點擊上圖或邀請連結：https://bit.ly/原神小幫手邀請
-- 多人伺服器要請有管理權限的人員邀請機器人
-- 個人使用可以建立一個只有自己的 Discord 伺服器，然後邀請機器人
 
 ## 簡介
 使用 Discord 機器人直接查詢原神內各項資訊，包含：
-- 即時便箋，包含樹脂、洞天寶錢、質變儀、探索派遣...等
+- 查詢即時便箋，包含樹脂、洞天寶錢、參數質變儀、探索派遣完成時間...等
 - 查詢深境螺旋紀錄
 - 查詢旅行者札記
 - 個人紀錄卡片（遊戲天數、成就、神瞳...等等）
 - Hoyolab 使用兌換碼
-- 每日早上 8~9 點 Hoyolab 自動簽到 (包含簽到崩壞3)
+- 每日早上 8~10 點 Hoyolab 自動簽到 (包含簽到崩壞3)
 - 每兩小時自動檢查樹脂，當樹脂超過 145 時推送提醒
+- 查詢任意玩家的展示櫃，顯示展示櫃內角色的面板、聖遺物詳情
 - 採用新的斜線指令，輸入 / 自動彈出指令提示，不需要記憶任何指令的使用方式
 
 ## 展示
 更多展示圖片、GIF 請參考巴哈介紹文章：https://forum.gamer.com.tw/Co.php?bsn=36730&sn=162433
 
-<img src="https://i.imgur.com/LcNJ2as.png" width="400"/> <img src="https://i.imgur.com/oNTOam5.png" width="300"/>
+<img src="https://i.imgur.com/LcNJ2as.png" width="350"/> <img src="https://i.imgur.com/IEckUqY.jpg" width="500"/>
 
 
 ## 自己安裝 & 架設機器人
@@ -64,9 +62,9 @@ Feel free to take all or part of the code to your own bot, just put the author a
 ![](https://i.imgur.com/tCMhEhv.png)
 
 ### 本地端
-1. 下載 [本專案](https://github.com/KT-Yeh/Genshin-Discord-Bot/archive/refs/heads/discord.py_v2.0.zip)
+1. 下載 [本專案](https://github.com/KT-Yeh/Genshin-Discord-Bot/archive/refs/heads/master.zip)
 2. 下載並安裝 Python（版本 3.8 以上）: https://www.python.org/downloads/
-3. 在專案資料夾（Genshin-Discord-Bot）內，用文字編輯器開啟 `config.example.json` 檔案，把剛才取得的 Application ID、機器人 Token、伺服器 ID 貼在 `application_id`、`bot_token`、`test_server_id` 欄位，並將檔案另存為 `config.json`
+3. 在專案資料夾（Genshin-Discord-Bot）內，用文字編輯器開啟 `config.json.example` 檔案，把剛才取得的 Application ID、機器人 Token、伺服器 ID 貼在 `application_id`、`bot_token`、`test_server_id` 欄位，並將檔案名稱另存為 `config.json`
 4. 在專案資料夾內開啟 cmd 或 powershell，輸入底下命令安裝相關套件：
 ```
 pip3 install -U -r requirements.txt
@@ -129,7 +127,6 @@ python .\main.py
 ```
 
 ## 致謝
-- 構想啟發自: https://github.com/Xm798/Genshin-Dailynote-Helper
 - 原神 API 使用自: https://github.com/thesadru/genshin.py
 - Discord API 使用自: https://github.com/Rapptz/discord.py
 - Enka Network API 使用自: https://github.com/EnkaNetwork/API-docs
