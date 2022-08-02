@@ -1,8 +1,11 @@
 import asyncio
+import json
 import aiohttp
 import discord
 import sentry_sdk
 from typing import Any, Dict, List, Union, Optional, Callable
+from pathlib import Path
+from datetime import datetime
 from utility.emoji import emoji
 from utility.config import config
 from data.game.characters import characters_map
@@ -36,14 +39,32 @@ class Showcase:
         self.url: str = EnkaAPI.get_user_url(uid)
         self.avatar_url: Optional[str] = None
 
+        # 檢查是否有快取
+        file = Path(f"data/cache/{uid}.json")
+        if file.exists():
+            with open(file, 'r', encoding='utf-8') as fp:
+                self.data = json.load(fp)
+
     async def getEnkaData(self, *, retry: int = 1) -> None:
         """從API取得玩家的角色展示櫃資料"""
+        # 檢查快取是否有效
+        if self.data != None:
+            refresh_timestamp = self.data.get('timestamp', 0) + self.data.get('ttl', 0)
+            if datetime.now().timestamp() < refresh_timestamp:
+                return
+        # 從API獲取資料
         async with aiohttp.request('GET', EnkaAPI.get_user_data_url(self.uid)) as resp:
             if resp.status == 200:
                 self.data = await resp.json()
+                # 設定時間戳並保存資料至快取資料夾
+                self.data['timestamp'] = int(datetime.now().timestamp())
+                with open(f"data/cache/{self.uid}.json", 'w', encoding='utf-8') as fp:
+                    json.dump(self.data, fp, ensure_ascii=False, indent=2)
             elif retry > 0:
                 await asyncio.sleep(0.5)
                 await self.getEnkaData(retry=retry-1)
+            elif self.data != None: # 快取資料
+                return
             else:
                 raise Exception(f"[{resp.status} {resp.reason}]目前無法從API伺服器取得資料或是此玩家不存在")
 
