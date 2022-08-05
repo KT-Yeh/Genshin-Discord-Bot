@@ -2,12 +2,13 @@ import asyncio
 import json
 import aiohttp
 import discord
-import sentry_sdk
 from typing import Any, Dict, List, Union, Optional, Callable
 from pathlib import Path
 from datetime import datetime
 from utility.emoji import emoji
 from utility.config import config
+from utility.GenshinApp import genshin_app
+from utility.utils import EmbedTemplate
 from data.game.characters import characters_map
 from data.game.weapons import weapons_map
 from data.game.artifacts import artifcats_map
@@ -55,11 +56,11 @@ class Showcase:
         # 從API獲取資料
         async with aiohttp.request('GET', EnkaAPI.get_user_data_url(self.uid)) as resp:
             if resp.status == 200:
-                self.data = await resp.json()
-                # 設定時間戳並保存資料至快取資料夾
-                self.data['timestamp'] = int(datetime.now().timestamp())
-                with open(f"data/cache/{self.uid}.json", 'w', encoding='utf-8') as fp:
-                    json.dump(self.data, fp, ensure_ascii=False, indent=2)
+                resp_data = await resp.json()
+                # 設定時間戳、合併快取資料並保存資料至快取資料夾
+                resp_data['timestamp'] = int(datetime.now().timestamp())
+                self.data = self.__combineCacheData(resp_data, self.data) if self.data != None else resp_data
+                self.saveDataToCache()
             elif retry > 0:
                 await asyncio.sleep(0.5)
                 await self.getEnkaData(retry=retry-1)
@@ -200,6 +201,10 @@ class Showcase:
         
         return embed
 
+    def saveDataToCache(self):
+        with open(f"data/cache/{self.uid}.json", 'w', encoding='utf-8') as fp:
+            json.dump(self.data, fp, ensure_ascii=False)
+
     def __getDefaultEmbed(self, character_id: str) -> discord.Embed:
         id = character_id
         color = {'pyro': 0xfb4120, 'electro': 0xbf73e7, 'hydro': 0x15b1ff, 'cryo': 0x70daf1, 'dendro': 0xa0ca22, 'anemo': 0x5cd4ac, 'geo': 0xfab632}
@@ -228,6 +233,31 @@ class Showcase:
             return emoji_str + prop_name.replace('%', f'+{value}%')
         return emoji_str + prop_name + f'+{value}'
 
+    def __combineCacheData(self, new_data: Dict[str, Any], cache_data: Dict[str, Any]) -> Dict[str, Any]:
+        """將快取資料合併到新取得的資料"""
+        def combineList(new_list: List[Dict[str, Any]], cache_list: List[Dict[str, Any]]):
+            for cache_avatarInfo in cache_list:
+                if len(new_list) >= 23: # 因應Discord下拉選單的上限，在此只保留23名角色
+                    break
+                # 若新資料與快取資料有相同角色，則保留新資料；其他角色從快取資料加入到新資料裡面
+                for new_avatarInfo in new_list:
+                    if new_avatarInfo['avatarId'] == cache_avatarInfo['avatarId']:
+                        break
+                else:
+                    new_list.append(cache_avatarInfo)
+        
+        if 'showAvatarInfoList' in cache_data['playerInfo']:
+            if 'showAvatarInfoList' not in new_data['playerInfo']:
+                new_data['playerInfo']['showAvatarInfoList'] = [ ]
+            combineList(new_data['playerInfo']['showAvatarInfoList'], cache_data['playerInfo']['showAvatarInfoList'])
+        
+        if 'avatarInfoList' in cache_data:
+            if 'avatarInfoList' not in new_data:
+                new_data['avatarInfoList'] = [ ]
+            combineList(new_data['avatarInfoList'], cache_data['avatarInfoList'])
+        
+        return new_data
+
 class ShowcaseCharactersDropdown(discord.ui.Select):
     """展示櫃角色下拉選單"""
     showcase: Showcase
@@ -247,17 +277,25 @@ class ShowcaseCharactersDropdown(discord.ui.Select):
                 value=str(i),
                 emoji=emoji.elements.get(element.lower())
             ))
+        options.append(discord.SelectOption(label='刪除角色快取資料', value='-2', emoji='❌'))
         super().__init__(placeholder=f'選擇展示櫃角色：', options=options)
     
     async def callback(self, interaction: discord.Interaction) -> None:
         index = int(self.values[0])
-        try:
-            embed = self.showcase.getCharacterStatEmbed(index) if index >= 0 else self.showcase.getPlayerOverviewEmbed()
-        except Exception as e:
-            sentry_sdk.capture_exception(e)
-        else:
-            view = ShowcaseView(self.showcase, index if index >= 0 else None)
-            await interaction.response.edit_message(embed=embed, view=view)
+        if index >= 0: # 角色資料
+            embed = self.showcase.getCharacterStatEmbed(index)
+            await interaction.response.edit_message(embed=embed, view=ShowcaseView(self.showcase, index))
+        elif index == -1: # 玩家資料一覽
+            embed = self.showcase.getPlayerOverviewEmbed()
+            await interaction.response.edit_message(embed=embed, view=ShowcaseView(self.showcase))
+        elif index == -2: # 刪除快取資料
+            if genshin_app.getUID(str(interaction.user.id)) != self.showcase.uid:
+                await interaction.response.send_message(embed=EmbedTemplate.error('非此UID本人，無法刪除資料'), ephemeral=True)
+            else:
+                embed = self.showcase.getPlayerOverviewEmbed()
+                self.showcase.data = None
+                self.showcase.saveDataToCache()
+                await interaction.response.edit_message(embed=embed, view=None)
 
 class ShowcaseButton(discord.ui.Button):
     """角色展示櫃按鈕"""
