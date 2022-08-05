@@ -42,7 +42,7 @@ class SpiralAbyss:
     
     class AbyssFloorDropdown(discord.ui.Select):
         """選擇深淵樓層的下拉選單"""
-        def __init__(self, overview: discord.Embed, floors: Sequence[genshin.models.Floor]):
+        def __init__(self, overview: discord.Embed, floors: Sequence[genshin.models.Floor], characters: Sequence[genshin.models.Character]):
             options = [discord.SelectOption(
                     label=f"[★{floor.stars}] 第 {floor.floor} 層",
                     description=genshin_app.parseAbyssChamber(floor.chambers[-1]),
@@ -52,9 +52,10 @@ class SpiralAbyss:
             super().__init__(placeholder='選擇樓層：', options=options)
             self.embed = overview
             self.floors = floors
+            self.characters = characters
         
         async def callback(self, interaction: discord.Interaction):
-            fp = drawAbyssCard(self.floors[int(self.values[0])])
+            fp = drawAbyssCard(self.floors[int(self.values[0])], self.characters)
             fp.seek(0)
             self.embed.set_image(url="attachment://image.jpeg")
             await interaction.response.edit_message(embed=self.embed, attachments=[discord.File(fp, "image.jpeg")])
@@ -62,9 +63,10 @@ class SpiralAbyss:
     @staticmethod
     async def abyss(interaction: discord.Interaction, user: discord.User, *, previous: bool = False):
         try:
-            defer, abyss = await asyncio.gather(
+            defer, abyss, characters = await asyncio.gather(
                 interaction.response.defer(),
-                genshin_app.getSpiralAbyss(str(user.id), previous)
+                genshin_app.getSpiralAbyss(str(user.id), previous),
+                genshin_app.getCharacters(str(user.id))
             )
         except Exception as e:
             await interaction.edit_original_message(embed=EmbedTemplate.error(str(e)))
@@ -75,7 +77,7 @@ class SpiralAbyss:
             view = None
             if len(abyss.floors) > 0:
                 view = SpiralAbyss.AuthorOnlyView(interaction.user, config.discord_view_long_timeout)
-                view.add_item(SpiralAbyss.AbyssFloorDropdown(embed, abyss.floors))
+                view.add_item(SpiralAbyss.AbyssFloorDropdown(embed, abyss.floors, characters))
             await interaction.edit_original_message(embed=embed, view=view)
 
 class TravelerDiary:

@@ -2,7 +2,7 @@ import genshin
 import random
 from urllib import request
 from PIL import Image, ImageFont, ImageDraw
-from typing import Tuple
+from typing import Tuple, Sequence
 from io import BytesIO
 from pathlib import Path
 from utility.utils import getServerName
@@ -105,12 +105,13 @@ def drawAbyssStar(img: Image.Image, number: int, size: Tuple[int, int], pos: Tup
     for i in range(0, number):
         img.paste(star, (int(upper_left[0] + i * (size[0] + 2 * pad)), int(upper_left[1])), star)
 
-def drawAbyssCard(abyss_floor: genshin.models.Floor) -> BytesIO:
+def drawAbyssCard(abyss_floor: genshin.models.Floor, characters: Sequence[genshin.models.Character]) -> BytesIO:
     """繪製深淵樓層紀錄圖，包含每一間星數以及上下半所使用的角色和等級
 
     ------
     Parameters
     abyss_floor `Floor`: 深境螺旋某一樓層的資料
+    characters `Sequence[Character]`: 玩家的角色資料
     ------
     Returns
     `BytesIO`: 製作完成的圖片存在記憶體，回傳file pointer，存取前需要先`seek(0)`
@@ -134,7 +135,8 @@ def drawAbyssCard(abyss_floor: genshin.models.Floor) -> BytesIO:
                 x = left_upper[0] + k * (character_size[0] + 2 * character_pad)
                 y = left_upper[1]
                 drawCharacter(img, character, (172, 210), (x, y))
-                drawText(img, (x + character_size[0] / 2, y + character_size[1] * 0.90), f'{character.level}級', 'SourceHanSansTC-Regular.otf', 30, (50, 50, 50), 'mm')
+                constellation = next((c.constellation for c in characters if c.id == character.id), 0) # 匹配角色ID並取得命座
+                drawText(img, (x + character_size[0] / 2, y + character_size[1] * 0.90), f'{constellation}命 {character.level}級', 'SourceHanSansTC-Regular.otf', 30, (50, 50, 50), 'mm')
     img = img.convert('RGB')
     fp = BytesIO()
     img.save(fp, 'jpeg', optimize=True, quality=40)
