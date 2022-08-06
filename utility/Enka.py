@@ -79,7 +79,8 @@ class Showcase:
                 f"冒險等階：{player.get('level', 1)}\n"
                 f"世界等級：{player.get('worldLevel', 0)}\n"
                 f"成就總數：{player.get('finishAchievementNum', 0)}\n"
-                f"深境螺旋：{player.get('towerFloorIndex', 0)}-{player.get('towerLevelIndex', 0)}"
+                f"深境螺旋：{player.get('towerFloorIndex', 0)}-{player.get('towerLevelIndex', 0)}\n"
+                f"下次可刷新時間：<t:{self.data.get('timestamp', 0) + self.data.get('ttl', 0)}:R>"
         )
         if avatarId := player.get('profilePicture', { }).get('avatarId'):
             self.avatar_url = characters_map.get(str(avatarId), { }).get('icon')
@@ -245,7 +246,7 @@ class Showcase:
                         break
                 else:
                     new_list.append(cache_avatarInfo)
-        
+
         if 'showAvatarInfoList' in cache_data['playerInfo']:
             if 'showAvatarInfoList' not in new_data['playerInfo']:
                 new_data['playerInfo']['showAvatarInfoList'] = [ ]
