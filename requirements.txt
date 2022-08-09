@@ -1,4 +1,4 @@
-git+https://github.com/Rapptz/discord.py
+git+https://github.com/Rapptz/discord.py@b0cb458
 git+https://github.com/thesadru/genshin.py
 Pillow
 sentry-sdk
