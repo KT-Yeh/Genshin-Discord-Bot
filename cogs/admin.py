@@ -47,7 +47,7 @@ class Admin(commands.Cog):
                     else:
                         count += 1
                         break
-        await interaction.edit_original_message(content=f'已廣播訊息到 {count} / {len(self.bot.guilds)} 伺服器')
+        await interaction.edit_original_response(content=f'已廣播訊息到 {count} / {len(self.bot.guilds)} 伺服器')
     
     # 顯示機器人相關狀態
     @app_commands.command(name='status', description='顯示小幫手狀態')

@@ -100,11 +100,11 @@ class Setting(commands.Cog, name='設定'):
                 genshin_app.getGameAccounts(str(interaction.user.id))
             )
         except Exception as e:
-            await interaction.edit_original_message(embed=EmbedTemplate.error(str(e)))
+            await interaction.edit_original_response(embed=EmbedTemplate.error(str(e)))
         else:
             view = discord.ui.View(timeout=config.discord_view_short_timeout)
             view.add_item(self.UidDropdown(accounts))
-            await interaction.edit_original_message(view=view)
+            await interaction.edit_original_response(view=view)
 
     # 清除資料確認按紐
     class ConfirmButton(discord.ui.View):
@@ -135,9 +135,9 @@ class Setting(commands.Cog, name='設定'):
         await view.wait()
         if view.value == True:
             result = genshin_app.clearUserData(str(interaction.user.id))
-            await interaction.edit_original_message(content=result, view=None)
+            await interaction.edit_original_response(content=result, view=None)
         else:
-            await interaction.edit_original_message(content='取消指令', view=None)
+            await interaction.edit_original_response(content='取消指令', view=None)
 
 async def setup(client: commands.Bot):
     await client.add_cog(Setting(client))

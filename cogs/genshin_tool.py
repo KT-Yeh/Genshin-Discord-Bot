@@ -29,7 +29,7 @@ class GenshinTool(commands.Cog, name='原神工具'):
         for i, code in enumerate(codes):
             # 使用兌換碼的間隔為5秒
             if i > 0:
-                await interaction.edit_original_message(embed=discord.Embed(color=0xfcc766, description=f"{msg}正在等待5秒冷卻時間使用第{i+1}組兌換碼..."))
+                await interaction.edit_original_response(embed=discord.Embed(color=0xfcc766, description=f"{msg}正在等待5秒冷卻時間使用第{i+1}組兌換碼..."))
                 await asyncio.sleep(5)
             try:
                 result = await genshin_app.redeemCode(str(interaction.user.id), code)
@@ -42,9 +42,9 @@ class GenshinTool(commands.Cog, name='原神工具'):
                 view = discord.ui.View()
                 for code in codes:
                     view.add_item(discord.ui.Button(label=code, url=f"https://genshin.hoyoverse.com/gift?code={code}"))
-                await interaction.edit_original_message(content='使用過程中發生錯誤，請直接點擊按鈕至官網兌換', view=view)
+                await interaction.edit_original_response(content='使用過程中發生錯誤，請直接點擊按鈕至官網兌換', view=view)
                 return
-        await interaction.edit_original_message(embed=discord.Embed(color=0x8fce00, description=msg))
+        await interaction.edit_original_response(embed=discord.Embed(color=0x8fce00, description=msg))
 
     # 為使用者在Hoyolab簽到
     @app_commands.command(
@@ -59,7 +59,7 @@ class GenshinTool(commands.Cog, name='原神工具'):
             interaction.response.defer(),
             genshin_app.claimDailyReward(str(interaction.user.id), honkai=bool(game))
         )
-        await interaction.edit_original_message(embed=EmbedTemplate.normal(result))
+        await interaction.edit_original_response(embed=EmbedTemplate.normal(result))
 
 async def setup(client: commands.Bot):
     await client.add_cog(GenshinTool(client))

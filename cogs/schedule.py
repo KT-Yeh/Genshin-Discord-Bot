@@ -122,18 +122,18 @@ class Schedule(commands.Cog, name='自動化'):
                 await interaction.response.send_message('請選擇要自動簽到的遊戲：', view=choose_game_btn)
                 await choose_game_btn.wait()
                 if choose_game_btn.value == None: 
-                    await interaction.edit_original_message(embed=EmbedTemplate.normal('已取消') ,content=None, view=None)
+                    await interaction.edit_original_response(embed=EmbedTemplate.normal('已取消') ,content=None, view=None)
                     return
                 
                 daily_mention_btn = self.DailyMentionButton(interaction.user)
-                await interaction.edit_original_message(content=f'每日自動簽到時希望小幫手tag你({interaction.user.mention})嗎？', view=daily_mention_btn)
+                await interaction.edit_original_response(content=f'每日自動簽到時希望小幫手tag你({interaction.user.mention})嗎？', view=daily_mention_btn)
                 await daily_mention_btn.wait()
                 
                 # 新增使用者
                 self.__add_user(str(interaction.user.id), str(interaction.channel_id), self.__daily_dict, self.__daily_reward_filename, mention=daily_mention_btn.value)
                 if choose_game_btn.value == '原神+崩3': # 新增崩壞3使用者
                     self.__add_honkai_user(str(interaction.user.id), self.__daily_dict, self.__daily_reward_filename)
-                await interaction.edit_original_message(embed=EmbedTemplate.normal(
+                await interaction.edit_original_response(embed=EmbedTemplate.normal(
                     f'{choose_game_btn.value}每日自動簽到已開啟，簽到時小幫手{"會" if daily_mention_btn.value else "不會"}tag你'), content=None, view=None)
             elif switch == 0: # 關閉簽到功能
                 self.__remove_user(str(interaction.user.id), self.__daily_dict, self.__daily_reward_filename)

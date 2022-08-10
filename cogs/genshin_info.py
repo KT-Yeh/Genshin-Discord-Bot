@@ -24,10 +24,10 @@ class RealtimeNotes:
                 genshin_app.getRealtimeNote(str(user.id))
             )
         except Exception as e:
-            await interaction.edit_original_message(embed=EmbedTemplate.error(str(e)))
+            await interaction.edit_original_response(embed=EmbedTemplate.error(str(e)))
         else:
             embed = genshin_app.parseNotes(notes, user=user, shortForm=shortForm)
-            await interaction.edit_original_message(embed=embed)
+            await interaction.edit_original_response(embed=embed)
 
 class SpiralAbyss:
     """深境螺旋"""
@@ -69,7 +69,7 @@ class SpiralAbyss:
                 genshin_app.getCharacters(str(user.id))
             )
         except Exception as e:
-            await interaction.edit_original_message(embed=EmbedTemplate.error(str(e)))
+            await interaction.edit_original_response(embed=EmbedTemplate.error(str(e)))
         else:
             embed = genshin_app.parseAbyssOverview(abyss)
             embed.title = f'{user.display_name} 的深境螺旋戰績'
@@ -78,7 +78,7 @@ class SpiralAbyss:
             if len(abyss.floors) > 0:
                 view = SpiralAbyss.AuthorOnlyView(interaction.user, config.discord_view_long_timeout)
                 view.add_item(SpiralAbyss.AbyssFloorDropdown(embed, abyss.floors, characters))
-            await interaction.edit_original_message(embed=embed, view=view)
+            await interaction.edit_original_response(embed=embed, view=view)
 
 class TravelerDiary:
     """旅行者札記"""
@@ -90,10 +90,10 @@ class TravelerDiary:
                 genshin_app.getTravelerDiary(str(user.id), month)
             )
         except Exception as e:
-            await interaction.edit_original_message(embed=EmbedTemplate.error(str(e)))
+            await interaction.edit_original_response(embed=EmbedTemplate.error(str(e)))
         else:
             embed.set_thumbnail(url=user.display_avatar.url)
-            await interaction.edit_original_message(embed=embed)
+            await interaction.edit_original_response(embed=embed)
 
 class RecordCard:
     """遊戲紀錄卡片"""
@@ -105,7 +105,7 @@ class RecordCard:
                 genshin_app.getRecordCard(str(user.id))
             )
         except Exception as e:
-            await interaction.edit_original_message(embed=EmbedTemplate.error(str(e)))
+            await interaction.edit_original_response(embed=EmbedTemplate.error(str(e)))
             return
         
         try:
@@ -114,10 +114,10 @@ class RecordCard:
         except Exception as e:
             log.warning(f'[例外][{interaction.user.id}][slash_card]: {e}')
             sentry_sdk.capture_exception(e)
-            await interaction.edit_original_message(embed=EmbedTemplate.error('發生錯誤，卡片製作失敗'))
+            await interaction.edit_original_response(embed=EmbedTemplate.error('發生錯誤，卡片製作失敗'))
         else:
             fp.seek(0)
-            await interaction.edit_original_message(attachments=[discord.File(fp=fp, filename='image.jpeg')])
+            await interaction.edit_original_response(attachments=[discord.File(fp=fp, filename='image.jpeg')])
             fp.close()
 
 class Characters:
@@ -157,10 +157,10 @@ class Characters:
                 genshin_app.getCharacters(str(user.id))
             )
         except Exception as e:
-            await interaction.edit_original_message(embed=EmbedTemplate.error(str(e)))
+            await interaction.edit_original_response(embed=EmbedTemplate.error(str(e)))
         else:
             view = Characters.DropdownView(user, characters)
-            await interaction.edit_original_message(content='請選擇角色：', view=view)
+            await interaction.edit_original_response(content='請選擇角色：', view=view)
 
 class Showcase:
     """角色展示櫃"""
@@ -170,9 +170,9 @@ class Showcase:
         uid = uid or genshin_app.getUID(str(user.id))
         log.info(f'[指令][{interaction.user.id}]showcase角色展示櫃: uid={uid}')
         if uid == None:
-            await interaction.edit_original_message(embed=EmbedTemplate.error('小幫手內找不到使用者資料，請直接在指令uid參數中輸入欲查詢的UID'))
+            await interaction.edit_original_response(embed=EmbedTemplate.error('小幫手內找不到使用者資料，請直接在指令uid參數中輸入欲查詢的UID'))
         elif len(str(uid)) != 9 or str(uid)[0] not in ['1', '2', '5', '6', '7', '8', '9']:
-            await interaction.edit_original_message(embed=EmbedTemplate.error('輸入的UID格式錯誤'))
+            await interaction.edit_original_response(embed=EmbedTemplate.error('輸入的UID格式錯誤'))
         else:
             showcase = Enka.Showcase(uid)
             try:
@@ -180,11 +180,11 @@ class Showcase:
             except Exception as e:
                 log.warning(f'[例外][{interaction.user.id}]showcase角色展示櫃: {e}')
                 sentry_sdk.capture_exception(e)
-                await interaction.edit_original_message(embed=EmbedTemplate.error(f"{e}，你可以點擊 [連結]({showcase.url}) 查看網站狀態"))
+                await interaction.edit_original_response(embed=EmbedTemplate.error(f"{e}，你可以點擊 [連結]({showcase.url}) 查看網站狀態"))
             else:
                 view = Enka.ShowcaseView(showcase)
                 embed = showcase.getPlayerOverviewEmbed()
-                await interaction.edit_original_message(embed=embed, view=view)
+                await interaction.edit_original_response(embed=embed, view=view)
 
 class GenshinInfo(commands.Cog, name='原神資訊'):
     """斜線指令"""
