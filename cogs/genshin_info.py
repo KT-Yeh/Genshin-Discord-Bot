@@ -3,7 +3,7 @@ import discord
 import genshin
 import asyncio
 import sentry_sdk
-from typing import Optional, Sequence
+from typing import Sequence
 from discord import app_commands
 from discord.ext import commands
 from discord.app_commands import Choice
@@ -12,7 +12,6 @@ from utility.draw import drawRecordCard, drawAbyssCard
 from utility.utils import log, EmbedTemplate
 from utility.config import config
 from utility.emoji import emoji
-from utility import Enka
 
 class RealtimeNotes:
     """即時便箋"""
@@ -162,30 +161,6 @@ class Characters:
             view = Characters.DropdownView(user, characters)
             await interaction.edit_original_response(content='請選擇角色：', view=view)
 
-class Showcase:
-    """角色展示櫃"""
-    @staticmethod
-    async def showcase(interaction: discord.Interaction, user: discord.User, uid: Optional[int] = None):
-        await interaction.response.defer()
-        uid = uid or genshin_app.getUID(str(user.id))
-        log.info(f'[指令][{interaction.user.id}]showcase角色展示櫃: uid={uid}')
-        if uid == None:
-            await interaction.edit_original_response(embed=EmbedTemplate.error('小幫手內找不到使用者資料，請直接在指令uid參數中輸入欲查詢的UID'))
-        elif len(str(uid)) != 9 or str(uid)[0] not in ['1', '2', '5', '6', '7', '8', '9']:
-            await interaction.edit_original_response(embed=EmbedTemplate.error('輸入的UID格式錯誤'))
-        else:
-            showcase = Enka.Showcase(uid)
-            try:
-                await showcase.getEnkaData()
-            except Exception as e:
-                log.warning(f'[例外][{interaction.user.id}]showcase角色展示櫃: {e}')
-                sentry_sdk.capture_exception(e)
-                await interaction.edit_original_response(embed=EmbedTemplate.error(f"{e}，你可以點擊 [連結]({showcase.url}) 查看網站狀態"))
-            else:
-                view = Enka.ShowcaseView(showcase)
-                embed = showcase.getPlayerOverviewEmbed()
-                await interaction.edit_original_response(embed=embed, view=view)
-
 class GenshinInfo(commands.Cog, name='原神資訊'):
     """斜線指令"""
     def __init__(self, bot):
@@ -263,16 +238,6 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
     async def slash_characters(self, interaction: discord.Interaction):
         await Characters.characters(interaction, interaction.user)
 
-    #-------------------------------------------------------------
-    # 角色展示櫃
-    @app_commands.command(name='showcase角色展示櫃', description='查詢指定UID玩家的公開角色展示櫃')
-    @app_commands.rename(user='使用者')
-    @app_commands.describe(
-        uid='欲查詢的玩家UID，若小幫手已保存資料的話查自己不需要填本欄位',
-        user='查詢其他成員的資料，不填寫則查詢自己')
-    async def slash_showcase(self, interaction: discord.Interaction, uid: Optional[int] = None, user: discord.User = None):
-        await Showcase.showcase(interaction, user or interaction.user, uid)
-
 async def setup(client: commands.Bot):
     await client.add_cog(GenshinInfo(client))
     
@@ -293,7 +258,3 @@ async def setup(client: commands.Bot):
     @client.tree.context_menu(name='遊戲紀錄卡片')
     async def context_card(interaction: discord.Interaction, user: discord.User):
         await RecordCard.card(interaction, user)
-
-    @client.tree.context_menu(name='角色展示櫃')
-    async def context_showcase(interaction: discord.Interaction, user: discord.User):
-        await Showcase.showcase(interaction, user, None)

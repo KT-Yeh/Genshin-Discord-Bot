@@ -4,7 +4,7 @@ import genshin
 import re
 import json
 from datetime import datetime
-from data.game.characters import characters_map
+from data.game.character_names import character_names
 from sentry_sdk.integrations.logging import LoggingIntegration
 
 logging.basicConfig(
@@ -20,9 +20,7 @@ sentry_logging = LoggingIntegration(
 )
 
 def getCharacterName(character: genshin.models.BaseCharacter) -> str:
-    chinese_name = None
-    if (id := str(character.id)) in characters_map:
-        chinese_name = characters_map[id].get('name')
+    chinese_name = character_names.get(character.id)
     return chinese_name if chinese_name != None else character.name
 
 def trimCookie(cookie: str) -> str:
