@@ -135,6 +135,8 @@ class Schedule(commands.Cog, name='自動化'):
                     self.__add_honkai_user(str(interaction.user.id), self.__daily_dict, self.__daily_reward_filename)
                 await interaction.edit_original_response(embed=EmbedTemplate.normal(
                     f'{choose_game_btn.value}每日自動簽到已開啟，簽到時小幫手{"會" if daily_mention_btn.value else "不會"}tag你'), content=None, view=None)
+                # 設定完成後幫使用者當日簽到
+                await genshin_app.claimDailyReward(str(interaction.user.id), honkai=(choose_game_btn.value == '原神+崩3'))
             elif switch == 0: # 關閉簽到功能
                 self.__remove_user(str(interaction.user.id), self.__daily_dict, self.__daily_reward_filename)
                 await interaction.response.send_message(embed=EmbedTemplate.normal('每日自動簽到已關閉'))
