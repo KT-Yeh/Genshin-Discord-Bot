@@ -99,7 +99,7 @@ class RecordCard:
     @staticmethod
     async def card(interaction: discord.Interaction, user: discord.User):
         try:
-            defer, (card, userstats) = await asyncio.gather(
+            defer, (account, userstats) = await asyncio.gather(
                 interaction.response.defer(),
                 genshin_app.getRecordCard(str(user.id))
             )
@@ -109,7 +109,7 @@ class RecordCard:
         
         try:
             avatar_bytes = await user.display_avatar.read()
-            fp = drawRecordCard(avatar_bytes, card, userstats)
+            fp = drawRecordCard(avatar_bytes, account, userstats)
         except Exception as e:
             log.warning(f'[例外][{interaction.user.id}][slash_card]: {e}')
             sentry_sdk.capture_exception(e)
