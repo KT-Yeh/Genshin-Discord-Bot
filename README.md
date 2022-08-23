@@ -1,16 +1,16 @@
 # 原神 Discord Bot
 
-歡迎將本專案所有或部分程式碼放入你自己的機器人中，只需要在你專案的 README 說明文件或任何地方放入本專案的作者與連結即可
+歡迎將本專案所有或部分程式碼放入你自己的機器人中，只需要在你專案的網頁、README 或任何公開的說明文件放入本專案的作者與連結
 
-Feel free to take all or part of the code to your own bot, just put the author and URL of this project in your project's README or any documentation.
+Feel free to take all or part of the code to your own bot, just put the author and URL of this project in your project's website, README or any public documentation.
 
-## 公共機器人
+## 邀請原神小幫手
 [![](https://i.imgur.com/ULhx0EP.png)](https://bit.ly/原神小幫手邀請)
-
 #### 點擊上圖或邀請連結：https://bit.ly/原神小幫手邀請
+Discord 支援伺服器：https://discord.gg/myugWxgRjd
 
 ## 簡介
-使用 Discord 機器人直接查詢原神內各項資訊，包含：
+使用機器人直接在 Discord 聊天頻道內查看原神內各項資訊，包含：
 - 查詢即時便箋，包含樹脂、洞天寶錢、參數質變儀、探索派遣完成時間...等
 - 查詢深境螺旋紀錄
 - 查詢旅行者札記
@@ -21,6 +21,12 @@ Feel free to take all or part of the code to your own bot, just put the author a
 - 查詢任意玩家的展示櫃，顯示展示櫃內角色的面板、聖遺物詳情
 - 採用新的斜線指令，輸入 / 自動彈出指令提示，不需要記憶任何指令的使用方式
 
+
+## 使用方式
+- 邀請到自己伺服器後，輸入斜線 `/` 查看各項指令
+- 第一次請先使用指令 `/cookie設定`，Cookie 取得方式：https://bit.ly/3LgQkg0
+- 設定自動簽到與樹脂提醒，使用指令 `/schedule排程`
+
 ## 展示
 更多展示圖片、GIF 請參考巴哈介紹文章：https://forum.gamer.com.tw/Co.php?bsn=36730&sn=162433
 
@@ -28,7 +34,7 @@ Feel free to take all or part of the code to your own bot, just put the author a
 
 
 ## 自己安裝 & 架設機器人
-公共機器人運行的程式碼與此 Github 上的程式碼完全一樣，安裝前請先確認自己遇到基本的問題有 Google 解決的能力，任何不關於本專案程式碼的問題（例如：python 安裝、套件安裝...等），請不要來問我。舉例來說：你不會拿著食譜去問食譜作者你家的瓦斯爐要怎麼開、烤箱沒插電怎麼辦之類的問題。若是有功能或是程式碼上的問題與建議，歡迎來討論。
+安裝前請先確認自己遇到基本的問題有 Google 解決的能力，任何不關於本專案程式碼的問題（例如：python 安裝、套件安裝...等），請不要來問我。舉例來說：你不會拿著食譜去問食譜作者你家的瓦斯爐要怎麼開、烤箱沒插電怎麼辦之類的問題。若是有功能或是程式碼上的問題與建議，歡迎來討論。
 
 ### 網頁端
 1. 到 [Discord Developer](https://discord.com/developers/applications "Discord Developer") 登入 Discord 帳號
