@@ -32,18 +32,10 @@ class GenshinTool(commands.Cog, name='原神工具'):
                 await interaction.edit_original_response(embed=discord.Embed(color=0xfcc766, description=f"{msg}正在等待5秒冷卻時間使用第{i+1}組兌換碼..."))
                 await asyncio.sleep(5)
             try:
-                result = await genshin_app.redeemCode(str(interaction.user.id), code)
+                result = '✅' + await genshin_app.redeemCode(str(interaction.user.id), code)
             except Exception as e:
-                result = str(e)
-            if len(result) > 0:
-                msg += f"{code} {result}\n"
-            else:
-                # 兌換網頁無任何回應訊息時，則新增連結按鈕至官網兌換，並結束本函式
-                view = discord.ui.View()
-                for code in codes:
-                    view.add_item(discord.ui.Button(label=code, url=f"https://genshin.hoyoverse.com/gift?code={code}"))
-                await interaction.edit_original_response(content='使用過程中發生錯誤，請直接點擊按鈕至官網兌換', view=view)
-                return
+                result = '❌' + str(e)
+            msg += f"[{code}](https://genshin.hoyoverse.com/gift?code={code})：{result}\n"
         await interaction.edit_original_response(embed=discord.Embed(color=0x8fce00, description=msg))
 
     # 為使用者在Hoyolab簽到
