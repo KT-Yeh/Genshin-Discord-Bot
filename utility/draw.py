@@ -56,7 +56,7 @@ def drawRecordCard(avatar_bytes: bytes, account: genshin.models.GenshinAccount, 
     
     s = user_stats.stats
     stat_list = [(s.days_active, '活躍天數'), (s.achievements, '成就達成數'), (s.characters, '獲得角色數'),
-                (s.anemoculi, '風神瞳'), (s.geoculi, '岩神瞳'), (s.electroculi, '雷神瞳'),
+                (s.anemoculi, '風神瞳'), (s.geoculi, '岩神瞳'), (s.electroculi, '雷神瞳'), (s.dendroculi, '草神瞳'),
                 (s.unlocked_waypoints, '解鎖傳送點'), (s.unlocked_domains, '解鎖秘境'), (s.spiral_abyss, '深境螺旋'),
                 (s.luxurious_chests, '華麗的寶箱數'), (s.precious_chests, '珍貴的寶箱數'), (s.exquisite_chests, '精緻的寶箱數'),
                 (s.common_chests, '普通的寶箱數'), (s.remarkable_chests, '奇饋寶箱數')]
