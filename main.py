@@ -9,12 +9,15 @@ intents = discord.Intents.default()
 class GenshinDiscordBot(commands.Bot):
     def __init__(self):
         super().__init__(
-            command_prefix='%$',
+            command_prefix=commands.when_mentioned,
             intents=intents,
             application_id=config.application_id
         )
 
     async def setup_hook(self) -> None:
+        # 載入 jishaku
+        await self.load_extension('jishaku')
+        
         # 從cogs資料夾載入所有cog
         for filepath in Path('./cogs').glob('**/*.py'):
             cog_name = Path(filepath).stem
@@ -30,8 +33,7 @@ class GenshinDiscordBot(commands.Bot):
         log.info(f'[資訊][System]on_ready: Total {len(self.guilds)} servers connected')
 
     async def on_command_error(self, ctx: commands.Context, error):
-        log.warning(f'[例外][{ctx.author.id}]on_command_error: {error}')
-        sentry_sdk.capture_exception(error)
+        log.info(f'[例外][{ctx.author.id}]on_command_error: {error}')
 
 sentry_sdk.init(dsn=config.sentry_sdk_dsn, integrations=[sentry_logging], traces_sample_rate=1.0)
 

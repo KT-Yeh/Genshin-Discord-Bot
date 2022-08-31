@@ -2,3 +2,4 @@ git+https://github.com/thesadru/genshin.py
 discord.py
 Pillow
 sentry-sdk
+jishaku
