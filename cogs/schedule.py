@@ -218,7 +218,7 @@ class Schedule(commands.Cog, name='自動化'):
                 notes = await genshin_app.getRealtimeNote(user_id, schedule=True)
             except Exception as e:
                 msg = f"自動檢查樹脂時發生錯誤：{str(e)}"
-                self.__resin_check_cooldown[user_id] = 1 # 當發生錯誤時，冷卻次數設為1
+                self.__resin_check_cooldown[user_id] = 2 # 當發生錯誤時，冷卻次數設為2
                 embed = None
             else:
                 if notes.current_resin >= config.auto_check_resin_threshold:

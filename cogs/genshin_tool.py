@@ -36,7 +36,10 @@ class GenshinTool(commands.Cog, name='原神工具'):
             except Exception as e:
                 result = '❌' + str(e)
             msg += f"[{code}](https://genshin.hoyoverse.com/gift?code={code})：{result}\n"
-        await interaction.edit_original_response(embed=discord.Embed(color=0x8fce00, description=msg))
+        
+        embed = discord.Embed(color=0x8fce00, description=msg)
+        embed.set_footer(text='點擊上述兌換碼可至官網兌換')
+        await interaction.edit_original_response(embed=embed)
 
     # 為使用者在Hoyolab簽到
     @app_commands.command(

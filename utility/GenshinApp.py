@@ -406,7 +406,7 @@ class GenshinApp:
         result = discord.Embed(description=f'第 {abyss.season} 期：{abyss.start_time.astimezone().strftime("%Y.%m.%d")} ~ {abyss.end_time.astimezone().strftime("%Y.%m.%d")}', color=0x6959c1)
         get_char = lambda c: ' ' if len(c) == 0 else f'{getCharacterName(c[0])}：{c[0].value}'
         result.add_field(
-            name=f'最深抵達：{abyss.max_floor}　戰鬥次數：{"👑" if abyss.total_stars == 36 and abyss.total_battles == 12 else abyss.total_battles}　★：{abyss.total_stars}',
+            name=f'最深抵達：{abyss.max_floor}　戰鬥次數：{"👑 (12)" if abyss.total_stars == 36 and abyss.total_battles == 12 else abyss.total_battles}　★：{abyss.total_stars}',
             value=f'[最多擊破數] {get_char(abyss.ranks.most_kills)}\n'
                     f'[最強之一擊] {get_char(abyss.ranks.strongest_strike)}\n'
                     f'[受最多傷害] {get_char(abyss.ranks.most_damage_taken)}\n'

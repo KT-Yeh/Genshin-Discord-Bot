@@ -22,6 +22,7 @@ class GenshinDiscordBot(commands.Bot):
         for filepath in Path('./cogs').glob('**/*.py'):
             cog_name = Path(filepath).stem
             await self.load_extension(f'cogs.{cog_name}')
+        
         # 同步Slash commands到測試伺服器，全域伺服器用 /sync 指令
         if config.test_server_id != None:
             test_guild = discord.Object(id=config.test_server_id)
@@ -41,6 +42,7 @@ client = GenshinDiscordBot()
 @client.tree.error
 async def on_error(interaction: discord.Interaction, error: discord.app_commands.AppCommandError) -> None:
     log.warning(f'[例外][{interaction.user.id}]{type(error)}: {error}')
-    sentry_sdk.capture_exception(error)
+    if not isinstance(error, discord.errors.NotFound): # 忽略 Not Found 例外
+        sentry_sdk.capture_exception(error)
 
 client.run(config.bot_token)
