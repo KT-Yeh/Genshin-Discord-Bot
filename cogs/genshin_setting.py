@@ -8,7 +8,7 @@ from discord.app_commands import Choice
 from discord.ext import commands
 from utility.GenshinApp import genshin_app
 from utility.config import config
-from utility.utils import getServerName, EmbedTemplate
+from utility.utils import getServerName, EmbedTemplate, getAppCommandMention
 
 class Setting(commands.Cog, name='設定'):
     def __init__(self, bot):
@@ -52,7 +52,7 @@ class Setting(commands.Cog, name='設定'):
                 "2.PC或手機使用Chrome開啟 [Hoyolab網頁](https://www.hoyolab.com) 並登入帳號\n"
                 "3.在網址列先輸入 `java`，然後貼上程式碼，確保網址開頭變成 `javascript:`\n"
                 "4.按Enter，網頁會變成顯示你的Cookie，全選然後複製\n"
-                "5.在這裡使用：`/cookie設定 提交已取得的Cookie`\n"
+               f"5.在這裡使用 {getAppCommandMention('cookie設定')} 提交已取得的Cookie\n"
                 "· 遇到問題嗎？點 [教學連結](https://bit.ly/3LgQkg0) 看其他方法\n"
             )
             embed.set_image(url="https://i.imgur.com/OQ8arx0.gif")
@@ -69,7 +69,7 @@ class Setting(commands.Cog, name='設定'):
                 '· 小幫手將資料保存於雲端主機獨立環境，只與Discord、Hoyolab伺服器連線\n'
                 '· 更詳細說明可以到 [巴哈說明文](https://forum.gamer.com.tw/Co.php?bsn=36730&sn=162433) 查看，若仍有疑慮請不要使用小幫手\n'
                 '· 當提交Cookie給小幫手時，表示你已同意小幫手保存並使用你的資料\n'
-                '· 你可以隨時刪除保存在小幫手的資料，請使用 `/清除資料` 指令\n')
+               f'· 你可以隨時刪除保存在小幫手的資料，請使用 {getAppCommandMention("清除資料")} 指令\n')
             embed = EmbedTemplate.normal(msg, title='小幫手Cookie使用與保存告知')
             await interaction.response.send_message(embed=embed, ephemeral=True)
     

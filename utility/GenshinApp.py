@@ -6,7 +6,7 @@ import sentry_sdk
 from datetime import datetime
 from typing import Sequence, Union, Tuple, Optional
 from .emoji import emoji
-from .utils import log, getCharacterName, trimCookie, getServerName, getDayOfWeek,user_last_use_time
+from .utils import log, getCharacterName, trimCookie, getServerName, getDayOfWeek, user_last_use_time, getAppCommandMention
 
 class UserDataNotFound(Exception):
     pass
@@ -63,7 +63,7 @@ class GenshinApp:
         user_id = str(user_id)
         cookie = trimCookie(cookie)
         if cookie == None:
-            return f'無效的Cookie，請重新輸入(輸入 `/cookie設定` 顯示說明)'
+            return f'無效的Cookie，請重新輸入(使用 {getAppCommandMention("cookie設定")} 顯示說明)'
         client = genshin.Client(lang='zh-tw')
         client.set_cookies(cookie)
         accounts = await client.genshin_accounts()
@@ -79,7 +79,7 @@ class GenshinApp:
                 self.setUID(user_id, str(accounts[0].uid))
                 result = f'Cookie已設定完成，角色UID: {accounts[0].uid} 已保存！'
             else:
-                result = f'Cookie已保存，你的Hoyolab帳號內共有{len(accounts)}名角色\n請使用指令 `/uid設定` 指定要保存的原神角色'
+                result = f'Cookie已保存，你的Hoyolab帳號內共有{len(accounts)}名角色\n請使用 {getAppCommandMention("uid設定")} 指定要保存的原神角色'
                 self.__saveUserData()
         return result
 
@@ -350,14 +350,14 @@ class GenshinApp:
         """
         if user_id not in self.__user_data.keys():
             log.info(f'[資訊][{user_id}]checkUserData: 找不到使用者')
-            return False, f'找不到使用者，請先設定Cookie(輸入 `/cookie設定` 顯示說明)'
+            return False, f'找不到使用者，請先設定Cookie(使用 {getAppCommandMention("cookie設定")} 顯示說明)'
         else:
             if 'cookie' not in self.__user_data[user_id].keys():
                 log.info(f'[資訊][{user_id}]checkUserData: 找不到Cookie')
-                return False, f'找不到Cookie，請先設定Cookie(輸入 `/cookie設定` 顯示說明)'
+                return False, f'找不到Cookie，請先設定Cookie(使用 {getAppCommandMention("cookie設定")} 顯示說明)'
             if checkUID and 'uid' not in self.__user_data[user_id].keys():
                 log.info(f'[資訊][{user_id}]checkUserData: 找不到角色UID')
-                return False, f'找不到角色UID，請先設定UID(使用 `/uid設定` 來設定UID)'
+                return False, f'找不到角色UID，請先設定UID(使用 {getAppCommandMention("uid設定")} 來設定UID)'
         if update_use_time:
             user_last_use_time.update(user_id)
         return True, None

@@ -49,6 +49,17 @@ def getDayOfWeek(time: datetime) -> str:
         return '明天'
     return __weekday_dict.get(time.weekday())
 
+def getAppCommandMention(name: str) -> str:
+    """取得斜線指令的Mention格式"""
+    if not hasattr(getAppCommandMention, 'appcmd_id'):
+        try:
+            with open('data/app_commands.json', 'r', encoding='utf-8') as f:
+                getAppCommandMention.appcmd_id: dict[str, int] = json.load(f)
+        except:
+            getAppCommandMention.appcmd_id = dict()
+    id = getAppCommandMention.appcmd_id.get(name)
+    return f"</{name}:{id}>" if id != None else f"`/{name}`"
+
 class EmbedTemplate:
     @staticmethod
     def normal(message: str, **kwargs):
