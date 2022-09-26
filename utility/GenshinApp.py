@@ -220,6 +220,8 @@ class GenshinApp:
         except genshin.errors.GenshinException as e:
             if e.retcode != 2001:
                 log.warning(f'[例外][{user_id}]claimDailyReward: Hoyolab[retcode]{e.retcode} [例外內容]{e.original}')
+        except Exception as e:
+            log.warning(f'[例外][{user_id}]claimDailyReward: Hoyolab[例外內容]{e}')
         
         return result
 
