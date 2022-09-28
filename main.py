@@ -6,7 +6,7 @@ from utility.config import config
 from utility.utils import log, sentry_logging
 
 intents = discord.Intents.default()
-class GenshinDiscordBot(commands.Bot):
+class GenshinDiscordBot(commands.AutoShardedBot):
     def __init__(self):
         super().__init__(
             command_prefix=commands.when_mentioned,
