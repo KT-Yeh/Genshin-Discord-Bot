@@ -7,17 +7,10 @@ from discord.ext import commands
 from utility.GenshinApp import genshin_app
 from utility.utils import EmbedTemplate
 
-class GenshinTool(commands.Cog, name='原神工具'):
-    def __init__(self, bot):
-        self.bot = bot
-    
-    # 為使用者使用指定的兌換碼
-    @app_commands.command(
-        name='redeem兌換',
-        description='使用Hoyolab兌換碼')
-    @app_commands.rename(code='兌換碼')
-    @app_commands.describe(code='請輸入要使用的兌換碼，支援多組兌換碼同時輸入')
-    async def slash_redeem(self, interaction: discord.Interaction, code: str):
+class RedeemCode:
+    """使用兌換碼"""
+    @staticmethod
+    async def redeem(interaction: discord.Interaction, user: discord.User, code: str):
         # 匹配多組兌換碼並存成list
         codes = re.findall(r"[A-Za-z0-9]{3,30}", code)
         if len(codes) == 0:
@@ -32,7 +25,7 @@ class GenshinTool(commands.Cog, name='原神工具'):
                 await interaction.edit_original_response(embed=discord.Embed(color=0xfcc766, description=f"{msg}正在等待5秒冷卻時間使用第{i+1}組兌換碼..."))
                 await asyncio.sleep(5)
             try:
-                result = '✅' + await genshin_app.redeemCode(str(interaction.user.id), code)
+                result = '✅' + await genshin_app.redeemCode(str(user.id), code)
             except Exception as e:
                 result = '❌' + str(e)
             msg += f"[{code}](https://genshin.hoyoverse.com/gift?code={code})：{result}\n"
@@ -41,20 +34,39 @@ class GenshinTool(commands.Cog, name='原神工具'):
         embed.set_footer(text='點擊上述兌換碼可至官網兌換')
         await interaction.edit_original_response(embed=embed)
 
+class GenshinTool(commands.Cog, name='原神工具'):
+    """斜線指令"""
+    def __init__(self, bot):
+        self.bot = bot
+    
+    # 為使用者使用指定的兌換碼
+    @app_commands.command(
+        name='redeem兌換',
+        description='使用Hoyolab兌換碼')
+    @app_commands.rename(code='兌換碼', user='使用者')
+    @app_commands.describe(code='請輸入要使用的兌換碼，支援多組兌換碼同時輸入')
+    async def slash_redeem(self, interaction: discord.Interaction, code: str, user: discord.User = None):
+        await RedeemCode.redeem(interaction, user or interaction.user, code)
+
     # 為使用者在Hoyolab簽到
     @app_commands.command(
         name='daily每日簽到',
         description='領取Hoyolab每日簽到獎勵')
-    @app_commands.rename(game='遊戲')
+    @app_commands.rename(game='遊戲', user='使用者')
     @app_commands.choices(game=[
         Choice(name='原神', value=0), 
         Choice(name='原神 + 崩壞3', value=1)])
-    async def slash_daily(self, interaction: discord.Interaction, game: int = 0):
+    async def slash_daily(self, interaction: discord.Interaction, game: int = 0, user: discord.User = None):
+        user = user or interaction.user
         defer, result = await asyncio.gather(
             interaction.response.defer(),
-            genshin_app.claimDailyReward(str(interaction.user.id), honkai=bool(game))
+            genshin_app.claimDailyReward(str(user.id), honkai=bool(game))
         )
         await interaction.edit_original_response(embed=EmbedTemplate.normal(result))
 
 async def setup(client: commands.Bot):
     await client.add_cog(GenshinTool(client))
+
+    @client.tree.context_menu(name='使用兌換碼')
+    async def context_redeem(interaction: discord.Interaction, msg: discord.Message):
+        await RedeemCode.redeem(interaction, interaction.user, msg.content)
