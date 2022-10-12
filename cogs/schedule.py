@@ -149,6 +149,23 @@ class Schedule(commands.Cog, name='自動化'):
                 self.__remove_user(str(interaction.user.id), self.__resin_dict, self.__resin_notifi_filename)
                 await interaction.response.send_message(embed=EmbedTemplate.normal('樹脂額滿提醒已關閉'))
 
+    # 具有頻道管理訊息權限的人可使用本指令，移除指定使用者的頻道排程設定
+    @app_commands.command(name='移除排程使用者', description='擁有管理此頻道訊息權限的人可使用本指令，移除指定使用者的排程設定')
+    @app_commands.rename(function='功能', user='使用者')
+    @app_commands.describe(function='選擇要移除的功能')
+    @app_commands.choices(
+        function=[Choice(name='每日自動簽到', value='daily'),
+                  Choice(name='樹脂額滿提醒', value='resin')])
+    @app_commands.default_permissions(manage_messages=True)
+    async def slash_remove_user(self, interaction: discord.Interaction, function: str, user: discord.User):
+        log.info(f'[指令][{interaction.user.id}]移除排程使用者(function={function}, user={user.id})')
+        if function == 'daily':
+            self.__remove_user(str(user.id), self.__daily_dict, self.__daily_reward_filename)
+            await interaction.response.send_message(embed=EmbedTemplate.normal(f'{user.display_name}的每日自動簽到已關閉'))
+        elif function == 'resin':
+            self.__remove_user(str(user.id), self.__resin_dict, self.__resin_notifi_filename)
+            await interaction.response.send_message(embed=EmbedTemplate.normal(f'{user.display_name}的樹脂額滿提醒已關閉'))
+
     loop_interval = 10 # 循環間隔10分鐘
     @tasks.loop(minutes=loop_interval)
     async def schedule(self):
