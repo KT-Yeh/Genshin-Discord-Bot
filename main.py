@@ -1,4 +1,5 @@
 import discord
+import genshin
 import sentry_sdk
 from discord.ext import commands
 from pathlib import Path
@@ -25,6 +26,9 @@ class GenshinDiscordBot(commands.AutoShardedBot):
 
         # 初始化資料庫
         await self.db.create('data/bot.db')
+
+        # 初始化 genshin api 角色名字
+        await genshin.utility.update_characters_ambr(['zh-tw'])
 
         # 從cogs資料夾載入所有cog
         for filepath in Path('./cogs').glob('**/*.py'):

@@ -5,7 +5,7 @@ import sentry_sdk
 from typing import Sequence, Union, Tuple, Optional
 from data.database import db, User
 from .emoji import emoji
-from .utils import log, getCharacterName, trimCookie, getServerName, getDayOfWeek, getAppCommandMention
+from .utils import log, trimCookie, getServerName, getDayOfWeek, getAppCommandMention
 
 class UserDataNotFound(Exception):
     pass
@@ -344,7 +344,7 @@ class GenshinApp:
         `discord.Embed`: discord嵌入格式
         """
         result = discord.Embed(description=f'第 {abyss.season} 期：{abyss.start_time.astimezone().strftime("%Y.%m.%d")} ~ {abyss.end_time.astimezone().strftime("%Y.%m.%d")}', color=0x6959c1)
-        get_char = lambda c: ' ' if len(c) == 0 else f'{getCharacterName(c[0])}：{c[0].value}'
+        get_char = lambda c: ' ' if len(c) == 0 else f'{c[0].name}：{c[0].value}'
         result.add_field(
             name=f'最深抵達：{abyss.max_floor}　戰鬥次數：{"👑 (12)" if abyss.total_stars == 36 and abyss.total_battles == 12 else abyss.total_battles}　★：{abyss.total_stars}',
             value=f'[最多擊破數] {get_char(abyss.ranks.most_kills)}\n'
@@ -369,7 +369,7 @@ class GenshinApp:
         chara_list = [[], []] # 分成上下半間
         for i, battle in enumerate(chamber.battles):
             for chara in battle.characters:
-                chara_list[i].append(getCharacterName(chara))
+                chara_list[i].append(chara.name)
         return f'{".".join(chara_list[0])} ／\n{".".join(chara_list[1])}'
     
     def parseCharacter(self, character: genshin.models.Character) -> discord.Embed:
@@ -452,7 +452,7 @@ class GenshinApp:
         exped_finished = 0
         exped_msg = ''
         for expedition in notes.expeditions:
-            exped_msg += f'． {getCharacterName(expedition.character)}：'
+            exped_msg += f'． {expedition.character.name}：'
             if expedition.finished:
                 exped_finished += 1
                 exped_msg += '已完成\n'
