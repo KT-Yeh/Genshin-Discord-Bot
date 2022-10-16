@@ -20,12 +20,12 @@ class RealtimeNotes:
         try:
             defer, notes = await asyncio.gather(
                 interaction.response.defer(),
-                genshin_app.getRealtimeNote(str(user.id))
+                genshin_app.getRealtimeNote(user.id)
             )
         except Exception as e:
             await interaction.edit_original_response(embed=EmbedTemplate.error(str(e)))
         else:
-            embed = genshin_app.parseNotes(notes, user=user, shortForm=shortForm)
+            embed = await genshin_app.parseNotes(notes, user=user, shortForm=shortForm)
             await interaction.edit_original_response(embed=embed)
 
 class SpiralAbyss:
@@ -64,8 +64,8 @@ class SpiralAbyss:
         try:
             defer, abyss, characters = await asyncio.gather(
                 interaction.response.defer(),
-                genshin_app.getSpiralAbyss(str(user.id), previous),
-                genshin_app.getCharacters(str(user.id))
+                genshin_app.getSpiralAbyss(user.id, previous),
+                genshin_app.getCharacters(user.id)
             )
         except Exception as e:
             await interaction.edit_original_response(embed=EmbedTemplate.error(str(e)))
@@ -86,7 +86,7 @@ class TravelerDiary:
         try:
             defer, embed = await asyncio.gather(
                 interaction.response.defer(),
-                genshin_app.getTravelerDiary(str(user.id), month)
+                genshin_app.getTravelerDiary(user.id, month)
             )
         except Exception as e:
             await interaction.edit_original_response(embed=EmbedTemplate.error(str(e)))
@@ -101,7 +101,7 @@ class RecordCard:
         try:
             defer, (account, userstats) = await asyncio.gather(
                 interaction.response.defer(),
-                genshin_app.getRecordCard(str(user.id))
+                genshin_app.getRecordCard(user.id)
             )
         except Exception as e:
             await interaction.edit_original_response(embed=EmbedTemplate.error(str(e)))
@@ -153,7 +153,7 @@ class Characters:
         try:
             defer, characters = await asyncio.gather(
                 interaction.response.defer(),
-                genshin_app.getCharacters(str(user.id))
+                genshin_app.getCharacters(user.id)
             )
         except Exception as e:
             await interaction.edit_original_response(embed=EmbedTemplate.error(str(e)))

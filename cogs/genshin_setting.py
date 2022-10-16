@@ -9,6 +9,7 @@ from discord.ext import commands
 from utility.GenshinApp import genshin_app
 from utility.config import config
 from utility.utils import getServerName, EmbedTemplate, getAppCommandMention
+from data import database
 
 class Setting(commands.Cog, name='設定'):
     def __init__(self, bot):
@@ -26,7 +27,7 @@ class Setting(commands.Cog, name='設定'):
         )
         async def on_submit(self, interaction: discord.Interaction):
             try:
-                msg = await genshin_app.setCookie(str(interaction.user.id), self.cookie.value)
+                msg = await genshin_app.setCookie(interaction.user.id, self.cookie.value)
             except Exception as e:
                 await interaction.response.send_message(embed=EmbedTemplate.error(str(e)), ephemeral=True)
             else:
@@ -86,7 +87,7 @@ class Setting(commands.Cog, name='設定'):
             self.accounts = accounts
         
         async def callback(self, interaction: discord.Interaction):
-            msg = genshin_app.setUID(str(interaction.user.id), str(self.accounts[int(self.values[0])].uid))
+            msg = await genshin_app.setUID(interaction.user.id, self.accounts[int(self.values[0])].uid)
             await interaction.response.edit_message(embed=EmbedTemplate.normal(msg), view=None)
 
     # 設定原神UID，當帳號內有多名角色時，保存指定的UID
@@ -97,7 +98,7 @@ class Setting(commands.Cog, name='設定'):
         try:
             defer, accounts = await asyncio.gather(
                 interaction.response.defer(ephemeral=True),
-                genshin_app.getGameAccounts(str(interaction.user.id))
+                genshin_app.getGameAccounts(interaction.user.id)
             )
         except Exception as e:
             await interaction.edit_original_response(embed=EmbedTemplate.error(str(e)))
@@ -134,8 +135,8 @@ class Setting(commands.Cog, name='設定'):
         
         await view.wait()
         if view.value == True:
-            result = genshin_app.clearUserData(str(interaction.user.id))
-            await interaction.edit_original_response(content=result, view=None)
+            await database.db.removeUser(interaction.user.id)
+            await interaction.edit_original_response(content='使用者資料已全部刪除', view=None)
         else:
             await interaction.edit_original_response(content='取消指令', view=None)
 

@@ -1,12 +1,11 @@
 import asyncio
-import json
 import discord
 import genshin
 import sentry_sdk
-from datetime import datetime
 from typing import Sequence, Union, Tuple, Optional
+from data.database import db, User
 from .emoji import emoji
-from .utils import log, getCharacterName, trimCookie, getServerName, getDayOfWeek, user_last_use_time, getAppCommandMention
+from .utils import log, getCharacterName, trimCookie, getServerName, getDayOfWeek, getAppCommandMention
 
 class UserDataNotFound(Exception):
     pass
@@ -41,26 +40,21 @@ def generalErrorHandler(func):
 
 class GenshinApp:
     def __init__(self) -> None:
-        try:
-            with open('data/user_data.json', 'r', encoding="utf-8") as f:
-                self.__user_data: dict[str, dict[str, str]] = json.load(f)
-        except:
-            self.__user_data: dict[str, dict[str, str]] = { }
+        pass
 
     @generalErrorHandler
-    async def setCookie(self, user_id: str, cookie: str) -> str:
+    async def setCookie(self, user_id: int, cookie: str) -> str:
         """設定使用者Cookie
         
         ------
         Parameters
-        user_id `str`: 使用者Discord ID
+        user_id `int`: 使用者Discord ID
         cookie `str`: Hoyolab cookie
         ------
         Returns
         `str`: 回覆給使用者的訊息
         """
         log.info(f'[指令][{user_id}]setCookie: cookie={cookie}')
-        user_id = str(user_id)
         cookie = trimCookie(cookie)
         if cookie == None:
             return f'無效的Cookie，請重新輸入(使用 {getAppCommandMention("cookie設定")} 顯示說明)'
@@ -71,65 +65,61 @@ class GenshinApp:
             log.info(f'[資訊][{user_id}]setCookie: 帳號內沒有任何角色')
             result = '帳號內沒有任何角色，取消設定Cookie'
         else:
-            self.__user_data[user_id] = {}
-            self.__user_data[user_id]['cookie'] = cookie
+            await db.users.add(User(id=user_id, cookie=cookie))
             log.info(f'[資訊][{user_id}]setCookie: Cookie設置成功')
             
             if len(accounts) == 1 and len(str(accounts[0].uid)) == 9:
-                self.setUID(user_id, str(accounts[0].uid))
+                await self.setUID(user_id, accounts[0].uid)
                 result = f'Cookie已設定完成，角色UID: {accounts[0].uid} 已保存！'
             else:
                 result = f'Cookie已保存，你的Hoyolab帳號內共有{len(accounts)}名角色\n請使用 {getAppCommandMention("uid設定")} 指定要保存的原神角色'
-                self.__saveUserData()
         return result
 
     @generalErrorHandler
-    async def getGameAccounts(self, user_id: str) -> Sequence[genshin.models.GenshinAccount]:
+    async def getGameAccounts(self, user_id: int) -> Sequence[genshin.models.GenshinAccount]:
         """取得同一個Hoyolab帳號下，各伺服器的原神帳號
 
         ------
         Parameters
-        user_id `str`: 使用者Discord ID
+        user_id `int`: 使用者Discord ID
         ------
         Returns
         Sequence[genshin.models.GenshinAccount]`: 查詢結果
         """
-        check, msg = self.checkUserData(user_id, checkUID=False)
+        user = await db.users.get(user_id)
+        check, msg = await db.users.exist(user, check_uid=False)
         if check == False:
             raise UserDataNotFound(msg)
-        client = self.__getGenshinClient(user_id)
+        client = self.__getGenshinClient(user)
         return await client.genshin_accounts()
     
-    def setUID(self, user_id: str, uid: str) -> str:
+    async def setUID(self, user_id: int, uid: int) -> str:
         """保存指定的UID
 
         ------
         Parameters
-        user_id `str`: 使用者Discord ID
-        uid `str`: 欲保存的原神UID
+        user_id `int`: 使用者Discord ID
+        uid `int`: 欲保存的原神UID
         ------
         Returns
         `str`: 回覆給使用者的訊息
         """
         log.info(f'[指令][{user_id}]setUID: uid={uid}')
-        self.__user_data[user_id]['uid'] = uid
-        self.__saveUserData()
+        await db.users.update(user_id, uid=uid)
         return f'角色UID: {uid} 已設定完成'
     
-    def getUID(self, user_id: str) -> Union[int, None]:
-        if user_id in self.__user_data.keys():
-            user_last_use_time.update(user_id)
-            if (uid :=self.__user_data[user_id].get('uid')) != None:
-                return int(uid)
-        return None
+    async def getUID(self, user_id: int) -> Union[int, None]:
+        """取得指定使用者的UID"""
+        user = await db.users.get(user_id)
+        return user.uid
 
     @generalErrorHandler
-    async def getRealtimeNote(self, user_id: str, *, schedule = False) -> genshin.models.Notes:
+    async def getRealtimeNote(self, user_id: int, *, schedule = False) -> genshin.models.Notes:
         """取得使用者的即時便箋
         
         ------
         Parameters
-        user_id `str`: 使用者Discord ID
+        user_id `int`: 使用者Discord ID
         schedule `bool`: 是否為排程檢查樹脂
         ------
         Returns
@@ -137,39 +127,40 @@ class GenshinApp:
         """
         if not schedule:
             log.info(f'[指令][{user_id}]getRealtimeNote')
-        check, msg = self.checkUserData(user_id, update_use_time=(not schedule))
+        user = await db.users.get(user_id)
+        check, msg = await db.users.exist(user, update_using_time=(not schedule))
         if check == False:
             raise UserDataNotFound(msg)
-        uid = self.__user_data[user_id]['uid']
-        client = self.__getGenshinClient(user_id)
-        return await client.get_genshin_notes(int(uid))
+        client = self.__getGenshinClient(user)
+        return await client.get_genshin_notes(user.uid)
 
     @generalErrorHandler
-    async def redeemCode(self, user_id: str, code: str) -> str:
+    async def redeemCode(self, user_id: int, code: str) -> str:
         """為使用者使用指定的兌換碼
 
         ------
         Parameters
-        user_id `str`: 使用者Discord ID
+        user_id `int`: 使用者Discord ID
         code `str`: Hoyolab兌換碼
         ------
         Returns
         `str`: 回覆給使用者的訊息
         """
         log.info(f'[指令][{user_id}]redeemCode: code={code}')
-        check, msg = self.checkUserData(user_id)
+        user = await db.users.get(user_id)
+        check, msg = await db.users.exist(user)
         if check == False:
             raise UserDataNotFound(msg)
-        client = self.__getGenshinClient(user_id)
-        await client.redeem_code(code, int(self.__user_data[user_id]['uid']))
+        client = self.__getGenshinClient(user)
+        await client.redeem_code(code, user.uid)
         return '兌換碼使用成功！'
 
-    async def claimDailyReward(self, user_id: str, *, honkai: bool = False, schedule = False) -> str:
+    async def claimDailyReward(self, user_id: int, *, honkai: bool = False, schedule = False) -> str:
         """為使用者在Hoyolab簽到
 
         ------
         Parameters
-        user_id `str`: 使用者Discord ID
+        user_id `int`: 使用者Discord ID
         honkai `bool`: 是否也簽到崩壞3
         schedule `bool`: 是否為排程自動簽到
         ------
@@ -178,10 +169,11 @@ class GenshinApp:
         """
         if not schedule:
             log.info(f'[指令][{user_id}]claimDailyReward: honkai={honkai}')
-        check, msg = self.checkUserData(user_id, update_use_time=(not schedule))
+        user = await db.users.get(user_id)
+        check, msg = await db.users.exist(user, update_using_time=(not schedule))
         if check == False:
             return msg
-        client = self.__getGenshinClient(user_id)
+        client = self.__getGenshinClient(user)
         
         game_name = {genshin.Game.GENSHIN: '原神', genshin.Game.HONKAI: '崩壞3'}
         async def claimReward(game: genshin.Game, retry: int = 5) -> str:
@@ -226,44 +218,46 @@ class GenshinApp:
         return result
 
     @generalErrorHandler
-    async def getSpiralAbyss(self, user_id: str, previous: bool = False) -> genshin.models.SpiralAbyss:
+    async def getSpiralAbyss(self, user_id: int, previous: bool = False) -> genshin.models.SpiralAbyss:
         """取得深境螺旋資訊
 
         ------
         Parameters
-        user_id `str`: 使用者Discord ID
+        user_id `int`: 使用者Discord ID
         previous `bool`: `True`查詢前一期的資訊、`False`查詢本期資訊
         ------
         Returns
         `SpiralAbyss`: 查詢結果
         """
         log.info(f'[指令][{user_id}]getSpiralAbyss: previous={previous}')
-        check, msg = self.checkUserData(user_id)
+        user = await db.users.get(user_id)
+        check, msg = await db.users.exist(user)
         if check == False:
             raise UserDataNotFound(msg)
-        client = self.__getGenshinClient(user_id)
+        client = self.__getGenshinClient(user)
         # 為了刷新戰鬥數據榜，需要先對record card發出請求
         await client.get_record_cards()
-        return await client.get_genshin_spiral_abyss(int(self.__user_data[user_id]['uid']), previous=previous)
+        return await client.get_genshin_spiral_abyss(user.uid, previous=previous)
 
     @generalErrorHandler
-    async def getTravelerDiary(self, user_id: str, month: int) -> discord.Embed:
+    async def getTravelerDiary(self, user_id: int, month: int) -> discord.Embed:
         """取得使用者旅行者札記
 
         ------
         Parameters:
-        user_id `str`: 使用者Discord ID
+        user_id `int`: 使用者Discord ID
         month `int`: 欲查詢的月份
         ------
         Returns:
         `discord.Embed`: 查詢結果，已包裝成 discord 嵌入格式
         """
         log.info(f'[指令][{user_id}]getTravelerDiary: month={month}')
-        check, msg = self.checkUserData(user_id)
+        user = await db.users.get(user_id)
+        check, msg = await db.users.exist(user)
         if check == False:
             raise UserDataNotFound(msg)
-        client = self.__getGenshinClient(user_id)
-        diary = await client.get_diary(int(self.__user_data[user_id]['uid']), month=month)
+        client = self.__getGenshinClient(user)
+        diary = await client.get_diary(user.uid, month=month)
         
         d = diary.data
         result = discord.Embed(
@@ -296,104 +290,48 @@ class GenshinApp:
         return result
 
     @generalErrorHandler
-    async def getRecordCard(self, user_id: str) -> Tuple[genshin.models.GenshinAccount, genshin.models.PartialGenshinUserStats]:
+    async def getRecordCard(self, user_id: int) -> Tuple[genshin.models.GenshinAccount, genshin.models.PartialGenshinUserStats]:
         """取得使用者記錄卡片(成就、活躍天數、角色數、神瞳、寶箱數...等等)
 
         ------
         Parameters:
-        user_id `str`: 使用者Discord ID
+        user_id `int`: 使用者Discord ID
         ------
         Returns:
         `(GenshinAccount, PartialGenshinUserStats)`: 查詢結果，包含角色伺服器資料與部分原神使用者資料
         """
         log.info(f'[指令][{user_id}]getRecordCard')
-        check, msg = self.checkUserData(user_id)
+        user = await db.users.get(user_id)
+        check, msg = await db.users.exist(user)
         if check == False:
             raise UserDataNotFound(msg)
-        client = self.__getGenshinClient(user_id)
+        client = self.__getGenshinClient(user)
         accounts = await client.get_game_accounts()
-        userstats = await client.get_partial_genshin_user(int(self.__user_data[user_id]['uid']))
+        userstats = await client.get_partial_genshin_user(user.uid)
 
         for account in accounts:
-            if account.uid == int(self.__user_data[user_id]['uid']):
+            if account.uid == user.uid:
                 return (account, userstats)
         raise UserDataNotFound('找不到原神紀錄卡片')
 
     @generalErrorHandler
-    async def getCharacters(self, user_id: str) -> Sequence[genshin.models.Character]:
+    async def getCharacters(self, user_id: int) -> Sequence[genshin.models.Character]:
         """取得使用者所有角色資料
 
         ------
         Parameters:
-        user_id `str`: 使用者Discord ID
+        user_id `int`: 使用者Discord ID
         ------
         Returns:
         `Sequence[Character]`: 查詢結果
         """
         log.info(f'[指令][{user_id}]getCharacters')
-        check, msg = self.checkUserData(user_id)
+        user = await db.users.get(user_id)
+        check, msg = await db.users.exist(user)
         if check == False:
             raise UserDataNotFound(msg)
-        client = self.__getGenshinClient(user_id)
-        return await client.get_genshin_characters(int(self.__user_data[user_id]['uid']))
-
-    def checkUserData(self, user_id: str, *, checkUID = True, update_use_time = True) -> Tuple[bool, str]:
-        """檢查使用者相關資料是否已保存在資料庫內
-        
-        ------
-        Parameters
-        user_id `str`: 使用者Discord ID
-        checkUID `bool`: 是否檢查UID
-        update_use_time `bool`: 是否更新使用者最後使用時間
-        ------
-        Returns
-        `bool`: `True`檢查成功，資料存在資料庫內；`False`檢查失敗，資料不存在資料庫內
-        `str`: 檢查失敗時，回覆給使用者的訊息
-        """
-        if user_id not in self.__user_data.keys():
-            log.info(f'[資訊][{user_id}]checkUserData: 找不到使用者')
-            return False, f'找不到使用者，請先設定Cookie(使用 {getAppCommandMention("cookie設定")} 顯示說明)'
-        else:
-            if 'cookie' not in self.__user_data[user_id].keys():
-                log.info(f'[資訊][{user_id}]checkUserData: 找不到Cookie')
-                return False, f'找不到Cookie，請先設定Cookie(使用 {getAppCommandMention("cookie設定")} 顯示說明)'
-            if checkUID and 'uid' not in self.__user_data[user_id].keys():
-                log.info(f'[資訊][{user_id}]checkUserData: 找不到角色UID')
-                return False, f'找不到角色UID，請先設定UID(使用 {getAppCommandMention("uid設定")} 來設定UID)'
-        if update_use_time:
-            user_last_use_time.update(user_id)
-        return True, None
-    
-    def clearUserData(self, user_id: str) -> str:
-        """從資料庫內永久刪除使用者資料
-
-        ------
-        Parameters
-        user_id `str`: 使用者Discord ID
-        ------
-        Returns:
-        `str`: 回覆給使用者的訊息
-        """
-        log.info(f'[指令][{user_id}]clearUserData')
-        try:
-            del self.__user_data[user_id]
-            user_last_use_time.deleteUser(user_id)
-        except:
-            return '刪除失敗，找不到使用者資料'
-        else:
-            self.__saveUserData()
-            return '使用者資料已全部刪除'
-    
-    def deleteExpiredUserData(self) -> None:
-        """將超過30天未使用的使用者刪除"""
-        now = datetime.now()
-        count = 0
-        user_data = dict(self.__user_data)
-        for user_id in user_data.keys():
-            if user_last_use_time.checkExpiry(user_id, now, 30) == True:
-                self.clearUserData(user_id)
-                count += 1
-        log.info(f'[資訊][System]deleteExpiredUserData: {len(user_data)} 位使用者已檢查，已刪除 {count} 位過期使用者')
+        client = self.__getGenshinClient(user)
+        return await client.get_genshin_characters(user.uid)
 
     def parseAbyssOverview(self, abyss: genshin.models.SpiralAbyss) -> discord.Embed:
         """解析深淵概述資料，包含日期、層數、戰鬥次數、總星數...等等
@@ -463,7 +401,7 @@ class GenshinApp:
 
         return embed
 
-    def parseNotes(self, notes: genshin.models.Notes, *, user: Optional[discord.User] = None, shortForm: bool = False) -> discord.Embed:
+    async def parseNotes(self, notes: genshin.models.Notes, *, user: Optional[discord.User] = None, shortForm: bool = False) -> discord.Embed:
         """解析即時便箋的資料，將內容排版成discord嵌入格式回傳
         
         ------
@@ -536,21 +474,17 @@ class GenshinApp:
             embed.add_field(name=resin_title, value=(resin_msg + exped_title))
 
         if user != None:
-            uid = str(self.getUID(str(user.id)))
+            uid = str(await self.getUID(user.id))
             embed.set_author(name=f'{getServerName(uid[0])} {uid}', icon_url=user.display_avatar.url)
         return embed
 
-    def __saveUserData(self) -> None:
-        with open('data/user_data.json', 'w', encoding='utf-8') as f:
-            json.dump(self.__user_data, f)
-
-    def __getGenshinClient(self, user_id: str) -> genshin.Client:
-        uid = self.__user_data[user_id].get('uid')
-        if uid != None and uid[0] in ['1', '2', '5']:
+    def __getGenshinClient(self, user: User) -> genshin.Client:
+        uid = user.uid
+        if uid != None and str(uid)[0] in ['1', '2', '5']:
             client = genshin.Client(region=genshin.Region.CHINESE, lang='zh-cn')
         else:
             client = genshin.Client(lang='zh-tw')
-        client.set_cookies(self.__user_data[user_id]['cookie'])
+        client.set_cookies(user.cookie)
         client.default_game = genshin.Game.GENSHIN
         return client
 

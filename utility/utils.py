@@ -68,37 +68,3 @@ class EmbedTemplate:
     @staticmethod
     def error(message: str, **kwargs):
         return discord.Embed(color=0xb54031, description=message, **kwargs)
-
-class UserLastUseTime:
-    def __init__(self) -> None:
-        try:
-            with open('data/last_use_time.json', 'r', encoding="utf-8") as f:
-                self.data: dict[str, str] = json.load(f)
-        except:
-            self.data: dict[str, str]  = { }
-
-    def update(self, user_id: str) -> None:
-        """更新使用者最後使用時間"""
-        self.data[user_id] = datetime.now().isoformat()
-    
-    def deleteUser(self, user_id: str) -> None:
-        self.data.pop(user_id, None)
-
-    def checkExpiry(self, user_id: str, now: datetime, diff_days: int = 30) -> bool:
-        """確認使用者是否超過一定時間沒使用本服務
-        param user_id: 使用者Discord ID
-        param now: 現在時間
-        param diff_days: 相差多少天
-        """
-        last_time = self.data.get(user_id)
-        if last_time == None:
-            self.update(user_id)
-            return False
-        interval = now - datetime.fromisoformat(last_time)
-        return True if interval.days > diff_days else False
-
-    def save(self) -> None:
-        with open('data/last_use_time.json', 'w', encoding="utf-8") as f:
-            json.dump(self.data, f)
-
-user_last_use_time = UserLastUseTime()

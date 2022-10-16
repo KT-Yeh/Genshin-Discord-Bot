@@ -25,7 +25,7 @@ class RedeemCode:
                 await interaction.edit_original_response(embed=discord.Embed(color=0xfcc766, description=f"{msg}正在等待5秒冷卻時間使用第{i+1}組兌換碼..."))
                 await asyncio.sleep(5)
             try:
-                result = '✅' + await genshin_app.redeemCode(str(user.id), code)
+                result = '✅' + await genshin_app.redeemCode(user.id, code)
             except Exception as e:
                 result = '❌' + str(e)
             msg += f"[{code}](https://genshin.hoyoverse.com/gift?code={code})：{result}\n"
@@ -60,7 +60,7 @@ class GenshinTool(commands.Cog, name='原神工具'):
         user = user or interaction.user
         defer, result = await asyncio.gather(
             interaction.response.defer(),
-            genshin_app.claimDailyReward(str(user.id), honkai=bool(game))
+            genshin_app.claimDailyReward(user.id, honkai=bool(game))
         )
         await interaction.edit_original_response(embed=EmbedTemplate.normal(result))
 

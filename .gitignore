@@ -6,6 +6,7 @@ __pycache__
 config.json
 
 # Data
+*.db
 *.json
 data/*.log
 data/image/character/[0-9]*.png
