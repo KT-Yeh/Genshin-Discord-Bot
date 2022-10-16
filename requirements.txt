@@ -3,3 +3,4 @@ discord.py
 Pillow
 sentry-sdk
 jishaku
+aiosqlite
