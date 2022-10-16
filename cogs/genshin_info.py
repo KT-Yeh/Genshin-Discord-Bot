@@ -3,7 +3,7 @@ import discord
 import genshin
 import asyncio
 import sentry_sdk
-from typing import Sequence
+from typing import Sequence, Optional
 from discord import app_commands
 from discord.ext import commands
 from discord.app_commands import Choice
@@ -41,7 +41,7 @@ class SpiralAbyss:
     
     class AbyssFloorDropdown(discord.ui.Select):
         """選擇深淵樓層的下拉選單"""
-        def __init__(self, overview: discord.Embed, floors: Sequence[genshin.models.Floor], characters: Sequence[genshin.models.Character]):
+        def __init__(self, overview: discord.Embed, floors: Sequence[genshin.models.Floor], characters: Optional[Sequence[genshin.models.Character]]):
             options = [discord.SelectOption(
                     label=f"[★{floor.stars}] 第 {floor.floor} 層",
                     description=genshin_app.parseAbyssChamber(floor.chambers[-1]),
@@ -61,14 +61,14 @@ class SpiralAbyss:
     
     @staticmethod
     async def abyss(interaction: discord.Interaction, user: discord.User, *, previous: bool = False):
-        try:
-            defer, abyss, characters = await asyncio.gather(
-                interaction.response.defer(),
-                genshin_app.getSpiralAbyss(user.id, previous),
-                genshin_app.getCharacters(user.id)
-            )
-        except Exception as e:
-            await interaction.edit_original_response(embed=EmbedTemplate.error(str(e)))
+        defer, abyss, characters = await asyncio.gather(
+            interaction.response.defer(),
+            genshin_app.getSpiralAbyss(user.id, previous),
+            genshin_app.getCharacters(user.id),
+            return_exceptions=True
+        )
+        if isinstance(abyss, Exception):
+            await interaction.edit_original_response(embed=EmbedTemplate.error(str(abyss)))
         else:
             embed = genshin_app.parseAbyssOverview(abyss)
             embed.title = f'{user.display_name} 的深境螺旋戰績'
@@ -76,7 +76,7 @@ class SpiralAbyss:
             view = None
             if len(abyss.floors) > 0:
                 view = SpiralAbyss.AuthorOnlyView(interaction.user, config.discord_view_long_timeout)
-                view.add_item(SpiralAbyss.AbyssFloorDropdown(embed, abyss.floors, characters))
+                view.add_item(SpiralAbyss.AbyssFloorDropdown(embed, abyss.floors, characters if (not isinstance(characters, Exception)) else None))
             await interaction.edit_original_response(embed=embed, view=view)
 
 class TravelerDiary:
