@@ -53,7 +53,7 @@ class UsersTable:
     async def getAll(self) -> typing.List[User]:
         async with self.db.execute('SELECT * FROM users') as cursor:
             rows = await cursor.fetchall()
-            return [User(row) for row in rows]
+            return [User.fromRow(row) for row in rows]
     
     async def remove(self, user_id: int) -> None:
         await self.db.execute('DELETE FROM users WHERE id=?', [user_id])
