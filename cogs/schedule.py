@@ -1,5 +1,7 @@
 import asyncio
 import discord
+import shutil
+import sentry_sdk
 from datetime import datetime, date, timedelta
 from discord import app_commands
 from discord.app_commands import Choice
@@ -170,8 +172,14 @@ class Schedule(commands.Cog, name='自動化'):
         if now.minute < self.loop_interval:
             asyncio.create_task(self.autoCheckResin())
 
-        # 每日凌晨一點刪除過期使用者資料
+        # 每日凌晨一點備份資料庫、刪除過期使用者資料
         if now.hour == 1 and now.minute < self.loop_interval:
+            try:
+                shutil.copyfile('data/bot.db', 'data/bot_backup.db')
+            except Exception as e:
+                log.warning(str(e))
+                sentry_sdk.capture_exception(e)
+            
             asyncio.create_task(db.removeExpiredUser(30))
 
     @schedule.before_loop
