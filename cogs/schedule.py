@@ -172,7 +172,7 @@ class Schedule(commands.Cog, name='自動化'):
 
         # 每日凌晨一點刪除過期使用者資料
         if now.hour == 1 and now.minute < self.loop_interval:
-            await db.removeExpiredUser(30)
+            asyncio.create_task(db.removeExpiredUser(30))
 
     @schedule.before_loop
     async def before_schedule(self):
