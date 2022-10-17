@@ -4,6 +4,7 @@ from utility.utils import log
 from .users import UsersTable
 from .schedule_daily import ScheduleDailyTable
 from .schedule_resin import ScheduleResinTable
+from .showcase import ShowcaseTable
 
 class Database:
     db: aiosqlite.Connection
@@ -16,10 +17,12 @@ class Database:
         self.users = UsersTable(self.db)
         self.schedule_daily = ScheduleDailyTable(self.db)
         self.schedule_resin = ScheduleResinTable(self.db)
+        self.showcase = ShowcaseTable(self.db)
 
         await self.users.create()
         await self.schedule_daily.create()
         await self.schedule_resin.create()
+        await self.showcase.create()
 
     async def close(self) -> None:
         """關閉資料庫，在 bot 關閉前需要呼叫一次"""
