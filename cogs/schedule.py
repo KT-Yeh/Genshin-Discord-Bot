@@ -15,7 +15,7 @@ class Schedule(commands.Cog, name='自動化'):
         self.schedule.start()
     
     async def cog_unload(self) -> None:
-        self.schedule.stop()
+        self.schedule.cancel()
 
     class ChooseGameButton(discord.ui.View):
         """選擇自動簽到遊戲的按鈕"""
