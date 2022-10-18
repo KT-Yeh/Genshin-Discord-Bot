@@ -4,6 +4,7 @@ import typing
 from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands, tasks
+from datetime import datetime, timedelta
 from pathlib import Path
 from utility.utils import log
 from utility.config import config
@@ -28,26 +29,6 @@ class Admin(commands.Cog):
         msg = f'已同步以下指令到{"全部" if area == 1 else "當前"}伺服器\n{"、".join(cmd.name for cmd in result)}'
         log.info(f'[指令][Admin]sync(area={area}): {msg}')
         await interaction.response.send_message(msg)
-
-    # 廣播訊息到所有的伺服器
-    @app_commands.command(name='broadcast', description='廣播訊息到所有的伺服器')
-    @app_commands.rename(message='訊息')
-    async def slash_broadcast(self, interaction: discord.Interaction, message: str):
-        await interaction.response.defer()
-        count = 0
-        for guild in self.bot.guilds:
-            # 找出第一個可用的頻道發出訊息
-            for channel in guild.text_channels:
-                if channel.permissions_for(guild.me).send_messages:
-                    try:
-                        await channel.send(message)
-                    except Exception as e:
-                        log.error(f'[例外][Admin]broadcast: 頻道發送訊息失敗 [伺服器]{guild} [例外內容]{e}')
-                        continue
-                    else:
-                        count += 1
-                        break
-        await interaction.edit_original_response(content=f'已廣播訊息到 {count} / {len(self.bot.guilds)} 伺服器')
     
     # 顯示機器人相關狀態
     @app_commands.command(name='status', description='顯示小幫手狀態')
@@ -119,8 +100,21 @@ class Admin(commands.Cog):
             setattr(config, option, float(value))
         await interaction.response.send_message(f"已將{option}的值設為: {value}")
 
+    @app_commands.command(name='maintenance', description='設定遊戲維護時間，輸入0表示將維護時間設定為關閉')
+    @app_commands.rename(month='月', day='日', hour='點', duration='維護幾小時')
+    async def slash_maintenance(self, interaction: discord.Interaction, month: int, day: int, hour: int = 6, duration: int = 5):
+        if month == 0 or day == 0:
+            config.game_maintenance_time = None
+            await interaction.response.send_message('已將維護時間設定為：關閉')
+        else:
+            now = datetime.now()
+            start_time = datetime((now.year if month >= now.month else now.year + 1), month, day, hour)
+            end_time = start_time + timedelta(hours=duration)
+            config.game_maintenance_time = (start_time, end_time)
+            await interaction.response.send_message(f"已將維護時間設定為：{start_time} ~ {end_time}")
+
     # 每一定時間更改機器人狀態
-    @tasks.loop(minutes=5)
+    @tasks.loop(minutes=1)
     async def change_presence(self):
         l = len(self.presence_string)
         n = random.randint(0, l)
