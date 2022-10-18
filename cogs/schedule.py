@@ -164,13 +164,15 @@ class Schedule(commands.Cog, name='自動化'):
     @tasks.loop(minutes=loop_interval)
     async def schedule(self):
         now = datetime.now()
-        # 每日 {config.auto_daily_reward_time} 點自動簽到
-        if now.hour == config.auto_daily_reward_time and now.minute < self.loop_interval:
-            asyncio.create_task(self.autoClaimDailyReward())
-
-        # 每小時檢查一次樹脂
-        if now.minute < self.loop_interval:
-            asyncio.create_task(self.autoCheckResin())
+        # 確認沒有在遊戲維護時間內
+        if config.game_maintenance_time == None or not(config.game_maintenance_time[0] <= now < config.game_maintenance_time[1]):
+            # 每日 {config.auto_daily_reward_time} 點自動簽到
+            if now.hour == config.auto_daily_reward_time and now.minute < self.loop_interval:
+                asyncio.create_task(self.autoClaimDailyReward())
+            
+            # 每小時檢查一次樹脂
+            if now.minute < self.loop_interval:
+                asyncio.create_task(self.autoCheckResin())
 
         # 每日凌晨一點備份資料庫、刪除過期使用者資料
         if now.hour == 1 and now.minute < self.loop_interval:
