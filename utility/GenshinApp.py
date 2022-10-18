@@ -86,11 +86,7 @@ class GenshinApp:
         Returns
         Sequence[genshin.models.GenshinAccount]`: 查詢結果
         """
-        user = await db.users.get(user_id)
-        check, msg = await db.users.exist(user, check_uid=False)
-        if check == False:
-            raise UserDataNotFound(msg)
-        client = self.__getGenshinClient(user)
+        client = await self.__getGenshinClient(user_id, check_uid=False)
         return await client.genshin_accounts()
     
     async def setUID(self, user_id: int, uid: int) -> str:
@@ -127,12 +123,8 @@ class GenshinApp:
         """
         if not schedule:
             log.info(f'[指令][{user_id}]getRealtimeNote')
-        user = await db.users.get(user_id)
-        check, msg = await db.users.exist(user, update_using_time=(not schedule))
-        if check == False:
-            raise UserDataNotFound(msg)
-        client = self.__getGenshinClient(user)
-        return await client.get_genshin_notes(user.uid)
+        client = await self.__getGenshinClient(user_id, update_using_time=(not schedule))
+        return await client.get_genshin_notes(client.uid)
 
     @generalErrorHandler
     async def redeemCode(self, user_id: int, code: str) -> str:
@@ -147,12 +139,8 @@ class GenshinApp:
         `str`: 回覆給使用者的訊息
         """
         log.info(f'[指令][{user_id}]redeemCode: code={code}')
-        user = await db.users.get(user_id)
-        check, msg = await db.users.exist(user)
-        if check == False:
-            raise UserDataNotFound(msg)
-        client = self.__getGenshinClient(user)
-        await client.redeem_code(code, user.uid)
+        client = await self.__getGenshinClient(user_id)
+        await client.redeem_code(code, client.uid)
         return '兌換碼使用成功！'
 
     async def claimDailyReward(self, user_id: int, *, honkai: bool = False, schedule = False) -> str:
@@ -169,11 +157,10 @@ class GenshinApp:
         """
         if not schedule:
             log.info(f'[指令][{user_id}]claimDailyReward: honkai={honkai}')
-        user = await db.users.get(user_id)
-        check, msg = await db.users.exist(user, update_using_time=(not schedule))
-        if check == False:
-            return msg
-        client = self.__getGenshinClient(user)
+        try:
+            client = await self.__getGenshinClient(user_id, update_using_time=(not schedule))
+        except Exception as e:
+            return str(e)
         
         game_name = {genshin.Game.GENSHIN: '原神', genshin.Game.HONKAI: '崩壞3'}
         async def claimReward(game: genshin.Game, retry: int = 5) -> str:
@@ -230,14 +217,10 @@ class GenshinApp:
         `SpiralAbyss`: 查詢結果
         """
         log.info(f'[指令][{user_id}]getSpiralAbyss: previous={previous}')
-        user = await db.users.get(user_id)
-        check, msg = await db.users.exist(user)
-        if check == False:
-            raise UserDataNotFound(msg)
-        client = self.__getGenshinClient(user)
+        client = await self.__getGenshinClient(user_id)
         # 為了刷新戰鬥數據榜，需要先對record card發出請求
         await client.get_record_cards()
-        return await client.get_genshin_spiral_abyss(user.uid, previous=previous)
+        return await client.get_genshin_spiral_abyss(client.uid, previous=previous)
 
     @generalErrorHandler
     async def getTravelerDiary(self, user_id: int, month: int) -> discord.Embed:
@@ -252,12 +235,8 @@ class GenshinApp:
         `discord.Embed`: 查詢結果，已包裝成 discord 嵌入格式
         """
         log.info(f'[指令][{user_id}]getTravelerDiary: month={month}')
-        user = await db.users.get(user_id)
-        check, msg = await db.users.exist(user)
-        if check == False:
-            raise UserDataNotFound(msg)
-        client = self.__getGenshinClient(user)
-        diary = await client.get_diary(user.uid, month=month)
+        client = await self.__getGenshinClient(user_id)
+        diary = await client.get_diary(client.uid, month=month)
         
         d = diary.data
         result = discord.Embed(
@@ -301,16 +280,13 @@ class GenshinApp:
         `(GenshinAccount, PartialGenshinUserStats)`: 查詢結果，包含角色伺服器資料與部分原神使用者資料
         """
         log.info(f'[指令][{user_id}]getRecordCard')
-        user = await db.users.get(user_id)
-        check, msg = await db.users.exist(user)
-        if check == False:
-            raise UserDataNotFound(msg)
-        client = self.__getGenshinClient(user)
-        accounts = await client.get_game_accounts()
-        userstats = await client.get_partial_genshin_user(user.uid)
-
+        client = await self.__getGenshinClient(user_id)
+        accounts, userstats = await asyncio.gather(
+            client.get_game_accounts(),
+            client.get_partial_genshin_user(client.uid)
+        )
         for account in accounts:
-            if account.uid == user.uid:
+            if account.uid == client.uid:
                 return (account, userstats)
         raise UserDataNotFound('找不到原神紀錄卡片')
 
@@ -326,12 +302,8 @@ class GenshinApp:
         `Sequence[Character]`: 查詢結果
         """
         log.info(f'[指令][{user_id}]getCharacters')
-        user = await db.users.get(user_id)
-        check, msg = await db.users.exist(user)
-        if check == False:
-            raise UserDataNotFound(msg)
-        client = self.__getGenshinClient(user)
-        return await client.get_genshin_characters(user.uid)
+        client = await self.__getGenshinClient(user_id)
+        return await client.get_genshin_characters(client.uid)
 
     def parseAbyssOverview(self, abyss: genshin.models.SpiralAbyss) -> discord.Embed:
         """解析深淵概述資料，包含日期、層數、戰鬥次數、總星數...等等
@@ -478,14 +450,30 @@ class GenshinApp:
             embed.set_author(name=f'{getServerName(uid[0])} {uid}', icon_url=user.display_avatar.url)
         return embed
 
-    def __getGenshinClient(self, user: User) -> genshin.Client:
-        uid = user.uid
-        if uid != None and str(uid)[0] in ['1', '2', '5']:
+    async def __getGenshinClient(self, user_id: int, *, check_uid = True, update_using_time: bool = True) -> genshin.Client:
+        """設定並取得原神API的Client
+
+        ------
+        Parameters:
+        user_id `int`: 使用者Discord ID
+        check_uid `bool`: 是否檢查UID
+        update_using_time `bool`: 是否更新使用者最後使用時間
+        ------
+        Returns:
+        `genshin.Client`: 原神API的Client
+        """
+        user = await db.users.get(user_id)
+        check, msg = await db.users.exist(user, check_uid=check_uid, update_using_time=update_using_time)
+        if check == False:
+            raise UserDataNotFound(msg)
+        
+        if user.uid != None and str(user.uid)[0] in ['1', '2', '5']:
             client = genshin.Client(region=genshin.Region.CHINESE, lang='zh-cn')
         else:
             client = genshin.Client(lang='zh-tw')
         client.set_cookies(user.cookie)
         client.default_game = genshin.Game.GENSHIN
+        client.uid = user.uid
         return client
 
 genshin_app = GenshinApp()
