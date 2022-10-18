@@ -4,6 +4,7 @@ from utility.utils import log
 from .users import UsersTable
 from .schedule_daily import ScheduleDailyTable
 from .schedule_resin import ScheduleResinTable
+from .spiral_abyss import SpiralAbyssTable
 from .showcase import ShowcaseTable
 
 class Database:
@@ -17,11 +18,13 @@ class Database:
         self.users = UsersTable(self.db)
         self.schedule_daily = ScheduleDailyTable(self.db)
         self.schedule_resin = ScheduleResinTable(self.db)
+        self.spiral_abyss = SpiralAbyssTable(self.db)
         self.showcase = ShowcaseTable(self.db)
 
         await self.users.create()
         await self.schedule_daily.create()
         await self.schedule_resin.create()
+        await self.spiral_abyss.create()
         await self.showcase.create()
 
     async def close(self) -> None:
@@ -33,6 +36,7 @@ class Database:
         await self.users.remove(user_id)
         await self.schedule_daily.remove(user_id)
         await self.schedule_resin.remove(user_id)
+        await self.spiral_abyss.remove(user_id)
     
     async def removeExpiredUser(self, diff_days: int = 30) -> None:
         """將超過天數未使用的使用者刪除"""
