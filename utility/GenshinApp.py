@@ -3,7 +3,7 @@ import discord
 import genshin
 import sentry_sdk
 from typing import Sequence, Union, Tuple, Optional
-from data.database import db, User
+from data.database import db, User, SpiralAbyssData
 from .emoji import emoji
 from .utils import log, trimCookie, getServerName, getDayOfWeek, getAppCommandMention
 
@@ -205,7 +205,7 @@ class GenshinApp:
         return result
 
     @generalErrorHandler
-    async def getSpiralAbyss(self, user_id: int, previous: bool = False) -> genshin.models.SpiralAbyss:
+    async def getSpiralAbyss(self, user_id: int, previous: bool = False) -> SpiralAbyssData:
         """取得深境螺旋資訊
 
         ------
@@ -214,13 +214,24 @@ class GenshinApp:
         previous `bool`: `True`查詢前一期的資訊、`False`查詢本期資訊
         ------
         Returns
-        `SpiralAbyss`: 查詢結果
+        `SpiralAbyssData`: 查詢結果
         """
         log.info(f'[指令][{user_id}]getSpiralAbyss: previous={previous}')
         client = await self.__getGenshinClient(user_id)
         # 為了刷新戰鬥數據榜，需要先對record card發出請求
         await client.get_record_cards()
-        return await client.get_genshin_spiral_abyss(client.uid, previous=previous)
+        abyss, partial_user = await asyncio.gather(
+            client.get_genshin_spiral_abyss(client.uid, previous=previous),
+            client.get_partial_genshin_user(client.uid),
+            return_exceptions=True
+        )
+        if isinstance(abyss, BaseException):
+            raise abyss
+        if isinstance(partial_user, BaseException):
+            characters = None
+        else:
+            characters = partial_user.characters
+        return SpiralAbyssData(user_id, abyss=abyss, characters=characters)
 
     @generalErrorHandler
     async def getTravelerDiary(self, user_id: int, month: int) -> discord.Embed:
