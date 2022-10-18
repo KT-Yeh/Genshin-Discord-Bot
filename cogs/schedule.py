@@ -160,7 +160,7 @@ class Schedule(commands.Cog, name='自動化'):
             await db.schedule_resin.remove(user.id)
             await interaction.response.send_message(embed=EmbedTemplate.normal(f'{user.display_name}的樹脂額滿提醒已關閉'))
 
-    loop_interval = 10 # 循環間隔10分鐘
+    loop_interval = 1 # 循環間隔1分鐘
     @tasks.loop(minutes=loop_interval)
     async def schedule(self):
         now = datetime.now()
