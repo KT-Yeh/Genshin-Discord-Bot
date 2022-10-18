@@ -13,7 +13,7 @@ class UserDataNotFound(Exception):
 def generalErrorHandler(func):
     """對於使用genshin.py函式的通用例外處理裝飾器"""
     async def wrapper(*args, **kwargs):
-        user_id = args[1] if (len(args) >= 2 and isinstance(args[1], str) and len(args[1]) >= 17) else ''
+        user_id = args[1] if (len(args) >= 2 and isinstance(args[1], int)) else -1
         try:
             return await func(*args, **kwargs)
         except genshin.errors.DataNotPublic as e:
