@@ -48,7 +48,9 @@ class GenshinDiscordBot(commands.AutoShardedBot):
     async def close(self) -> None:
         # 關閉資料庫
         await database.db.close()
+        log.info('[資訊][System]on_close: 資料庫已關閉')
         await super().close()
+        log.info('[資訊][System]on_close: 機器人已結束')
 
     async def on_command_error(self, ctx: commands.Context, error):
         log.info(f'[例外][{ctx.author.id}]on_command_error: {error}')
@@ -59,7 +61,6 @@ client = GenshinDiscordBot()
 @client.tree.error
 async def on_error(interaction: discord.Interaction, error: discord.app_commands.AppCommandError) -> None:
     log.warning(f'[例外][{interaction.user.id}]{type(error)}: {error}')
-    if not isinstance(error, discord.errors.NotFound): # 忽略 Not Found 例外
-        sentry_sdk.capture_exception(error)
+    sentry_sdk.capture_exception(error)
 
 client.run(config.bot_token)
