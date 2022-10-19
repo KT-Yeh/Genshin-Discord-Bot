@@ -89,14 +89,14 @@ class Admin(commands.Cog):
     @app_commands.command(name='config', description='更改config配置內容')
     @app_commands.rename(option='選項', value='值')
     @app_commands.choices(option=[
-        Choice(name='auto_daily_reward_time', value='auto_daily_reward_time'),
-        Choice(name='auto_check_resin_threshold', value='auto_check_resin_threshold'),
-        Choice(name='auto_loop_delay', value='auto_loop_delay')
+        Choice(name='schedule_daily_reward_time', value='schedule_daily_reward_time'),
+        Choice(name='schedule_check_resin_threshold', value='schedule_check_resin_threshold'),
+        Choice(name='schedule_loop_delay', value='schedule_loop_delay')
     ])
     async def slash_config(self, interaction: discord.Interaction, option: str, value: str):
-        if option in ['auto_daily_reward_time', 'auto_check_resin_threshold']:
+        if option in ['schedule_daily_reward_time', 'schedule_check_resin_threshold']:
             setattr(config, option, int(value))
-        elif option in ['auto_loop_delay']:
+        elif option in ['schedule_loop_delay']:
             setattr(config, option, float(value))
         await interaction.response.send_message(f"已將{option}的值設為: {value}")
 

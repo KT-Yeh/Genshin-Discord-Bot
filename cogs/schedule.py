@@ -84,8 +84,8 @@ class Schedule(commands.Cog, name='自動化'):
             msg = ('· 排程會在特定時間執行功能，執行結果會在設定指令的頻道推送\n'
             '· 設定前請先確認小幫手有在該頻道發言的權限，如果推送訊息失敗，小幫手會自動移除排程設定\n'
             '· 若要更改推送頻道，請在新的頻道重新設定指令一次\n\n'
-            f'· 每日簽到：每日 {config.auto_daily_reward_time}~{config.auto_daily_reward_time+3} 點之間自動論壇簽到，設定前請先使用 {getAppCommandMention("daily每日簽到")} 指令確認小幫手能正確幫你簽到\n'
-            f'· 樹脂提醒：每小時檢查一次，當樹脂超過 {config.auto_check_resin_threshold} 會發送提醒，設定前請先用 {getAppCommandMention("notes即時便箋")} 指令確認小幫手能讀到你的樹脂資訊\n')
+            f'· 每日簽到：每日 {config.schedule_daily_reward_time}~{config.schedule_daily_reward_time+3} 點之間自動論壇簽到，設定前請先使用 {getAppCommandMention("daily每日簽到")} 指令確認小幫手能正確幫你簽到\n'
+            f'· 樹脂提醒：每小時檢查一次，當樹脂超過 {config.schedule_check_resin_threshold} 會發送提醒，設定前請先用 {getAppCommandMention("notes即時便箋")} 指令確認小幫手能讀到你的樹脂資訊\n')
             await interaction.response.send_message(embed=EmbedTemplate.normal(msg, title='排程功能使用說明'), ephemeral=True)
             return
         
@@ -166,8 +166,8 @@ class Schedule(commands.Cog, name='自動化'):
         now = datetime.now()
         # 確認沒有在遊戲維護時間內
         if config.game_maintenance_time == None or not(config.game_maintenance_time[0] <= now < config.game_maintenance_time[1]):
-            # 每日 {config.auto_daily_reward_time} 點自動簽到
-            if now.hour == config.auto_daily_reward_time and now.minute < self.loop_interval:
+            # 每日 {config.schedule_daily_reward_time} 點自動簽到
+            if now.hour == config.schedule_daily_reward_time and now.minute < self.loop_interval:
                 asyncio.create_task(self.autoClaimDailyReward())
             
             # 每小時檢查一次樹脂
@@ -219,7 +219,7 @@ class Schedule(commands.Cog, name='自動化'):
             except Exception as e: # 發送訊息失敗，移除此使用者
                 log.warning(f'[排程][{user.id}]自動簽到：{e}')
                 await db.schedule_daily.remove(user.id)
-            await asyncio.sleep(config.auto_loop_delay)
+            await asyncio.sleep(config.schedule_loop_delay)
         log.info(f'[排程][System]schedule: 每日自動簽到結束，總共 {total} 人簽到，其中 {honkai_count} 人也簽到崩壞3')
 
     async def autoCheckResin(self):
@@ -247,13 +247,13 @@ class Schedule(commands.Cog, name='自動化'):
                 embed = None
             else: # 正常檢查樹脂
                 # 當樹脂超過設定值，則設定要發送的訊息
-                if notes.current_resin >= config.auto_check_resin_threshold:
+                if notes.current_resin >= config.schedule_check_resin_threshold:
                     msg = "樹脂(快要)溢出啦！"
                     embed = await genshin_app.parseNotes(notes, shortForm=True)
                 else:
                     msg = None
                 # 設定下次檢查時間，當樹脂完全額滿時，預計6小時後再檢查；否則依照樹脂差額預估時間
-                minutes = 350 if notes.current_resin >= notes.max_resin else (config.auto_check_resin_threshold - notes.current_resin) * 8 - 10
+                minutes = 350 if notes.current_resin >= notes.max_resin else (config.schedule_check_resin_threshold - notes.current_resin) * 8 - 10
                 await db.schedule_resin.update(user.id, next_check_time=(datetime.now() + timedelta(minutes=minutes)))
             count += 1
             # 當有錯誤訊息或是樹脂快要溢出時，向使用者發送訊息
@@ -269,7 +269,7 @@ class Schedule(commands.Cog, name='自動化'):
                     if user.mentioned_in(msg_sent) == False:
                         log.info(f'[排程][{user.id}]檢查樹脂：使用者不在頻道')
                         await db.schedule_resin.remove(user.id)
-            await asyncio.sleep(config.auto_loop_delay)
+            await asyncio.sleep(config.schedule_loop_delay)
         log.info(f'[排程][System]schedule: 自動檢查樹脂結束，{count}/{len(resin_users)} 人已檢查')
 
 async def setup(client: commands.Bot):

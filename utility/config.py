@@ -8,9 +8,9 @@ class Config(BaseModel):
     test_server_id: int
     bot_token: str
     enka_api_key: typing.Optional[str] = None
-    auto_daily_reward_time: int = 8
-    auto_check_resin_threshold: int = 150
-    auto_loop_delay: float = 2.0
+    schedule_daily_reward_time: int = 8
+    schedule_check_resin_threshold: int = 150
+    schedule_loop_delay: float = 2.0
     slash_cmd_cooldown: float = 5.0
     discord_view_long_timeout: float = 1800
     discord_view_short_timeout: float = 60
