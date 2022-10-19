@@ -15,9 +15,9 @@ Discord 支援伺服器：https://discord.gg/myugWxgRjd
 - 查詢深境螺旋紀錄
 - 查詢旅行者札記
 - 個人紀錄卡片（遊戲天數、成就、神瞳...等等）
-- Hoyolab 使用兌換碼
+- 使用 Hoyolab 兌換碼
 - 每日早上 8~10 點 Hoyolab 自動簽到 (包含簽到崩壞3)
-- 每兩小時自動檢查樹脂，當樹脂超過 145 時推送提醒
+- 每小時自動檢查樹脂，當樹脂超過 150 時推送提醒
 - 查詢任意玩家的展示櫃，顯示展示櫃內角色的面板、聖遺物詳情
 - 採用新的斜線指令，輸入 / 自動彈出指令提示，不需要記憶任何指令的使用方式
 
@@ -83,17 +83,19 @@ python .\main.py
 
 註1：當運行後看到 `[資訊][System]on_ready: You have logged in as XXXXX` 表示參數設置正確並成功啟動，此時機器人會自動同步所有指令到你的測試伺服器，稱為「本地同步」。
 
-註2：若你輸入斜線 / 後看不到指令的話，請嘗試完全關閉 Discord 軟體並重啟 Discord。
+註2：若你輸入斜線 / 後看不到指令的話，請嘗試 CTRL + R 重新整理或是完全關閉 Discord 軟體並重啟 Discord。
 
 ## 配置檔案說明 (config.json)
+前三行必需改成自己的設定值，其他行可以不改保留預設值
 ```python
 {
     "application_id": 123456789123456789,   # 機器人 Application ID，從 Discord Developer 網頁上取得
     "test_server_id": 212340008888812345,   # 測試伺服器 ID，用來測試斜線指令，管理員指令只能在本伺服器使用
     "bot_token": "ABCDEFG",                 # 機器人 Token，從 Discord Developer 網頁取得
-    "auto_daily_reward_time": 8,            # 每日 Hoyolab 自動簽到時間 (單位：時)
-    "auto_check_resin_threshold": 145,      # 每兩小時檢查一次，當超過多少樹脂時發送提醒
-    "auto_loop_delay": 2.0,                 # 排程執行時每位使用者之間的等待間隔（單位：秒）
+    "schedule_daily_reward_time": 8,        # 每日 Hoyolab 自動簽到時間 (單位：時)
+    "schedule_check_resin_threshold": 150,  # 每小時檢查一次，當超過多少樹脂時發送提醒
+    "schedule_loop_delay": 2.0,             # 排程執行時每位使用者之間的等待間隔（單位：秒）
+    "expired_user_days": 30,                # 過期使用者天數，會刪除超過此天數未使用任何指令的使用者
     "slash_cmd_cooldown": 5.0,              # 使用者重複呼叫部分斜線指令的冷卻時間（單位：秒）
     "discord_view_long_timeout": 1800,      # Discord 長時間互動介面（例：下拉選單） 的逾時時間（單位：秒）
     "discord_view_short_timeout": 60,       # Discord 短時間互動介面（例：確認、選擇按鈕）的逾時時間（單位：秒）
@@ -123,13 +125,13 @@ python .\main.py
 - 若要將特定接到的例外發送到 Sentry 的話，請在該 except 內使用 `sentry_sdk.capture_exception(exception)`
 
 ## Admin 管理指令說明
-管理指令只能在配置檔案內設定的伺服器才能使用
+管理指令只能在配置檔案設定的測試伺服器內才能使用
 ```python
 /sync：同步斜線指令，範圍「當前伺服器」表示將指令同步到你配置檔案的測試伺服器、「全域伺服器」表示將指令推送到所有伺服器，需等待約 1 小時
-/broadcast：向機器人已連接的所有伺服器廣播訊息
 /status：顯示機器人狀態，包含延遲、已連接伺服器數量、已連接伺服器名稱
 /system reload：重新載入模組，非開發者不需要使用，重新載入後須使用 /sync，否則指令不會同步
-/system precense 字串1,字串2,字串3,...：變更機器人顯示狀態(正在玩 ...)，每 5 分鐘隨機變更為設定的其中一個字串，字串數量不限
+/system precense 字串1,字串2,字串3,...：變更機器人顯示狀態(正在玩 ...)，每分鐘隨機變更為設定的其中一個字串，字串數量不限
+/maintenance：設定遊戲維護時間，在此時間內自動排程(簽到、檢查樹脂)不會執行
 ```
 
 ## 致謝
