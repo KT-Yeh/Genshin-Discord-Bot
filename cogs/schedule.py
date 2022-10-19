@@ -182,7 +182,7 @@ class Schedule(commands.Cog, name='自動化'):
                 log.warning(str(e))
                 sentry_sdk.capture_exception(e)
             
-            asyncio.create_task(db.removeExpiredUser(30))
+            asyncio.create_task(db.removeExpiredUser(config.expired_user_days))
 
     @schedule.before_loop
     async def before_schedule(self):

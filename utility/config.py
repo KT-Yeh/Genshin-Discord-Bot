@@ -11,6 +11,7 @@ class Config(BaseModel):
     schedule_daily_reward_time: int = 8
     schedule_check_resin_threshold: int = 150
     schedule_loop_delay: float = 2.0
+    expired_user_days: int = 30
     slash_cmd_cooldown: float = 5.0
     discord_view_long_timeout: float = 1800
     discord_view_short_timeout: float = 60
