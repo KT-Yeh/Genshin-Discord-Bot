@@ -9,12 +9,12 @@ class ShowcaseTable:
 
     async def create(self) -> None:
         await self.db.execute('''CREATE TABLE IF NOT EXISTS showcase (
-                uid int NOT NULL UNIQUE,
+                uid int NOT NULL PRIMARY KEY,
                 data blob
             )''')
         await self.db.commit()
 
-    async def add(self, uid: int, data: Dict[str, Any] = None) -> None:
+    async def add(self, uid: int, data: Optional[Dict[str, Any]] = None) -> None:
         json_data = json.dumps(data, ensure_ascii=False)
         compressed_data = zlib.compress(json_data.encode(encoding='utf8'), level=5)
         await self.db.execute('INSERT OR REPLACE INTO showcase VALUES(?, ?)',

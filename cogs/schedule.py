@@ -196,12 +196,9 @@ class Schedule(commands.Cog, name='自動化'):
             # 檢查今天是否已經簽到過
             if user.last_checkin_date == date.today():
                 continue
-            # 取得要發送的頻道
+            # 取得要發送的頻道，若發送頻道不存在，則移除此使用者
             channel = self.bot.get_channel(user.channel_id)
-            # 檢查使用者資料
-            check, msg = await db.users.exist(await db.users.get(user.id), update_using_time=False)
-            # 若發送頻道或使用者資料不存在，則移除此使用者
-            if channel == None or check == False:
+            if channel == None:
                 await db.schedule_daily.remove(user.id)
                 continue
             # 簽到並更新最後簽到時間
@@ -228,13 +225,11 @@ class Schedule(commands.Cog, name='自動化'):
         count = 0 # 統計人數
         for user in resin_users:
             # 若還沒到檢查時間則跳過此使用者
-            if datetime.now() < user.next_check_time:
+            if user.next_check_time and datetime.now() < user.next_check_time:
                 continue
-            
-            # 取得要發送訊息的頻道與確認使用者資料，若頻道或使用者資料不存在，則移除此使用者
+            # 取得要發送訊息的頻道，若頻道不存在，則移除此使用者
             channel = self.bot.get_channel(user.channel_id)
-            check, msg = await db.users.exist(await db.users.get(user.id), update_using_time=False)
-            if channel == None or check == False:
+            if channel == None:
                 await db.schedule_resin.remove(user.id)
                 continue
             # 檢查使用者樹脂

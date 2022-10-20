@@ -2,7 +2,7 @@ import asyncio
 import discord
 import genshin
 import sentry_sdk
-from typing import Sequence, Union, Tuple, Optional
+from typing import Sequence, Tuple, Optional
 from data.database import db, User, SpiralAbyssData
 from .emoji import emoji
 from .utils import log, trimCookie, getServerName, getDayOfWeek, getAppCommandMention
@@ -104,10 +104,10 @@ class GenshinApp:
         await db.users.update(user_id, uid=uid)
         return f'角色UID: {uid} 已設定完成'
     
-    async def getUID(self, user_id: int) -> Union[int, None]:
+    async def getUID(self, user_id: int) -> Optional[int]:
         """取得指定使用者的UID"""
         user = await db.users.get(user_id)
-        return user.uid
+        return user.uid if user else None
 
     @generalErrorHandler
     async def getRealtimeNote(self, user_id: int, *, schedule = False) -> genshin.models.Notes:
