@@ -6,6 +6,7 @@ from typing import Tuple, Sequence, Optional, List
 from io import BytesIO
 from pathlib import Path
 from utility.utils import getServerName
+from data.database import CharacterData
 
 def drawAvatar(img: Image.Image, avatar: Image.Image, pos: Tuple[float, float]):
     """以圓形畫個人頭像"""
@@ -165,7 +166,7 @@ def drawAbyssStar(img: Image.Image, number: int, size: Tuple[int, int], pos: Tup
     for i in range(0, number):
         img.paste(star, (int(upper_left[0] + i * (size[0] + 2 * pad)), int(upper_left[1])), star)
 
-def drawAbyssCard(abyss_floor: genshin.models.Floor, characters: Optional[Sequence[genshin.models.PartialCharacter]] = None) -> BytesIO:
+def drawAbyssCard(abyss_floor: genshin.models.Floor, characters: Optional[Sequence[CharacterData]] = None) -> BytesIO:
     """繪製深淵樓層紀錄圖，包含每一間星數以及上下半所使用的角色和等級
 
     ------

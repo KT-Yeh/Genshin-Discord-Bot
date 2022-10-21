@@ -2,25 +2,62 @@ from __future__ import annotations
 import aiosqlite
 import pickle
 import zlib
+import genshin
 from typing import Sequence, Optional
-from genshin.models import SpiralAbyss, PartialCharacter
+from genshin.models import SpiralAbyss, Character
+
+class CharacterData:
+    id: int
+    level: int
+    friendship: int
+    constellation: int
+    weapon: Weapon
+    artifacts: Sequence[Artifact]
+    
+    def __init__(self, character: Character) -> None:
+        self.id = character.id
+        self.level = character.level
+        self.friendship = character.friendship
+        self.constellation = character.constellation
+        self.weapon = self.Weapon(character.weapon)
+        self.artifacts = [self.Artifact(artifact) for artifact in character.artifacts]
+    
+    class Weapon:
+        id: int
+        level: int
+        refinement: int
+
+        def __init__(self, weapon: genshin.models.CharacterWeapon) -> None:
+            self.id = weapon.id
+            self.level = weapon.level
+            self.refinement = weapon.refinement
+    
+    class Artifact:
+        id: int
+        pos: int
+        level: int
+
+        def __init__(self, artifact: genshin.models.Artifact) -> None:
+            self.id = artifact.id
+            self.pos = artifact.pos
+            self.level = artifact.level
 
 class SpiralAbyssData:
     id: int
     season: int
     abyss: SpiralAbyss
-    characters: Optional[Sequence[PartialCharacter]]
+    characters: Optional[Sequence[CharacterData]]
     
-    def __init__(self, id: int, abyss: SpiralAbyss, *, characters: Optional[Sequence[PartialCharacter]] = None):
+    def __init__(self, id: int, abyss: SpiralAbyss, *, characters: Optional[Sequence[Character]] = None):
         self.id = id
         self.season = abyss.season
         self.abyss = abyss
-        self.characters = characters
+        self.characters = [CharacterData(c) for c in characters] if characters else None
 
     @classmethod
     def fromRow(cls, row: aiosqlite.Row) -> SpiralAbyssData:
         abyss: SpiralAbyss = pickle.loads(zlib.decompress(row['abyss']))
-        characters: Optional[Sequence[PartialCharacter]] = pickle.loads(zlib.decompress(row['characters'])) if row['characters'] != None else None
+        characters: Optional[Sequence[CharacterData]] = pickle.loads(zlib.decompress(row['characters'])) if row['characters'] != None else None
         return cls(row['id'], abyss=abyss, characters=characters)
 
 class SpiralAbyssTable:

@@ -220,17 +220,15 @@ class GenshinApp:
         client = await self.__getGenshinClient(user_id)
         # 為了刷新戰鬥數據榜，需要先對record card發出請求
         await client.get_record_cards()
-        abyss, partial_user = await asyncio.gather(
+        abyss, characters = await asyncio.gather(
             client.get_genshin_spiral_abyss(client.uid, previous=previous),
-            client.get_partial_genshin_user(client.uid),
+            client.get_genshin_characters(client.uid),
             return_exceptions=True
         )
         if isinstance(abyss, BaseException):
             raise abyss
-        if isinstance(partial_user, BaseException):
+        if isinstance(characters, BaseException):
             characters = None
-        else:
-            characters = partial_user.characters
         return SpiralAbyssData(user_id, abyss=abyss, characters=characters)
 
     @generalErrorHandler
