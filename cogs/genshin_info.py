@@ -3,12 +3,12 @@ import discord
 import genshin
 import asyncio
 import sentry_sdk
-from typing import Sequence
+from typing import Sequence, Literal
 from discord import app_commands
 from discord.ext import commands
 from discord.app_commands import Choice
 from utility.GenshinApp import genshin_app
-from utility.draw import drawRecordCard, drawAbyssCard
+from utility.draw import drawRecordCard, drawExplorationCard, drawAbyssCard
 from utility.utils import log, EmbedTemplate
 from utility.config import config
 from utility.emoji import emoji
@@ -107,9 +107,9 @@ class TravelerDiary:
 class RecordCard:
     """遊戲紀錄卡片"""
     @staticmethod
-    async def card(interaction: discord.Interaction, user: discord.User):
+    async def card(interaction: discord.Interaction, user: discord.User, option: Literal['RECORD', 'EXPLORATION']):
         try:
-            defer, (account, userstats) = await asyncio.gather(
+            defer, (uid, userstats) = await asyncio.gather(
                 interaction.response.defer(),
                 genshin_app.getRecordCard(user.id)
             )
@@ -119,7 +119,10 @@ class RecordCard:
         
         try:
             avatar_bytes = await user.display_avatar.read()
-            fp = drawRecordCard(avatar_bytes, account, userstats)
+            if option == 'RECORD':
+                fp = drawRecordCard(avatar_bytes, uid, userstats)
+            elif option == 'EXPLORATION':
+                fp = drawExplorationCard(avatar_bytes, uid, userstats)
         except Exception as e:
             log.warning(f'[例外][{interaction.user.id}][slash_card]: {e}')
             sentry_sdk.capture_exception(e)
@@ -231,11 +234,16 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
     #-------------------------------------------------------------
     # 產生遊戲紀錄卡片
     @app_commands.command(name='card紀錄卡片', description='產生原神個人遊戲紀錄卡片')
-    @app_commands.rename(user='使用者')
-    @app_commands.describe(user='查詢其他成員的資料，不填寫則查詢自己')
+    @app_commands.rename(option='選項', user='使用者')
+    @app_commands.describe(
+        option='選擇要查詢數據總覽或是世界探索度',
+        user='查詢其他成員的資料，不填寫則查詢自己')
+    @app_commands.choices(option=[
+        Choice(name='數據總覽', value='RECORD'),
+        Choice(name='世界探索', value='EXPLORATION')])
     @app_commands.checks.cooldown(1, config.slash_cmd_cooldown)
-    async def slash_card(self, interaction: discord.Interaction, user: discord.User = None):
-        await RecordCard.card(interaction, user or interaction.user)
+    async def slash_card(self, interaction: discord.Interaction, option: str, user: discord.User = None):
+        await RecordCard.card(interaction, user or interaction.user, option)
 
     @slash_card.error
     async def on_slash_card_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
@@ -267,4 +275,4 @@ async def setup(client: commands.Bot):
 
     @client.tree.context_menu(name='遊戲紀錄卡片')
     async def context_card(interaction: discord.Interaction, user: discord.User):
-        await RecordCard.card(interaction, user)
+        await RecordCard.card(interaction, user, 'RECORD')

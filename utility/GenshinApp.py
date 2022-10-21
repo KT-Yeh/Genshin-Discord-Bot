@@ -280,7 +280,7 @@ class GenshinApp:
         return result
 
     @generalErrorHandler
-    async def getRecordCard(self, user_id: int) -> Tuple[genshin.models.GenshinAccount, genshin.models.PartialGenshinUserStats]:
+    async def getRecordCard(self, user_id: int) -> Tuple[int, genshin.models.PartialGenshinUserStats]:
         """取得使用者記錄卡片(成就、活躍天數、角色數、神瞳、寶箱數...等等)
 
         ------
@@ -288,18 +288,12 @@ class GenshinApp:
         user_id `int`: 使用者Discord ID
         ------
         Returns:
-        `(GenshinAccount, PartialGenshinUserStats)`: 查詢結果，包含角色伺服器資料與部分原神使用者資料
+        `(int, PartialGenshinUserStats)`: 查詢結果，包含UID與原神使用者資料
         """
         log.info(f'[指令][{user_id}]getRecordCard')
         client = await self.__getGenshinClient(user_id)
-        accounts, userstats = await asyncio.gather(
-            client.get_game_accounts(),
-            client.get_partial_genshin_user(client.uid)
-        )
-        for account in accounts:
-            if account.uid == client.uid:
-                return (account, userstats)
-        raise UserDataNotFound('找不到原神紀錄卡片')
+        userstats = await client.get_partial_genshin_user(client.uid)
+        return (client.uid, userstats)
 
     @generalErrorHandler
     async def getCharacters(self, user_id: int) -> Sequence[genshin.models.Character]:

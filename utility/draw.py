@@ -2,7 +2,7 @@ import genshin
 import random
 from urllib import request
 from PIL import Image, ImageFont, ImageDraw
-from typing import Tuple, Sequence, Optional
+from typing import Tuple, Sequence, Optional, List
 from io import BytesIO
 from pathlib import Path
 from utility.utils import getServerName
@@ -27,32 +27,38 @@ def drawText(img: Image.Image, pos: Tuple[float, float], text: str, font: str, s
     font = ImageFont.truetype(f'data/font/{font}', size)
     draw.text(pos, text, fill, font, anchor=anchor)
 
-def drawRecordCard(avatar_bytes: bytes, account: genshin.models.GenshinAccount, user_stats: genshin.models.PartialGenshinUserStats) -> BytesIO:
+def drawBasicCard(avatar_bytes: bytes, uid: int, user_stats: genshin.models.PartialGenshinUserStats) -> Image.Image:
+    img: Image.Image = Image.open(f'data/image/record_card/{random.randint(1, 12)}.jpg')
+    img = img.convert('RGBA')
+
+    avatar: Image.Image = Image.open(BytesIO(avatar_bytes)).resize((250, 250))
+    drawAvatar(img, avatar, (70, 210))
+
+    drawRoundedRect(img, (340, 270, 990, 460), radius=30, fill=(0, 0, 0, 120))
+    drawRoundedRect(img, (90, 520, 990, 1730), radius=30, fill=(0, 0, 0, 120))
+    
+    info = user_stats.info
+    drawText(img, (665, 335), info.nickname, 'SourceHanSerifTC-Bold.otf', 88, (255, 255, 255, 255), 'mm')
+    drawText(img, (665, 415), f'{getServerName(info.server)}  Lv.{info.level}  UID:{uid}', 'SourceHanSansTC-Medium.otf', 40, (255, 255, 255, 255), 'mm')
+
+    return img
+
+def drawRecordCard(avatar_bytes: bytes, uid: int, user_stats: genshin.models.PartialGenshinUserStats) -> BytesIO:
     """製作個人紀錄卡片圖
 
     ------
     Parameters
     avatar_bytes `bytes`: Discord使用者的頭像圖片，以bytes方式傳入
-    account `GenshinAccount`: 從Hoyolab取得的角色伺服器資料
+    uid `int`: 原神角色UID
     user_stats `PartialGenshinUserStats`: 從Hoyolab取得的使用者遊戲紀錄
     ------
     Returns
     `BytesIO`: 製作完成的圖片存在記憶體，回傳file pointer，存取前需要先`seek(0)`
     """
-    img = Image.open(f'data/image/record_card/{random.randint(1, 12)}.jpg')
-    img = img.convert('RGBA')
-
-    avatar = avatar = Image.open(BytesIO(avatar_bytes)).resize((250, 250))
-    drawAvatar(img, avatar, (70, 210))
-
-    drawRoundedRect(img, (340, 270, 990, 460), radius=30, fill=(0, 0, 0, 120))
-    drawRoundedRect(img, (90, 520, 990, 1730), radius=30, fill=(0, 0, 0, 120))
-
+    img = drawBasicCard(avatar_bytes, uid, user_stats)
+    
     white = (255, 255, 255, 255)
     grey = (230, 230, 230, 255)
-
-    drawText(img, (665, 335), account.nickname, 'SourceHanSerifTC-Bold.otf', 88, white, 'mm')
-    drawText(img, (665, 415), f'{getServerName(account.server)}  Lv.{account.level}  UID:{account.uid}', 'SourceHanSansTC-Medium.otf', 40, white, 'mm')
     
     s = user_stats.stats
     stat_list = [(s.days_active, '活躍天數'), (s.achievements, '成就達成數'), (s.characters, '獲得角色數'),
@@ -66,6 +72,60 @@ def drawRecordCard(avatar_bytes: bytes, account: genshin.models.GenshinAccount, 
         row = int(n / 3)
         drawText(img, (245 + column * 295, 630 + row * 230), str(stat[0]), 'SourceHanSansTC-Bold.otf', 80, white, 'mm')
         drawText(img, (245 + column * 295, 700 + row * 230), str(stat[1]), 'SourceHanSansTC-Regular.otf', 40, grey, 'mm')
+
+    img = img.convert('RGB')
+    fp = BytesIO()
+    img.save(fp, 'jpeg', optimize=True, quality=50)
+    return fp
+
+def drawExplorationCard(avatar_bytes: bytes, uid: int, user_stats: genshin.models.PartialGenshinUserStats) -> BytesIO:
+    """製作個人世界探索度卡片圖
+
+    ------
+    Parameters
+    avatar_bytes `bytes`: Discord使用者的頭像圖片，以bytes方式傳入
+    uid `int`: 原神角色UID
+    user_stats `PartialGenshinUserStats`: 從Hoyolab取得的使用者遊戲紀錄
+    ------
+    Returns
+    `BytesIO`: 製作完成的圖片存在記憶體，回傳file pointer，存取前需要先`seek(0)`
+    """
+    img = drawBasicCard(avatar_bytes, uid, user_stats)
+
+    white = (255, 255, 255, 255)
+    grey = (230, 230, 230, 255)
+
+    explored_list = [
+        ['蒙德', 0], ['璃月', 0], ['雪山', 0], ['稻妻', 0],
+        ['淵下宮', 0], ['層岩·表', 0], ['層岩·底', 0], ['須彌', 0]
+    ]
+    offering_list = [
+        ['忍冬之樹', 0], ['神櫻眷顧', 0], ['流明石', 0], ['夢之樹', 0]
+    ]
+    for e in user_stats.explorations:
+        explored_list[e.id - 1][1] = e.explored
+
+        if e.id == 3 and len(e.offerings) >= 1:
+            offering_list[0][1] = e.offerings[0].level
+        if e.id == 4 and len(e.offerings) >= 2:
+            offering_list[1][1] = e.offerings[0].level
+        if e.id == 6 and len(e.offerings) >= 1:
+            offering_list[2][1] = e.offerings[0].level
+        if e.id == 8 and len(e.offerings) >= 2:
+            offering_list[3][1] = e.offerings[0].level
+    
+    stat_list: List[Tuple[str, float, str]] = []
+    for e in explored_list:
+        stat_list.append(('探索', e[1], e[0]))
+    for o in offering_list:
+        stat_list.append(('等級', o[1], o[0]))
+
+    for n, stat in enumerate(stat_list):
+        column = int(n % 3)
+        row = int(n / 3)
+        drawText(img, (245 + column * 295, 620 + row * 270), stat[0], 'SourceHanSansTC-Regular.otf', 41, grey, 'mm')
+        drawText(img, (245 + column * 295, 691 + row * 270), f"{stat[1]:g}", 'SourceHanSansTC-Bold.otf', 82, white, 'mm')
+        drawText(img, (245 + column * 295, 770 + row * 270), stat[2], 'SourceHanSansTC-Regular.otf', 45, grey, 'mm')
 
     img = img.convert('RGB')
     fp = BytesIO()
