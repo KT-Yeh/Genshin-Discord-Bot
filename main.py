@@ -25,7 +25,7 @@ class GenshinDiscordBot(commands.AutoShardedBot):
         await self.load_extension('jishaku')
 
         # 初始化資料庫
-        await self.db.create('data/bot.db')
+        await self.db.create(config.database_file_path)
 
         # 初始化 genshin api 角色名字
         await genshin.utility.update_characters_ambr(['zh-tw'])

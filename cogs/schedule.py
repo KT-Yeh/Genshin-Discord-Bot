@@ -177,11 +177,12 @@ class Schedule(commands.Cog, name='自動化'):
         # 每日凌晨一點備份資料庫、刪除過期使用者資料
         if now.hour == 1 and now.minute < self.loop_interval:
             try:
-                shutil.copyfile('data/bot.db', 'data/bot_backup.db')
+                db_path = config.database_file_path
+                today = date.today()
+                shutil.copyfile(db_path, f"{db_path.split('.')[0]}_backup_{today}.db")
             except Exception as e:
                 log.warning(str(e))
                 sentry_sdk.capture_exception(e)
-            
             asyncio.create_task(db.removeExpiredUser(config.expired_user_days))
 
     @schedule.before_loop
