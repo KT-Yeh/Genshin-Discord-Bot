@@ -26,16 +26,13 @@ class Setting(commands.Cog, name='設定'):
             max_length=2000
         )
         async def on_submit(self, interaction: discord.Interaction):
+            await interaction.response.send_message(embed=EmbedTemplate.normal('設定中，請稍後...') , ephemeral=True)
             try:
                 msg = await genshin_app.setCookie(interaction.user.id, self.cookie.value)
             except Exception as e:
-                await interaction.response.send_message(embed=EmbedTemplate.error(str(e)), ephemeral=True)
+                await interaction.edit_original_response(embed=EmbedTemplate.error(str(e)))
             else:
-                await interaction.response.send_message(embed=EmbedTemplate.normal(msg), ephemeral=True)
-        
-        async def on_error(self, interaction: discord.Interaction, error: Exception):
-            sentry_sdk.capture_exception(error)
-            await interaction.response.send_message(embed=EmbedTemplate.error('發生未知錯誤'), ephemeral=True)
+                await interaction.edit_original_response(embed=EmbedTemplate.normal(msg))
 
     # 設定使用者Cookie
     @app_commands.command(
