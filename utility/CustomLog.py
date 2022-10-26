@@ -204,19 +204,19 @@ class LogTool(ColorTool):
         self.indent = '\n                     　　　　'
         self.indent_noTag = '\n                     '
         #   下面這段就是拿來看效果的，顏色記得自己調
-        print(f"\n  {self._PINK}LogTool {self._GRAY_SCALE_5}v{self.VERSION}{self.RESET}"
-              f"                    System : {self._LIGHT_CYAN}{platform.system()}{self.RESET}\n"
-              f" {self._STD_WHITE}-------------------- 顏色範例 --------------------{self.RESET}\n"
-              f"  {self._BRIGHT_PINK}自定義訊息{self.RESET}:{self._BRIGHT_PINK}範例文字{self.RESET}\n"
-              f"  {self._ORANGE_RED}範例指令集{self.RESET}({self._BRIGHT_RED}Example{self.RESET})\n"
-              f"  {self._LIGHT_MAGENTA}例外類型{self.RESET}({self._LIGHT_MAGENTA}Error.ExampleException{self.RESET})\n"
-              f"  {self._RED}錯誤訊息{self.RESET}:{self._RED}Error Message...{self.RESET}\n"
-              f"  {self._GRASS_GREEN}伺服器{self.RESET}({self._BRIGHT_GREEN}Guild_ID{self.RESET})\n"
-              f"  {self._TIAN_YI_BLUE}#頻道{self.RESET}({self._BRIGHT_CYAN}Channel ID{self.RESET})\n"
-              f"  {self._BRIGHT_ORANGE}@使用者{self.RESET}({self._BRIGHT_YELLOW}User ID{self.RESET})\n"
-              f" {self._STD_WHITE}-------------------- 標籤範例 --------------------{self.RESET}\n"
-              f"  {self.SYSTEM}{self.OK}{self.EVENT}{self.COMMAND}{self.INTERACTION}{self.TEST}\n"
-              f"  {self.DEBUG}{self.INFO}{self.WARN}{self.EXCEPTION}{self.ERROR}\n")
+        print(f"\n  {self._MIKU_GREEN}原神小幫手{self.RESET}        {self._PINK}LogTool {self._GRAY_SCALE_5}v{self.VERSION}{self.RESET}"
+              f"        System : {self._LIGHT_CYAN}{platform.system()}{self.RESET}\n")
+            #   f" {self._STD_WHITE}-------------------- 顏色範例 --------------------{self.RESET}\n"
+            #   f"  {self._BRIGHT_PINK}自定義訊息{self.RESET}:{self._BRIGHT_PINK}範例文字{self.RESET}\n"
+            #   f"  {self._ORANGE_RED}範例指令集{self.RESET}({self._BRIGHT_RED}Example{self.RESET})\n"
+            #   f"  {self._LIGHT_MAGENTA}例外類型{self.RESET}({self._LIGHT_MAGENTA}Error.ExampleException{self.RESET})\n"
+            #   f"  {self._RED}錯誤訊息{self.RESET}:{self._RED}Error Message...{self.RESET}\n"
+            #   f"  {self._GRASS_GREEN}伺服器{self.RESET}({self._BRIGHT_GREEN}Guild_ID{self.RESET})\n"
+            #   f"  {self._TIAN_YI_BLUE}#頻道{self.RESET}({self._BRIGHT_CYAN}Channel ID{self.RESET})\n"
+            #   f"  {self._BRIGHT_ORANGE}@使用者{self.RESET}({self._BRIGHT_YELLOW}User ID{self.RESET})\n"
+            #   f" {self._STD_WHITE}-------------------- 標籤範例 --------------------{self.RESET}\n"
+            #   f"  {self.SYSTEM}{self.OK}{self.EVENT}{self.COMMAND}{self.INTERACTION}{self.TEST}\n"
+            #   f"  {self.DEBUG}{self.INFO}{self.WARN}{self.EXCEPTION}{self.ERROR}\n")
 
     def __get_timestamp__(self, display: bool = True) -> str:
         """取得Log時間戳記"""
@@ -295,13 +295,13 @@ class LogTool(ColorTool):
 
     def Channel(self, channel: discord.TextChannel | discord.ForumChannel | discord.Thread | discord.DMChannel) -> str:
         if isinstance(channel, discord.TextChannel):
-            return f'{self._TIAN_YI_BLUE}#{channel.name}{self.RESET}({self._BRIGHT_CYAN}{channel.id}{self.RESET})'
+            return f'{self._MIKU_GREEN}#{channel.name}{self.RESET}({self._BRIGHT_CYAN}{channel.id}{self.RESET})'
         if isinstance(channel, discord.ForumChannel):
-            return f'{self._TIAN_YI_BLUE}#{channel.name}{self.RESET}({self._BRIGHT_CYAN}{channel.id}{self.RESET})'
+            return f'{self._MIKU_GREEN}#{channel.name}{self.RESET}({self._BRIGHT_CYAN}{channel.id}{self.RESET})'
         elif isinstance(channel, discord.Thread):
-            return f'{self._TIAN_YI_BLUE}#{channel.parent.name}({self._BRIGHT_CYAN}{channel.parent.id}{self.RESET}) => 討論串：{channel.name}{self.RESET}({self._BRIGHT_CYAN}{channel.id}{self.RESET})'
+            return f'{self._MIKU_GREEN}#{channel.parent.name}({self._BRIGHT_CYAN}{channel.parent.id}{self.RESET}) => 討論串：{channel.name}{self.RESET}({self._BRIGHT_CYAN}{channel.id}{self.RESET})'
         else:
-            return f'{self._TIAN_YI_BLUE}#私訊頻道{self.RESET}({self._BRIGHT_CYAN}{channel.id}{self.RESET})'
+            return f'{self._MIKU_GREEN}#私訊頻道{self.RESET}({self._BRIGHT_CYAN}{channel.id}{self.RESET})'
 
     def CostTime(self, start_time: float) -> str:
         end_time = time.perf_counter()
