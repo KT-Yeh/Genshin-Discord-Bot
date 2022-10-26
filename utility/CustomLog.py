@@ -10,6 +10,7 @@ import genshin
 from datetime import datetime as dt
 from discord.ext import commands
 from typing import Any, Callable, List
+from importlib.metadata import version
 
 #   六位色碼的正則表達式
 COLOR_CODE = re.compile(r'^[#]?[a-f0-9]{6}$')
@@ -204,8 +205,12 @@ class LogTool(ColorTool):
         self.indent = '\n                     　　　　'
         self.indent_noTag = '\n                     '
         #   下面這段就是拿來看效果的，顏色記得自己調
-        print(f"\n  {self._MIKU_GREEN}原神小幫手{self.RESET}        {self._PINK}LogTool {self._GRAY_SCALE_5}v{self.VERSION}{self.RESET}"
-              f"        System : {self._LIGHT_CYAN}{platform.system()}{self.RESET}\n")
+        print(f"\n              {self._MIKU_GREEN}原神小幫手{self.RESET}              System : {self._LIGHT_CYAN}{platform.system()}\n"
+              f" {self._LIGHT_RED}Python {self._GRAY_SCALE_6}v{platform.python_version()}"
+              f"   {self._BRIGHT_BLUE}discord.py {self._GRAY_SCALE_6}v{version('discord.py')}"
+              f"   {self._WHEAT_YELLOW}genshin.py {self._GRAY_SCALE_6}v{version('genshin')}"
+              f"   {self._PINK}LogTool {self._GRAY_SCALE_6}v{self.VERSION}{self.RESET}\n"
+        )
             #   f" {self._STD_WHITE}-------------------- 顏色範例 --------------------{self.RESET}\n"
             #   f"  {self._BRIGHT_PINK}自定義訊息{self.RESET}:{self._BRIGHT_PINK}範例文字{self.RESET}\n"
             #   f"  {self._ORANGE_RED}範例指令集{self.RESET}({self._BRIGHT_RED}Example{self.RESET})\n"
@@ -331,12 +336,14 @@ class LogTool(ColorTool):
             return f'({self._LIGHT_MAGENTA}{type(error).__qualname__}{self.RESET})'
 
     def CmdCall(self, ctx: discord.Interaction, *args, **kwargs) -> None:
+        """指令被呼叫後Log模板"""
         cmd_name = (
             f'/{ctx.command.name}' if isinstance(ctx.command, discord.app_commands.Command)
             else f'\u200b{ctx.command.name}' if isinstance(ctx.command, discord.app_commands.ContextMenu)
             else '(無相關指令)'
         )
         def parse_argument(arg: Any) -> str:
+            """將指令的參數內容轉成字串"""
             return (
                 self.User(arg) if isinstance(arg, (discord.User, discord.Member))
                 else arg.content if isinstance(arg, discord.Message)
@@ -395,6 +402,7 @@ class LogTool(ColorTool):
     def ErrorLog(self,
                  ctx: commands.Context | discord.Interaction,
                  error: commands.CommandError | discord.app_commands.AppCommandError | Exception) -> None:
+        """指令內發生錯誤時Log模板"""
         msg = ''
         if isinstance(ctx, commands.Context) and isinstance(error, commands.CommandInvokeError):
             msg = f"{self.User(ctx.author)}執行指令期間發生錯誤{self.ErrorType(error)}：\n錯誤訊息:{self.__ErrorMsg__(error.original)}"
@@ -407,9 +415,10 @@ class LogTool(ColorTool):
         #     traceback.print_tb(error.__traceback__)
     
     def FuncExceptionLog(self,
-                             user: str | int,
-                             func_name: str, 
-                             error: genshin.GenshinException | Exception) -> None:
+                         user: str | int,
+                         func_name: str,
+                         error: genshin.GenshinException | Exception) -> None:
+        """原神函式內發生例外Log模板"""
         msg = f"{self.User(user)} 執行函式 {self.__FuncName__(func_name)} 期間發生錯誤：\n"
         if isinstance(error, genshin.GenshinException):
             msg = msg + (
@@ -441,6 +450,7 @@ class LogTool(ColorTool):
 LOG = LogTool()
 
 def SlashCommandLogger(func: Callable):
+    """斜線指令Log裝飾器"""
     @wraps(func)
     async def inner(self, ctx: discord.Interaction, *args, **kwargs):
         LOG.CmdCall(ctx, *args, **kwargs)
@@ -451,6 +461,7 @@ def SlashCommandLogger(func: Callable):
     return inner
 
 def ContextCommandLogger(func: Callable):
+    """Context指令Log裝飾器"""
     @wraps(func)
     async def inner(ctx: discord.Interaction, *args, **kwargs):
         LOG.CmdCall(ctx, *args, **kwargs)
