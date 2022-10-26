@@ -17,6 +17,7 @@ class Config(BaseModel):
     discord_view_short_timeout: float = 60
     database_file_path: str = 'data/bot.db'
     sentry_sdk_dsn: typing.Optional[str] = None
+    notification_channel_id: typing.Optional[int] = None
     game_maintenance_time: typing.Optional[typing.Tuple[datetime, datetime]] = None
 
 config = Config.parse_file(Path('config.json'), encoding='utf8')

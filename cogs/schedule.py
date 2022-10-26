@@ -192,8 +192,9 @@ class Schedule(commands.Cog, name='自動化'):
 
     async def autoClaimDailyReward(self):
         LOG.System('每日自動簽到開始')
-        daily_users = await db.schedule_daily.getAll()
+        start_time = datetime.now() # 簽到開始時間
         total, honkai_count = 0, 0 # 統計簽到人數
+        daily_users = await db.schedule_daily.getAll()
         for user in daily_users:
             # 檢查今天是否已經簽到過
             if user.last_checkin_date == date.today():
@@ -220,6 +221,15 @@ class Schedule(commands.Cog, name='自動化'):
                 await db.schedule_daily.remove(user.id)
             await asyncio.sleep(config.schedule_loop_delay)
         LOG.System(f'每日自動簽到結束，總共 {total} 人簽到，其中 {honkai_count} 人也簽到崩壞3')
+        # 發送統計結果到通知頻道
+        if config.notification_channel_id:
+            end_time = datetime.now()
+            embed = EmbedTemplate.normal(
+                f"總共 {total} 人簽到，其中 {honkai_count} 人也簽到崩壞3\n"
+                f"簽到時間：{start_time.strftime('%H:%M:%S')} ~ {end_time.strftime('%H:%M:%S')}\n"
+                f"平均時間：{(end_time - start_time).total_seconds() / (total if total > 0 else 1):.2f} 秒/人",
+                title='每日自動簽到結果')
+            await self.bot.get_channel(config.notification_channel_id).send(embed=embed)
 
     async def autoCheckResin(self):
         LOG.System('自動檢查樹脂開始')
