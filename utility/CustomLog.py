@@ -202,8 +202,8 @@ class LogTool(ColorTool):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self.indent = '\n                     　　　　'
-        self.indent_noTag = '\n                     '
+        self.indent = '\n                　　　　'
+        self.indent_noTag = '\n                '
         #   下面這段就是拿來看效果的，顏色記得自己調
         print(f"\n              {self._MIKU_GREEN}原神小幫手{self.RESET}              System : {self._LIGHT_CYAN}{platform.system()}\n"
               f" {self._LIGHT_RED}Python {self._GRAY_SCALE_6}v{platform.python_version()}"
@@ -225,7 +225,7 @@ class LogTool(ColorTool):
 
     def __get_timestamp__(self, display: bool = True) -> str:
         """取得Log時間戳記"""
-        time_stamp = dt.now().strftime("%Y-%m-%d %H:%M:%S")
+        time_stamp = dt.now().strftime("%m-%d %H:%M:%S")
         if display:
             return f'{self._STD_DARK_GRAY}[{time_stamp}]{self.RESET}'
         else:
@@ -291,7 +291,7 @@ class LogTool(ColorTool):
     def User(self, user: discord.User | discord.Member | str | int):
         if isinstance(user, (str, int)):
             return f'{self._BRIGHT_YELLOW}@{user}{self.RESET}'
-        display_name = user.display_name if len(user.display_name) <= 10 else f'{user.display_name[:8]}...'
+        display_name = user.display_name if len(user.display_name) <= 15 else f'{user.display_name[:13]}...'
         return f'{self._BRIGHT_ORANGE}@{display_name}#{user.discriminator}{self.RESET}({self._BRIGHT_YELLOW}{user.id}{self.RESET})'
 
     def Server(self, server: discord.Guild | None):
