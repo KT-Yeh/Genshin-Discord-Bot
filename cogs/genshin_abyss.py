@@ -8,6 +8,7 @@ from utility.GenshinApp import genshin_app
 from utility.draw import drawAbyssCard
 from utility.utils import EmbedTemplate
 from utility.config import config
+from utility import CustomLog
 from data.database import SpiralAbyssData
 
 class SpiralAbyss:
@@ -88,6 +89,7 @@ class SpiralAbyssCog(commands.Cog, name='深境螺旋'):
     @app_commands.choices(
         season=[Choice(name='本期紀錄', value=0),
                 Choice(name='上期紀錄', value=1)])
+    @CustomLog.SlashCommandLogger
     async def slash_abyss(self, interaction: discord.Interaction, season: int, user: discord.User = None):
         await SpiralAbyss.abyss(interaction, user or interaction.user, season)
 
@@ -102,9 +104,11 @@ async def setup(client: commands.Bot):
     #-------------------------------------------------------------
     # 下面為Context Menu指令
     @client.tree.context_menu(name='深淵紀錄(上期)')
+    @CustomLog.ContextCommandLogger
     async def context_abyss_previous(interaction: discord.Interaction, user: discord.User):
         await SpiralAbyss.abyss(interaction, user, 1)
 
     @client.tree.context_menu(name='深淵紀錄(本期)')
+    @CustomLog.ContextCommandLogger
     async def context_abyss(interaction: discord.Interaction, user: discord.User):
         await SpiralAbyss.abyss(interaction, user, 0)

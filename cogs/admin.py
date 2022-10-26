@@ -6,7 +6,7 @@ from discord.app_commands import Choice
 from discord.ext import commands, tasks
 from datetime import datetime, timedelta
 from pathlib import Path
-from utility.utils import log
+from utility.CustomLog import SlashCommandLogger
 from utility.config import config
 
 class Admin(commands.Cog):
@@ -19,16 +19,17 @@ class Admin(commands.Cog):
     @app_commands.command(name='sync', description='同步Slash commands到全域或是當前伺服器')
     @app_commands.rename(area='範圍')
     @app_commands.choices(area=[Choice(name='當前伺服器', value=0), Choice(name='全域伺服器', value=1)])
+    @SlashCommandLogger
     async def slash_sync(self, interaction: discord.Interaction, area: int = 0):
+        await interaction.response.defer()
         if area == 0: # 複製全域指令，同步到當前伺服器，不需等待
             self.bot.tree.copy_global_to(guild=interaction.guild)
             result = await self.bot.tree.sync(guild=interaction.guild)
         else: # 同步到全域，需等待一小時
             result = await self.bot.tree.sync()
         
-        msg = f'已同步以下指令到{"全部" if area == 1 else "當前"}伺服器\n{"、".join(cmd.name for cmd in result)}'
-        log.info(f'[指令][Admin]sync(area={area}): {msg}')
-        await interaction.response.send_message(msg)
+        msg = f'已同步以下指令到{"全部" if area == 1 else "當前"}伺服器：{"、".join(cmd.name for cmd in result)}'
+        await interaction.edit_original_response(msg)
     
     # 顯示機器人相關狀態
     @app_commands.command(name='status', description='顯示小幫手狀態')
@@ -36,6 +37,7 @@ class Admin(commands.Cog):
         Choice(name='延遲', value=0),
         Choice(name='已連接伺服器數量', value=1),
         Choice(name='已連接伺服器名稱', value=2)])
+    @SlashCommandLogger
     async def slash_status(self, interaction: discord.Interaction, option: int):
         if option == 0:
             await interaction.response.send_message(f'延遲：{round(self.bot.latency*1000)} 毫秒')
@@ -58,6 +60,7 @@ class Admin(commands.Cog):
         Choice(name='reload', value=2),
         Choice(name='presence', value=3)
     ])
+    @SlashCommandLogger
     async def slash_system(self, interaction: discord.Interaction, option: int, param: str = None):
         async def operateCogs(func: typing.Callable[[str], typing.Awaitable[None]], param: typing.Optional[str] = None, *, pass_self: bool = False):
             if param == None: # 操作全部cog
@@ -93,6 +96,7 @@ class Admin(commands.Cog):
         Choice(name='schedule_check_resin_threshold', value='schedule_check_resin_threshold'),
         Choice(name='schedule_loop_delay', value='schedule_loop_delay')
     ])
+    @SlashCommandLogger
     async def slash_config(self, interaction: discord.Interaction, option: str, value: str):
         if option in ['schedule_daily_reward_time', 'schedule_check_resin_threshold']:
             setattr(config, option, int(value))
@@ -102,6 +106,7 @@ class Admin(commands.Cog):
 
     @app_commands.command(name='maintenance', description='設定遊戲維護時間，輸入0表示將維護時間設定為關閉')
     @app_commands.rename(month='月', day='日', hour='點', duration='維護幾小時')
+    @SlashCommandLogger
     async def slash_maintenance(self, interaction: discord.Interaction, month: int, day: int, hour: int = 6, duration: int = 5):
         if month == 0 or day == 0:
             config.game_maintenance_time = None

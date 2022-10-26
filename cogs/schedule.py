@@ -7,8 +7,9 @@ from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands, tasks
 from utility.config import config
-from utility.utils import log, EmbedTemplate, getAppCommandMention
+from utility.utils import EmbedTemplate, getAppCommandMention
 from utility.GenshinApp import genshin_app
+from utility.CustomLog import LOG, SlashCommandLogger
 from data.database import db, ScheduleDaily, ScheduleResin
 
 class Schedule(commands.Cog, name='自動化'):
@@ -78,8 +79,8 @@ class Schedule(commands.Cog, name='自動化'):
                   Choice(name='★ 樹脂額滿提醒', value='resin')],
         switch=[Choice(name='開啟功能', value=1),
                 Choice(name='關閉功能', value=0)])
+    @SlashCommandLogger
     async def slash_schedule(self, interaction: discord.Interaction, function: str, switch: int):
-        log.info(f'[指令][{interaction.user.id}]schedule(function={function}, switch={switch})')
         if function == 'help': # 排程功能使用說明
             msg = ('· 排程會在特定時間執行功能，執行結果會在設定指令的頻道推送\n'
             '· 設定前請先確認小幫手有在該頻道發言的權限，如果推送訊息失敗，小幫手會自動移除排程設定\n'
@@ -151,8 +152,8 @@ class Schedule(commands.Cog, name='自動化'):
         function=[Choice(name='每日自動簽到', value='daily'),
                   Choice(name='樹脂額滿提醒', value='resin')])
     @app_commands.default_permissions(manage_messages=True)
+    @SlashCommandLogger
     async def slash_remove_user(self, interaction: discord.Interaction, function: str, user: discord.User):
-        log.info(f'[指令][{interaction.user.id}]移除排程使用者(function={function}, user={user.id})')
         if function == 'daily':
             await db.schedule_daily.remove(user.id)
             await interaction.response.send_message(embed=EmbedTemplate.normal(f'{user.display_name}的每日自動簽到已關閉'))
@@ -181,7 +182,7 @@ class Schedule(commands.Cog, name='自動化'):
                 today = date.today()
                 shutil.copyfile(db_path, f"{db_path.split('.')[0]}_backup_{today}.db")
             except Exception as e:
-                log.warning(str(e))
+                LOG.Error(str(e))
                 sentry_sdk.capture_exception(e)
             asyncio.create_task(db.removeExpiredUser(config.expired_user_days))
 
@@ -190,7 +191,7 @@ class Schedule(commands.Cog, name='自動化'):
         await self.bot.wait_until_ready()
 
     async def autoClaimDailyReward(self):
-        log.info('[排程][System]schedule: 每日自動簽到開始')
+        LOG.System('每日自動簽到開始')
         daily_users = await db.schedule_daily.getAll()
         total, honkai_count = 0, 0 # 統計簽到人數
         for user in daily_users:
@@ -215,13 +216,13 @@ class Schedule(commands.Cog, name='自動化'):
                 else:
                     await channel.send(f'[自動簽到] <@{user.id}> {result}')
             except Exception as e: # 發送訊息失敗，移除此使用者
-                log.warning(f'[排程][{user.id}]自動簽到：{e}')
+                LOG.Except(f'自動簽到發送訊息失敗，移除此使用者 {LOG.User(user.id)}：{e}')
                 await db.schedule_daily.remove(user.id)
             await asyncio.sleep(config.schedule_loop_delay)
-        log.info(f'[排程][System]schedule: 每日自動簽到結束，總共 {total} 人簽到，其中 {honkai_count} 人也簽到崩壞3')
+        LOG.System(f'每日自動簽到結束，總共 {total} 人簽到，其中 {honkai_count} 人也簽到崩壞3')
 
     async def autoCheckResin(self):
-        log.info('[排程][System]schedule: 自動檢查樹脂開始')
+        LOG.System('自動檢查樹脂開始')
         resin_users = await db.schedule_resin.getAll()
         count = 0 # 統計人數
         for user in resin_users:
@@ -258,15 +259,15 @@ class Schedule(commands.Cog, name='自動化'):
                     user = await self.bot.fetch_user(user.id)
                     msg_sent = await channel.send(f"{user.mention}，{msg}", embed=embed)
                 except Exception as e: # 發送訊息失敗，移除此使用者
-                    log.info(f'[例外][{user.id}]排程檢查樹脂發送訊息：{e}')
+                    LOG.Except(f'自動檢查樹脂發送訊息失敗，移除此使用者 {LOG.User(user.id)}：{e}')
                     await db.schedule_resin.remove(user.id)
                 else:
                     # 若使用者不在發送訊息的頻道則移除
                     if user.mentioned_in(msg_sent) == False:
-                        log.info(f'[排程][{user.id}]檢查樹脂：使用者不在頻道')
+                        LOG.Except(f'自動檢查樹脂使用者不在頻道，移除此使用者 {LOG.User(user.id)}：{e}')
                         await db.schedule_resin.remove(user.id)
             await asyncio.sleep(config.schedule_loop_delay)
-        log.info(f'[排程][System]schedule: 自動檢查樹脂結束，{count}/{len(resin_users)} 人已檢查')
+        LOG.System(f'自動檢查樹脂結束，{count}/{len(resin_users)} 人已檢查')
 
 async def setup(client: commands.Bot):
     await client.add_cog(Schedule(client))

@@ -9,9 +9,10 @@ from discord.ext import commands
 from discord.app_commands import Choice
 from utility.GenshinApp import genshin_app
 from utility.draw import drawRecordCard, drawExplorationCard
-from utility.utils import log, EmbedTemplate
+from utility.utils import EmbedTemplate
 from utility.config import config
 from utility.emoji import emoji
+from utility.CustomLog import LOG, SlashCommandLogger, ContextCommandLogger
 
 class RealtimeNotes:
     """即時便箋"""
@@ -63,7 +64,7 @@ class RecordCard:
             elif option == 'EXPLORATION':
                 fp = drawExplorationCard(avatar_bytes, uid, userstats)
         except Exception as e:
-            log.warning(f'[例外][{interaction.user.id}][slash_card]: {e}')
+            LOG.ErrorLog(interaction, e)
             sentry_sdk.capture_exception(e)
             await interaction.edit_original_response(embed=EmbedTemplate.error('發生錯誤，卡片製作失敗'))
         else:
@@ -130,6 +131,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
     @app_commands.choices(
         shortForm=[Choice(name='完整', value=0),
                    Choice(name='簡約', value=1)])
+    @SlashCommandLogger
     async def slash_notes(self, interaction: discord.Interaction, shortForm: int = 0, user: discord.User = None):
         await RealtimeNotes.notes(interaction, user or interaction.user, shortForm=bool(shortForm))
 
@@ -144,6 +146,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
             Choice(name='這個月', value=0),
             Choice(name='上個月', value=-1),
             Choice(name='上上個月', value=-2)])
+    @SlashCommandLogger
     async def slash_diary(self, interaction: discord.Interaction, month: int):
         month = datetime.datetime.now().month + month
         month = month + 12 if month < 1 else month
@@ -160,6 +163,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
         Choice(name='數據總覽', value='RECORD'),
         Choice(name='世界探索', value='EXPLORATION')])
     @app_commands.checks.cooldown(1, config.slash_cmd_cooldown)
+    @SlashCommandLogger
     async def slash_card(self, interaction: discord.Interaction, option: str, user: discord.User = None):
         await RecordCard.card(interaction, user or interaction.user, option)
 
@@ -171,6 +175,7 @@ class GenshinInfo(commands.Cog, name='原神資訊'):
     #-------------------------------------------------------------
     # 個人所有角色一覽
     @app_commands.command(name='character角色一覽', description='公開展示我的所有角色')
+    @SlashCommandLogger
     async def slash_characters(self, interaction: discord.Interaction):
         await Characters.characters(interaction, interaction.user)
 
@@ -180,9 +185,11 @@ async def setup(client: commands.Bot):
     #-------------------------------------------------------------
     # 下面為Context Menu指令
     @client.tree.context_menu(name='即時便箋')
+    @ContextCommandLogger
     async def context_notes(interaction: discord.Interaction, user: discord.User):
         await RealtimeNotes.notes(interaction, user)
 
     @client.tree.context_menu(name='遊戲紀錄卡片')
+    @ContextCommandLogger
     async def context_card(interaction: discord.Interaction, user: discord.User):
         await RecordCard.card(interaction, user, 'RECORD')

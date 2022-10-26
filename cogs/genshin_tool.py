@@ -6,6 +6,7 @@ from discord.app_commands import Choice
 from discord.ext import commands
 from utility.GenshinApp import genshin_app
 from utility.utils import EmbedTemplate
+from utility import CustomLog
 
 class RedeemCode:
     """使用兌換碼"""
@@ -45,6 +46,7 @@ class GenshinTool(commands.Cog, name='原神工具'):
         description='使用Hoyolab兌換碼')
     @app_commands.rename(code='兌換碼', user='使用者')
     @app_commands.describe(code='請輸入要使用的兌換碼，支援多組兌換碼同時輸入')
+    @CustomLog.SlashCommandLogger
     async def slash_redeem(self, interaction: discord.Interaction, code: str, user: discord.User = None):
         await RedeemCode.redeem(interaction, user or interaction.user, code)
 
@@ -56,6 +58,7 @@ class GenshinTool(commands.Cog, name='原神工具'):
     @app_commands.choices(game=[
         Choice(name='原神', value=0), 
         Choice(name='原神 + 崩壞3', value=1)])
+    @CustomLog.SlashCommandLogger
     async def slash_daily(self, interaction: discord.Interaction, game: int = 0, user: discord.User = None):
         user = user or interaction.user
         defer, result = await asyncio.gather(
@@ -68,5 +71,6 @@ async def setup(client: commands.Bot):
     await client.add_cog(GenshinTool(client))
 
     @client.tree.context_menu(name='使用兌換碼')
+    @CustomLog.ContextCommandLogger
     async def context_redeem(interaction: discord.Interaction, msg: discord.Message):
         await RedeemCode.redeem(interaction, interaction.user, msg.content)

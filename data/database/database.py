@@ -1,6 +1,6 @@
 import aiosqlite
 from datetime import datetime
-from utility.utils import log
+from utility.CustomLog import LOG
 from .users import UsersTable
 from .schedule_daily import ScheduleDailyTable
 from .schedule_resin import ScheduleResinTable
@@ -50,6 +50,6 @@ class Database:
             if interval.days > diff_days:
                 await self.removeUser(user.id)
                 count += 1
-        log.info(f'[資訊][System]removeExpiredUser: {len(users)} 位使用者已檢查，已刪除 {count} 位過期使用者')
+        LOG.System(f'檢查過期使用者：{len(users)} 位使用者已檢查，已刪除 {count} 位過期使用者')
 
 db = Database()

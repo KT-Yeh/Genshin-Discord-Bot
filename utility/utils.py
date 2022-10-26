@@ -5,13 +5,6 @@ import json
 from datetime import datetime
 from sentry_sdk.integrations.logging import LoggingIntegration
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s %(levelname)s %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
-)
-log = logging
-
 sentry_logging = LoggingIntegration(
     level=logging.INFO,
     event_level=logging.ERROR

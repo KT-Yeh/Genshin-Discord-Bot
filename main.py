@@ -4,7 +4,8 @@ import sentry_sdk
 from discord.ext import commands
 from pathlib import Path
 from utility.config import config
-from utility.utils import log, sentry_logging
+from utility.utils import sentry_logging
+from utility.CustomLog import LOG
 from data import database
 
 intents = discord.Intents.default()
@@ -33,6 +34,8 @@ class GenshinDiscordBot(commands.AutoShardedBot):
         # 從cogs資料夾載入所有cog
         for filepath in Path('./cogs').glob('**/*.py'):
             cog_name = Path(filepath).stem
+            if cog_name.startswith('_'):
+                continue
             await self.load_extension(f'cogs.{cog_name}')
 
         # 同步Slash commands到測試伺服器，全域伺服器用 /sync 指令
@@ -42,25 +45,25 @@ class GenshinDiscordBot(commands.AutoShardedBot):
             await self.tree.sync(guild=test_guild)
 
     async def on_ready(self):
-        log.info(f'[資訊][System]on_ready: You have logged in as {self.user}')
-        log.info(f'[資訊][System]on_ready: Total {len(self.guilds)} servers connected')
+        LOG.System(f'on_ready: You have logged in as {self.user}')
+        LOG.System(f'on_ready: Total {len(self.guilds)} servers connected')
 
     async def close(self) -> None:
         # 關閉資料庫
         await database.db.close()
-        log.info('[資訊][System]on_close: 資料庫已關閉')
+        LOG.System('on_close: 資料庫已關閉')
         await super().close()
-        log.info('[資訊][System]on_close: 機器人已結束')
+        LOG.System('on_close: 機器人已結束')
 
     async def on_command_error(self, ctx: commands.Context, error):
-        log.info(f'[例外][{ctx.author.id}]on_command_error: {error}')
+        LOG.ErrorLog(ctx, error)
 
 sentry_sdk.init(dsn=config.sentry_sdk_dsn, integrations=[sentry_logging], traces_sample_rate=1.0)
 
 client = GenshinDiscordBot()
 @client.tree.error
 async def on_error(interaction: discord.Interaction, error: discord.app_commands.AppCommandError) -> None:
-    log.warning(f'[例外][{interaction.user.id}]{type(error)}: {error}')
+    LOG.ErrorLog(interaction, error)
     sentry_sdk.capture_exception(error)
 
 client.run(config.bot_token)

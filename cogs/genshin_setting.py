@@ -9,6 +9,7 @@ from discord.ext import commands
 from utility.GenshinApp import genshin_app
 from utility.config import config
 from utility.utils import getServerName, EmbedTemplate, getAppCommandMention
+from utility import CustomLog
 from data import database
 
 class Setting(commands.Cog, name='設定'):
@@ -43,6 +44,7 @@ class Setting(commands.Cog, name='設定'):
         Choice(name='① 顯示說明如何取得Cookie', value=0),
         Choice(name='② 提交已取得的Cookie給小幫手', value=1),
         Choice(name='③ 顯示小幫手Cookie使用與保存告知', value=2)])
+    @CustomLog.SlashCommandLogger
     async def slash_cookie(self, interaction: discord.Interaction, option: int):
         if option == 0:
             embed = EmbedTemplate.normal(
@@ -91,6 +93,7 @@ class Setting(commands.Cog, name='設定'):
     @app_commands.command(
         name='uid設定',
         description='帳號內多角色時需保存指定的UID，只有單一角色不需要使用本指令')
+    @CustomLog.SlashCommandLogger
     async def slash_uid(self, interaction: discord.Interaction):
         try:
             defer, accounts = await asyncio.gather(
@@ -126,6 +129,7 @@ class Setting(commands.Cog, name='設定'):
     @app_commands.command(
         name='清除資料',
         description='刪除使用者所有保存在小幫手內的個人資料')
+    @CustomLog.SlashCommandLogger
     async def slash_clear(self, interaction: discord.Interaction):
         view = self.ConfirmButton()
         await interaction.response.send_message('是否確定刪除？', view=view, ephemeral=True)

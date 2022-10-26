@@ -5,7 +5,8 @@ import sentry_sdk
 from typing import Sequence, Tuple, Optional
 from data.database import db, User, SpiralAbyssData
 from .emoji import emoji
-from .utils import log, trimCookie, getServerName, getDayOfWeek, getAppCommandMention
+from .CustomLog import LOG
+from .utils import trimCookie, getServerName, getDayOfWeek, getAppCommandMention
 
 class UserDataNotFound(Exception):
     pass
@@ -17,23 +18,23 @@ def generalErrorHandler(func):
         try:
             return await func(*args, **kwargs)
         except genshin.errors.DataNotPublic as e:
-            log.info(f"[例外][{user_id}]{func.__name__}: [retcode]{e.retcode} [原始內容]{e.original} [錯誤訊息]{e.msg}")
+            LOG.FuncExceptionLog(user_id, func.__name__, e)
             raise Exception('此功能權限未開啟，請先從Hoyolab網頁或App上的個人戰績->設定，將此功能啟用')
         except genshin.errors.InvalidCookies as e:
-            log.info(f"[例外][{user_id}]{func.__name__}: [retcode]{e.retcode} [原始內容]{e.original} [錯誤訊息]{e.msg}")
+            LOG.FuncExceptionLog(user_id, func.__name__, e)
             raise Exception('Cookie已失效，請從Hoyolab重新取得新Cookie')
         except genshin.errors.RedemptionException as e:
-            log.info(f"[例外][{user_id}]{func.__name__}: [retcode]{e.retcode} [原始內容]{e.original} [錯誤訊息]{e.msg}")
+            LOG.FuncExceptionLog(user_id, func.__name__, e)
             raise Exception(e.original)
         except genshin.errors.GenshinException as e:
-            log.warning(f"[例外][{user_id}]{func.__name__}: [retcode]{e.retcode} [原始內容]{e.original} [錯誤訊息]{e.msg}")
+            LOG.FuncExceptionLog(user_id, func.__name__, e)
             sentry_sdk.capture_exception(e)
             raise Exception(e.original)
         except UserDataNotFound as e:
-            log.info(f"[例外][{user_id}]{func.__name__}: [錯誤訊息]{e}")
+            LOG.FuncExceptionLog(user_id, func.__name__, e)
             raise Exception(str(e))
         except Exception as e:
-            log.warning(f"[例外][{user_id}]{func.__name__}: [錯誤訊息]{e}")
+            LOG.FuncExceptionLog(user_id, func.__name__, e)
             sentry_sdk.capture_exception(e)
             raise Exception(str(e))
     return wrapper
@@ -54,7 +55,7 @@ class GenshinApp:
         Returns
         `str`: 回覆給使用者的訊息
         """
-        log.info(f'[指令][{user_id}]setCookie: cookie={cookie}')
+        LOG.Info(f"設定 {LOG.User(user_id)} 的Cookie：{cookie}")
         cookie = trimCookie(cookie)
         if cookie == None:
             return f'無效的Cookie，請重新輸入(使用 {getAppCommandMention("cookie設定")} 顯示說明)'
@@ -62,11 +63,11 @@ class GenshinApp:
         client.set_cookies(cookie)
         accounts = await client.genshin_accounts()
         if len(accounts) == 0:
-            log.info(f'[資訊][{user_id}]setCookie: 帳號內沒有任何角色')
+            LOG.Info(f"{LOG.User(user_id)} 帳號內沒有任何角色")
             result = '帳號內沒有任何角色，取消設定Cookie'
         else:
             await db.users.add(User(id=user_id, cookie=cookie))
-            log.info(f'[資訊][{user_id}]setCookie: Cookie設置成功')
+            LOG.Info(f"{LOG.User(user_id)} Cookie設置成功")
             
             if len(accounts) == 1 and len(str(accounts[0].uid)) == 9:
                 await self.setUID(user_id, accounts[0].uid)
@@ -100,7 +101,6 @@ class GenshinApp:
         Returns
         `str`: 回覆給使用者的訊息
         """
-        log.info(f'[指令][{user_id}]setUID: uid={uid}')
         await db.users.update(user_id, uid=uid)
         return f'角色UID: {uid} 已設定完成'
     
@@ -121,8 +121,6 @@ class GenshinApp:
         Returns
         `Notes`: 查詢結果
         """
-        if not schedule:
-            log.info(f'[指令][{user_id}]getRealtimeNote')
         client = await self.__getGenshinClient(user_id, update_using_time=(not schedule))
         return await client.get_genshin_notes(client.uid)
 
@@ -138,7 +136,6 @@ class GenshinApp:
         Returns
         `str`: 回覆給使用者的訊息
         """
-        log.info(f'[指令][{user_id}]redeemCode: code={code}')
         client = await self.__getGenshinClient(user_id)
         await client.redeem_code(code, client.uid)
         return '兌換碼使用成功！'
@@ -155,8 +152,6 @@ class GenshinApp:
         Returns
         `str`: 回覆給使用者的訊息
         """
-        if not schedule:
-            log.info(f'[指令][{user_id}]claimDailyReward: honkai={honkai}')
         try:
             client = await self.__getGenshinClient(user_id, update_using_time=(not schedule))
         except Exception as e:
@@ -174,16 +169,16 @@ class GenshinApp:
                 if e.retcode == -10002 and game == genshin.Game.HONKAI:
                     return '崩壞3簽到失敗，未查詢到角色資訊，請確認艦長是否已綁定新HoYoverse通行證'
                 
-                log.info(f'[例外][{user_id}]claimDailyReward: {game_name[game]}[retcode]{e.retcode} [例外內容]{e.original}')
+                LOG.FuncExceptionLog(user_id, 'claimDailyReward', e)
                 if retry > 0:
                     await asyncio.sleep(1)
                     return await claimReward(game, retry - 1)
                 
-                log.warning(f'[例外][{user_id}]claimDailyReward: {game_name[game]}[retcode]{e.retcode} [例外內容]{e.original}')
+                LOG.Error(f"{LOG.User(user_id)} {game_name[game]}簽到失敗")
                 sentry_sdk.capture_exception(e)
                 return f'{game_name[game]}簽到失敗：[retcode]{e.retcode} [內容]{e.original}'
             except Exception as e:
-                log.warning(f'[例外][{user_id}]claimDailyReward: {game_name[game]}[例外內容]{e}')
+                LOG.FuncExceptionLog(user_id, 'claimDailyReward', e)
                 sentry_sdk.capture_exception(e)
                 return f'{game_name[game]}簽到失敗：{e}'
             else:
@@ -198,9 +193,9 @@ class GenshinApp:
             await client.check_in_community()
         except genshin.errors.GenshinException as e:
             if e.retcode != 2001:
-                log.warning(f'[例外][{user_id}]claimDailyReward: Hoyolab[retcode]{e.retcode} [例外內容]{e.original}')
+                LOG.FuncExceptionLog(user_id, 'claimDailyReward: Hoyolab', e)
         except Exception as e:
-            log.warning(f'[例外][{user_id}]claimDailyReward: Hoyolab[例外內容]{e}')
+            LOG.FuncExceptionLog(user_id, 'claimDailyReward: Hoyolab', e)
         
         return result
 
@@ -216,7 +211,6 @@ class GenshinApp:
         Returns
         `SpiralAbyssData`: 查詢結果
         """
-        log.info(f'[指令][{user_id}]getSpiralAbyss: previous={previous}')
         client = await self.__getGenshinClient(user_id)
         # 為了刷新戰鬥數據榜，需要先對record card發出請求
         await client.get_record_cards()
@@ -243,7 +237,6 @@ class GenshinApp:
         Returns:
         `discord.Embed`: 查詢結果，已包裝成 discord 嵌入格式
         """
-        log.info(f'[指令][{user_id}]getTravelerDiary: month={month}')
         client = await self.__getGenshinClient(user_id)
         diary = await client.get_diary(client.uid, month=month)
         
@@ -288,7 +281,6 @@ class GenshinApp:
         Returns:
         `(int, PartialGenshinUserStats)`: 查詢結果，包含UID與原神使用者資料
         """
-        log.info(f'[指令][{user_id}]getRecordCard')
         client = await self.__getGenshinClient(user_id)
         userstats = await client.get_partial_genshin_user(client.uid)
         return (client.uid, userstats)
@@ -304,7 +296,6 @@ class GenshinApp:
         Returns:
         `Sequence[Character]`: 查詢結果
         """
-        log.info(f'[指令][{user_id}]getCharacters')
         client = await self.__getGenshinClient(user_id)
         return await client.get_genshin_characters(client.uid)
 
