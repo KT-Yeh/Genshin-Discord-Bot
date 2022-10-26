@@ -286,12 +286,14 @@ class LogTool(ColorTool):
     def User(self, user: discord.User | discord.Member | str | int):
         if isinstance(user, (str, int)):
             return f'{self._BRIGHT_YELLOW}@{user}{self.RESET}'
-        display_name = user.display_name if len(user.display_name) <= 8 else f'{user.display_name[:8]}...'
+        display_name = user.display_name if len(user.display_name) <= 10 else f'{user.display_name[:8]}...'
         return f'{self._BRIGHT_ORANGE}@{display_name}#{user.discriminator}{self.RESET}({self._BRIGHT_YELLOW}{user.id}{self.RESET})'
 
     def Server(self, server: discord.Guild | None):
-        server_name = server.name if len(server.name) <= 15 else f'{server.name[:15]}...'
-        return f'{self._GRASS_GREEN}{server_name}{self.RESET}({self._BRIGHT_GREEN}{server.id}{self.RESET})' if server != None else ''
+        if server:
+            server_name = server.name if len(server.name) <= 15 else f'{server.name[:13]}...'
+            return f'{self._GRASS_GREEN}{server_name}{self.RESET}({self._BRIGHT_GREEN}{server.id}{self.RESET})'
+        return ''
 
     def Channel(self, channel: discord.TextChannel | discord.ForumChannel | discord.Thread | discord.DMChannel) -> str:
         if isinstance(channel, discord.TextChannel):
@@ -343,7 +345,7 @@ class LogTool(ColorTool):
         arg_list = [parse_argument(arg) for arg in args]
         for name, argument in kwargs.items():
             arg_list.append(f"{self.__ParameterName__(name)}={parse_argument(argument)}")
-        log = f"{self.User(ctx.user)} 使用 {self.__CmdName__(cmd_name)}：{', '.join(arg_list)}"
+        log = f"{self.User(ctx.user)} 使用了 {self.__CmdName__(cmd_name)}：{', '.join(arg_list)}"
         self.Cmd(log)
 
     def CmdResult(self,
@@ -388,7 +390,7 @@ class LogTool(ColorTool):
         postition = f'\n伺服器：{self.Server(ctx.guild)}　頻道：{self.Channel(ctx.channel)}\n'
         msg = f'\n訊息：{self._BRIGHT_PINK}{message}{self.RESET}\n' if message != None and message != '' else ''
         #   輸出Log
-        self.Cmd(log + cost_time + postition + msg, show_timestamp)
+        self.Cmd('⤷ ' + log + cost_time + postition + msg, show_timestamp)
 
     def ErrorLog(self,
                  ctx: commands.Context | discord.Interaction,
