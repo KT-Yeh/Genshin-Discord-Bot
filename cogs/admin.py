@@ -29,7 +29,7 @@ class Admin(commands.Cog):
             result = await self.bot.tree.sync()
         
         msg = f'已同步以下指令到{"全部" if area == 1 else "當前"}伺服器：{"、".join(cmd.name for cmd in result)}'
-        await interaction.edit_original_response(msg)
+        await interaction.edit_original_response(content=msg)
     
     # 顯示機器人相關狀態
     @app_commands.command(name='status', description='顯示小幫手狀態')
