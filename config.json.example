@@ -3,7 +3,7 @@
     "test_server_id": 212340008888812345,
     "bot_token": "ABCDEFG",
     "schedule_daily_reward_time": 8,
-    "schedule_check_resin_threshold": 150,
+    "schedule_check_resin_interval": 10,
     "schedule_loop_delay": 2.0,
     "expired_user_days": 30,
     "slash_cmd_cooldown": 5.0,

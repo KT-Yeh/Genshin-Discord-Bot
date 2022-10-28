@@ -6,6 +6,7 @@ from datetime import datetime, date, timedelta
 from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands, tasks
+from typing import Callable, Optional
 from utility.config import config
 from utility.utils import EmbedTemplate, getAppCommandMention
 from utility.GenshinApp import genshin_app
@@ -64,7 +65,79 @@ class Schedule(commands.Cog, name='自動化'):
             self.value = False
             self.stop()
 
-    # 設定自動排程功能
+    class CheckingNotesThresholdModal(discord.ui.Modal, title='設定即時便箋提醒'):
+        """設定檢查即時便箋各項閾值的表單"""
+        resin = discord.ui.TextInput(
+            label='原粹樹脂：設定樹脂額滿之前幾小時發送提醒 (不填表示不提醒)',
+            placeholder='請輸入一個介於 0 ~ 5 的整數',
+            default='1',
+            required=False,
+            max_length=1
+        )
+        realm_currency = discord.ui.TextInput(
+            label='洞天寶錢：設定寶錢額滿之前幾小時發送提醒 (不填表示不提醒)',
+            placeholder='請輸入一個介於 0 ~ 8 的整數',
+            required=False,
+            max_length=1
+        )
+        transformer = discord.ui.TextInput(
+            label='質變儀：設定質變儀完成之前幾小時發送提醒 (不填表示不提醒)',
+            placeholder='請輸入一個介於 0 ~ 5 的整數',
+            required=False,
+            max_length=1
+        )
+        expedition = discord.ui.TextInput(
+            label='探索派遣：設定全部派遣完成之前幾小時發送提醒 (不填表示不提醒)',
+            placeholder='請輸入一個介於 0 ~ 5 的整數',
+            required=False,
+            max_length=1
+        )
+        async def on_submit(self, interaction: discord.Interaction) -> None:
+            try:
+                # 將字串轉為數字
+                to_int = lambda string: int(string) if len(string) > 0 else None
+                resin = to_int(self.resin.value)
+                realm_currency = to_int(self.realm_currency.value)
+                transformer = to_int(self.transformer.value)
+                expedition = to_int(self.expedition.value)
+                
+                # 檢查數字範圍
+                if resin == None and realm_currency == None and transformer == None and expedition == None:
+                    raise ValueError()
+                if ((isinstance(resin, int) and not(0 <= resin <= 5)) or
+                    (isinstance(realm_currency, int) and not(0 <= realm_currency <= 8)) or
+                    (isinstance(transformer, int) and not(0 <= transformer <= 5)) or
+                    (isinstance(expedition, int) and not(0 <= expedition <= 5))
+                ):
+                    raise ValueError()
+            except Exception:
+                await interaction.response.send_message(
+                    embed=EmbedTemplate.error('輸入數值有誤，請確認輸入的數值為整數且在規定範圍內'),
+                    ephemeral=True
+                )
+            else:
+                # 儲存設定資料
+                await db.schedule_resin.add(
+                    ScheduleResin(
+                        id=interaction.user.id,
+                        channel_id=interaction.channel_id,
+                        threshold_resin=resin,
+                        threshold_currency=realm_currency,
+                        threshold_transformer=transformer,
+                        threshold_expedition=expedition)
+                )
+                to_msg: Callable[[str, Optional[int]], str] = (lambda title, value:
+                    '' if value == None else f"． {title}：當完成時提醒\n" if value == 0 else f"． {title}：完成前 {value} 小時提醒\n")
+                await interaction.response.send_message(
+                    embed=EmbedTemplate.normal(
+                        f"設定完成，當達到以下設定值時會發送提醒訊息：\n"
+                        f"{to_msg('原粹樹脂', resin)}"
+                        f"{to_msg('洞天寶錢', realm_currency)}"
+                        f"{to_msg('質變儀　', transformer)}"
+                        f"{to_msg('探索派遣', expedition)}")
+                )
+
+    # 設定自動排程功能的斜線指令
     @app_commands.command(
         name='schedule排程',
         description='設定自動化功能(Hoyolab每日簽到、樹脂額滿提醒)')
@@ -76,7 +149,7 @@ class Schedule(commands.Cog, name='自動化'):
         function=[Choice(name='① 顯示使用說明', value='help'),
                   Choice(name='② 訊息推送測試', value='test'),
                   Choice(name='★ 每日自動簽到', value='daily'),
-                  Choice(name='★ 樹脂額滿提醒', value='resin')],
+                  Choice(name='★ 即時便箋提醒', value='resin')],
         switch=[Choice(name='開啟功能', value=1),
                 Choice(name='關閉功能', value=0)])
     @SlashCommandLogger
@@ -85,8 +158,8 @@ class Schedule(commands.Cog, name='自動化'):
             msg = ('· 排程會在特定時間執行功能，執行結果會在設定指令的頻道推送\n'
             '· 設定前請先確認小幫手有在該頻道發言的權限，如果推送訊息失敗，小幫手會自動移除排程設定\n'
             '· 若要更改推送頻道，請在新的頻道重新設定指令一次\n\n'
-            f'· 每日簽到：每日 {config.schedule_daily_reward_time}~{config.schedule_daily_reward_time+3} 點之間自動論壇簽到，設定前請先使用 {getAppCommandMention("daily每日簽到")} 指令確認小幫手能正確幫你簽到\n'
-            f'· 樹脂提醒：每小時檢查一次，當樹脂超過 {config.schedule_check_resin_threshold} 會發送提醒，設定前請先用 {getAppCommandMention("notes即時便箋")} 指令確認小幫手能讀到你的樹脂資訊\n')
+            f'· 每日自動簽到：每日 {config.schedule_daily_reward_time} 開始依照登記順序自動簽到，設定前請先使用 {getAppCommandMention("daily每日簽到")} 指令確認小幫手能正確幫你簽到\n'
+            f'· 即時便箋提醒：當超過設定值時會發送提醒，設定前請先用 {getAppCommandMention("notes即時便箋")} 指令確認小幫手能讀到你的樹脂資訊\n')
             await interaction.response.send_message(embed=EmbedTemplate.normal(msg, title='排程功能使用說明'), ephemeral=True)
             return
         
@@ -133,16 +206,12 @@ class Schedule(commands.Cog, name='自動化'):
             elif switch == 0: # 關閉簽到功能
                 await db.schedule_daily.remove(interaction.user.id)
                 await interaction.response.send_message(embed=EmbedTemplate.normal('每日自動簽到已關閉'))
-        elif function == 'resin': # 樹脂額滿提醒
-            if switch == 1: # 開啟檢查樹脂功能
-                await db.schedule_resin.add(ScheduleResin(
-                    id=interaction.user.id,
-                    channel_id=interaction.channel_id)
-                )
-                await interaction.response.send_message(embed=EmbedTemplate.normal('樹脂額滿提醒已開啟'))
-            elif switch == 0: # 關閉檢查樹脂功能
+        elif function == 'resin': # 即時便箋檢查提醒
+            if switch == 1: # 開啟即時便箋檢查功能
+                await interaction.response.send_modal(self.CheckingNotesThresholdModal())
+            elif switch == 0: # 關閉即時便箋檢查功能
                 await db.schedule_resin.remove(interaction.user.id)
-                await interaction.response.send_message(embed=EmbedTemplate.normal('樹脂額滿提醒已關閉'))
+                await interaction.response.send_message(embed=EmbedTemplate.normal('即時便箋檢查提醒已關閉'))
 
     # 具有頻道管理訊息權限的人可使用本指令，移除指定使用者的頻道排程設定
     @app_commands.command(name='移除排程使用者', description='擁有管理此頻道訊息權限的人可使用本指令，移除指定使用者的排程設定')
@@ -167,12 +236,12 @@ class Schedule(commands.Cog, name='自動化'):
         now = datetime.now()
         # 確認沒有在遊戲維護時間內
         if config.game_maintenance_time == None or not(config.game_maintenance_time[0] <= now < config.game_maintenance_time[1]):
-            # 每日 {config.schedule_daily_reward_time} 點自動簽到
+            # 每日 {config.schedule_daily_reward_time} 點開始自動簽到
             if now.hour == config.schedule_daily_reward_time and now.minute < self.loop_interval:
                 asyncio.create_task(self.autoClaimDailyReward())
             
-            # 每小時檢查一次樹脂
-            if now.minute < self.loop_interval:
+            # 每 {config.schedule_check_resin_interval} 分鐘檢查一次樹脂
+            if now.minute % config.schedule_check_resin_interval < self.loop_interval:
                 asyncio.create_task(self.autoCheckResin())
 
         # 每日凌晨一點備份資料庫、刪除過期使用者資料
@@ -199,21 +268,17 @@ class Schedule(commands.Cog, name='自動化'):
             # 檢查今天是否已經簽到過
             if user.last_checkin_date == date.today():
                 continue
-            # 取得要發送的頻道，若發送頻道不存在，則移除此使用者
-            channel = self.bot.get_channel(user.channel_id)
-            if channel == None:
-                await db.schedule_daily.remove(user.id)
-                continue
             # 簽到並更新最後簽到時間
             result = await genshin_app.claimDailyReward(user.id, honkai=user.has_honkai, schedule=True)
             await db.schedule_daily.update(user.id, last_checkin_date=True)
             total += 1
             honkai_count += int(user.has_honkai)
             try:
+                channel = self.bot.get_channel(user.channel_id)
                 # 若不用@提及使用者，則先取得此使用者的暱稱然後發送訊息
                 if user.is_mention == False:
-                    user = await self.bot.fetch_user(user.id)
-                    await channel.send(f'[自動簽到] {user.display_name}：{result}')
+                    _user = await self.bot.fetch_user(user.id)
+                    await channel.send(f'[自動簽到] {_user.display_name}：{result}')
                 else:
                     await channel.send(f'[自動簽到] <@{user.id}> {result}')
             except Exception as e: # 發送訊息失敗，移除此使用者
@@ -239,12 +304,7 @@ class Schedule(commands.Cog, name='自動化'):
             # 若還沒到檢查時間則跳過此使用者
             if user.next_check_time and datetime.now() < user.next_check_time:
                 continue
-            # 取得要發送訊息的頻道，若頻道不存在，則移除此使用者
-            channel = self.bot.get_channel(user.channel_id)
-            if channel == None:
-                await db.schedule_resin.remove(user.id)
-                continue
-            # 檢查使用者樹脂
+            # 檢查使用者即時便箋
             try:
                 notes = await genshin_app.getRealtimeNote(user.id, schedule=True)
             except Exception as e:
@@ -252,29 +312,60 @@ class Schedule(commands.Cog, name='自動化'):
                 # 當發生錯誤時，預計5小時後再檢查
                 await db.schedule_resin.update(user.id, next_check_time=(datetime.now() + timedelta(hours=5)))
                 embed = None
-            else: # 正常檢查樹脂
-                # 當樹脂超過設定值，則設定要發送的訊息
-                if notes.current_resin >= config.schedule_check_resin_threshold:
-                    msg = "樹脂(快要)溢出啦！"
-                    embed = await genshin_app.parseNotes(notes, shortForm=True)
-                else:
-                    msg = None
-                # 設定下次檢查時間，當樹脂完全額滿時，預計6小時後再檢查；否則依照樹脂差額預估時間
-                minutes = 350 if notes.current_resin >= notes.max_resin else (config.schedule_check_resin_threshold - notes.current_resin) * 8 - 10
-                await db.schedule_resin.update(user.id, next_check_time=(datetime.now() + timedelta(minutes=minutes)))
+            else: # 正常檢查即時便箋
+                msg = ''
+                embed = await genshin_app.parseNotes(notes, shortForm=True)
+                next_check_time: list[datetime] = [datetime.now() + timedelta(days=1)] # 設定一個基本的下次檢查時間
+                # 計算下次檢查時間的函式：預計完成時間-使用者設定的時間
+                cal_nxt_check_time: Callable[[timedelta, int], datetime] = lambda remaining, user_threshold: datetime.now() + remaining - timedelta(hours=user_threshold)
+                # 檢查樹脂
+                if isinstance(user.threshold_resin, int):
+                    # 當樹脂距離額滿時間低於設定值，則設定要發送的訊息
+                    if notes.remaining_resin_recovery_time <= timedelta(hours=user.threshold_resin, seconds=10):
+                        msg += "樹脂(快要)溢出啦！"
+                    # 設定下次檢查時間，當樹脂完全額滿時，預計6小時後再檢查；否則依照(預計完成-使用者設定的時間)
+                    next_check_time.append(datetime.now() + timedelta(hours=6) if notes.current_resin >= notes.max_resin
+                                           else cal_nxt_check_time(notes.remaining_resin_recovery_time, user.threshold_resin))
+                # 檢查洞天寶錢
+                if isinstance(user.threshold_currency, int):
+                    if notes.remaining_realm_currency_recovery_time <= timedelta(hours=user.threshold_currency, seconds=10):
+                        msg += "洞天寶錢(快要)溢出啦！"
+                    next_check_time.append(datetime.now() + timedelta(hours=6) if notes.current_realm_currency >= notes.max_realm_currency
+                                           else cal_nxt_check_time(notes.remaining_realm_currency_recovery_time, user.threshold_currency))
+                # 檢查質變儀
+                if isinstance(user.threshold_transformer, int) and isinstance(notes.transformer_recovery_time, datetime):
+                    if notes.remaining_transformer_recovery_time <= timedelta(hours=user.threshold_transformer, seconds=10):
+                        msg += "質變儀(快要)完成了！"
+                    next_check_time.append(datetime.now() + timedelta(hours=6) if notes.remaining_transformer_recovery_time.total_seconds() <= 5
+                                           else cal_nxt_check_time(notes.remaining_transformer_recovery_time, user.threshold_transformer))
+                # 檢查探索派遣
+                if isinstance(user.threshold_expedition, int) and len(notes.expeditions) > 0:
+                    # 選出剩餘時間最多的派遣
+                    longest_expedition = max(notes.expeditions, key=lambda epd: epd.remaining_time)
+                    if longest_expedition.remaining_time <= timedelta(hours=user.threshold_expedition, seconds=10):
+                        msg += "探索派遣(快要)完成了！"
+                    next_check_time.append(datetime.now() + timedelta(hours=6) if longest_expedition.finished == True
+                                           else cal_nxt_check_time(longest_expedition.remaining_time, user.threshold_expedition))
+                # 設定下次檢查時間，從上面中取最小的值
+                check_time = min(next_check_time)
+                # 若此次要發送訊息，則將下次檢查時間設為至少1小時
+                if len(msg) > 0:
+                    check_time = max(check_time, datetime.now() + timedelta(minutes=60))
+                await db.schedule_resin.update(user.id, next_check_time=check_time)
             count += 1
             # 當有錯誤訊息或是樹脂快要溢出時，向使用者發送訊息
-            if msg != None:
+            if len(msg) > 0:
                 try: # 發送訊息提醒使用者
-                    user = await self.bot.fetch_user(user.id)
-                    msg_sent = await channel.send(f"{user.mention}，{msg}", embed=embed)
+                    channel = self.bot.get_channel(user.channel_id)
+                    _user = await self.bot.fetch_user(user.id)
+                    msg_sent = await channel.send(f"{_user.mention}，{msg}", embed=embed)
                 except Exception as e: # 發送訊息失敗，移除此使用者
-                    LOG.Except(f'自動檢查樹脂發送訊息失敗，移除此使用者 {LOG.User(user.id)}：{e}')
+                    LOG.Except(f'自動檢查樹脂發送訊息失敗，移除此使用者 {LOG.User(_user)}：{e}')
                     await db.schedule_resin.remove(user.id)
-                else:
+                else: # 成功發送訊息
                     # 若使用者不在發送訊息的頻道則移除
-                    if user.mentioned_in(msg_sent) == False:
-                        LOG.Except(f'自動檢查樹脂使用者不在頻道，移除此使用者 {LOG.User(user.id)}：{e}')
+                    if _user.mentioned_in(msg_sent) == False:
+                        LOG.Except(f'自動檢查樹脂使用者不在頻道，移除此使用者 {LOG.User(_user)}：{e}')
                         await db.schedule_resin.remove(user.id)
             await asyncio.sleep(config.schedule_loop_delay)
         LOG.System(f'自動檢查樹脂結束，{count}/{len(resin_users)} 人已檢查')

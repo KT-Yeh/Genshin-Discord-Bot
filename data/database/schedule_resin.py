@@ -7,18 +7,35 @@ class ScheduleResin:
     id: int
     channel_id: int
     next_check_time: Optional[datetime]
+    threshold_resin: Optional[int]
+    threshold_currency: Optional[int]
+    threshold_transformer: Optional[int]
+    threshold_expedition: Optional[int]
 
-    def __init__(self, id: int, channel_id: int, *, next_check_time: Optional[datetime] = None):
+    def __init__(self, id: int, channel_id: int, *,
+                 next_check_time: Optional[datetime] = None,
+                 threshold_resin: Optional[int] = None,
+                 threshold_currency: Optional[int] = None,
+                 threshold_transformer: Optional[int] = None,
+                 threshold_expedition: Optional[int] = None):
         self.id= id
         self.channel_id = channel_id
         self.next_check_time = next_check_time
+        self.threshold_resin = threshold_resin
+        self.threshold_currency = threshold_currency
+        self.threshold_transformer = threshold_transformer
+        self.threshold_expedition = threshold_expedition
     
     @classmethod
     def fromRow(cls, row: aiosqlite.Row) -> ScheduleResin:
         return cls(
             id=row['id'],
             channel_id=row['channel_id'],
-            next_check_time=(datetime.fromisoformat(row['next_check_time']) if row['next_check_time'] else None)
+            next_check_time=(datetime.fromisoformat(row['next_check_time']) if row['next_check_time'] else None),
+            threshold_resin=row['threshold_resin'],
+            threshold_currency=row['threshold_currency'],
+            threshold_transformer=row['threshold_transformer'],
+            threshold_expedition=row['threshold_expedition']
         )
 
 class ScheduleResinTable:
@@ -29,13 +46,18 @@ class ScheduleResinTable:
         await self.db.execute('''CREATE TABLE IF NOT EXISTS schedule_resin (
                 id int NOT NULL PRIMARY KEY,
                 channel_id int NOT NULL,
-                next_check_time text
+                next_check_time text,
+                threshold_resin int,
+                threshold_currency int,
+                threshold_transformer int,
+                threshold_expedition int
             )''')
         await self.db.commit()
 
     async def add(self, user: ScheduleResin) -> None:
-        await self.db.execute('INSERT OR REPLACE INTO schedule_resin VALUES(?, ?, ?)',
-            [user.id, user.channel_id, datetime.now().isoformat()])
+        await self.db.execute('INSERT OR REPLACE INTO schedule_resin VALUES(?, ?, ?, ?, ?, ?, ?)',
+            [user.id, user.channel_id, datetime.now().isoformat(),
+             user.threshold_resin, user.threshold_currency, user.threshold_transformer, user.threshold_expedition])
         await self.db.commit()
     
     async def remove(self, user_id: int) -> None:

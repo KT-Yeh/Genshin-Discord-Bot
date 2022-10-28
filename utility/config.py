@@ -9,7 +9,7 @@ class Config(BaseModel):
     bot_token: str
     enka_api_key: typing.Optional[str] = None
     schedule_daily_reward_time: int = 8
-    schedule_check_resin_threshold: int = 150
+    schedule_check_resin_interval: int = 10
     schedule_loop_delay: float = 2.0
     expired_user_days: int = 30
     slash_cmd_cooldown: float = 5.0
