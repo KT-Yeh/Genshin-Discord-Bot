@@ -13,7 +13,7 @@ class GenshinDiscordBot(commands.AutoShardedBot):
     def __init__(self):
         self.db = database.db
         super().__init__(
-            command_prefix=commands.when_mentioned,
+            command_prefix=commands.when_mentioned_or('$'),
             intents=intents,
             application_id=config.application_id
         )
