@@ -6,6 +6,7 @@ from discord.app_commands import Choice
 from discord.ext import commands, tasks
 from datetime import datetime, timedelta
 from pathlib import Path
+from .schedule import Schedule
 from utility.CustomLog import SlashCommandLogger
 from utility.config import config
 
@@ -55,13 +56,14 @@ class Admin(commands.Cog):
     @app_commands.command(name='system', description='使用系統命令(操作cog、更改機器人狀態)')
     @app_commands.rename(option='選項', param='參數')
     @app_commands.choices(option=[
-        Choice(name='load', value=0),
-        Choice(name='unload', value=1),
-        Choice(name='reload', value=2),
-        Choice(name='presence', value=3)
+        Choice(name='load', value='load'),
+        Choice(name='unload', value='unload'),
+        Choice(name='reload', value='reload'),
+        Choice(name='presence', value='presence'),
+        Choice(name='claimdailyreward', value='claimdailyreward')
     ])
     @SlashCommandLogger
-    async def slash_system(self, interaction: discord.Interaction, option: int, param: str = None):
+    async def slash_system(self, interaction: discord.Interaction, option: str, param: str = None):
         async def operateCogs(func: typing.Callable[[str], typing.Awaitable[None]], param: typing.Optional[str] = None, *, pass_self: bool = False):
             if param == None: # 操作全部cog
                 for filepath in Path('./cogs').glob('**/*.py'):
@@ -72,33 +74,39 @@ class Admin(commands.Cog):
             else: # 操作單一cog
                 await func(f"cogs.{param}")
         
-        if option == 0: # Load cogs
+        if option == 'load': # Load cogs
             await operateCogs(self.bot.load_extension, param, pass_self=True)
             await interaction.response.send_message(f"{param or '全部'}指令集載入完成")
         
-        elif option == 1: # Unload cogs
+        elif option == 'unload': # Unload cogs
             await operateCogs(self.bot.unload_extension, param, pass_self=True)
             await interaction.response.send_message(f"{param or '全部'}指令集卸載完成")
         
-        elif option == 2: # Reload cogs
+        elif option == 'reload': # Reload cogs
             await operateCogs(self.bot.reload_extension, param)
             await interaction.response.send_message(f"{param or '全部'}指令集重新載入完成")
         
-        elif option == 3: # Change presence string
+        elif option == 'presence': # Change presence string
             self.presence_string = param.split(',')
             await interaction.response.send_message(f'Presence list已變更為：{self.presence_string}')
+        
+        elif option == 'claimdailyreward': # 立即執行領取每日獎勵
+            await interaction.response.send_message('開始執行每日自動簽到')
+            cog: Schedule = self.bot.cogs['自動化']
+            await cog.autoClaimDailyReward()
     
     # 設定config配置檔案的參數值
     @app_commands.command(name='config', description='更改config配置內容')
     @app_commands.rename(option='選項', value='值')
     @app_commands.choices(option=[
         Choice(name='schedule_daily_reward_time', value='schedule_daily_reward_time'),
-        Choice(name='schedule_check_resin_threshold', value='schedule_check_resin_threshold'),
-        Choice(name='schedule_loop_delay', value='schedule_loop_delay')
+        Choice(name='schedule_check_resin_interval', value='schedule_check_resin_interval'),
+        Choice(name='schedule_loop_delay', value='schedule_loop_delay'),
+        Choice(name='notification_channel_id', value='notification_channel_id')
     ])
     @SlashCommandLogger
     async def slash_config(self, interaction: discord.Interaction, option: str, value: str):
-        if option in ['schedule_daily_reward_time', 'schedule_check_resin_threshold']:
+        if option in ['schedule_daily_reward_time', 'schedule_check_resin_interval', 'notification_channel_id']:
             setattr(config, option, int(value))
         elif option in ['schedule_loop_delay']:
             setattr(config, option, float(value))
