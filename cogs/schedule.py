@@ -274,7 +274,7 @@ class Schedule(commands.Cog, name='自動化'):
             total += 1
             honkai_count += int(user.has_honkai)
             try:
-                channel = self.bot.get_channel(user.channel_id)
+                channel = self.bot.get_channel(user.channel_id) or await self.bot.fetch_channel(user.channel_id)
                 # 若不用@提及使用者，則先取得此使用者的暱稱然後發送訊息
                 if user.is_mention == False:
                     _user = await self.bot.fetch_user(user.id)
@@ -356,7 +356,7 @@ class Schedule(commands.Cog, name='自動化'):
             # 當有錯誤訊息或是樹脂快要溢出時，向使用者發送訊息
             if len(msg) > 0:
                 try: # 發送訊息提醒使用者
-                    channel = self.bot.get_channel(user.channel_id)
+                    channel = self.bot.get_channel(user.channel_id) or await self.bot.fetch_channel(user.channel_id)
                     _user = await self.bot.fetch_user(user.id)
                     msg_sent = await channel.send(f"{_user.mention}，{msg}", embed=embed)
                 except Exception as e: # 發送訊息失敗，移除此使用者
