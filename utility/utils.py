@@ -2,6 +2,7 @@ import logging
 import discord
 import re
 import json
+from typing import Optional
 from datetime import datetime
 from sentry_sdk.integrations.logging import LoggingIntegration
 
@@ -10,17 +11,19 @@ sentry_logging = LoggingIntegration(
     event_level=logging.ERROR
 )
 
-def trimCookie(cookie: str) -> str:
-    try:
-        new_cookie = ' '.join([
-            re.search('ltoken=[0-9A-Za-z]{20,}', cookie).group(),
-            re.search('ltuid=[0-9]{3,}', cookie).group(),
-            re.search('cookie_token=[0-9A-Za-z]{20,}', cookie).group(),
-            re.search('account_id=[0-9]{3,}', cookie).group()
-        ])
+def trimCookie(cookie: str) -> Optional[str]:
+    try: # 嘗試取得 ltoken、ltuid
+        ltoken: str = re.search('ltoken=[0-9A-Za-z]{30,}', cookie).group(0)
+        ltuid: str = re.search('ltuid=[0-9]{5,}', cookie).group(0)
     except:
-        new_cookie = None
-    return new_cookie
+        return None
+    
+    try: # 嘗試取得 cookie_token
+        cookie_token: str = re.search('cookie_token=[0-9A-Za-z]{30,}', cookie).group(0)
+    except:
+        return ' '.join([ltoken, ltuid])
+    
+    return ' '.join([ltoken, ltuid, cookie_token, ltuid.replace('ltuid', 'account_id')])
 
 __server_dict = {'os_usa': '美服', 'os_euro': '歐服', 'os_asia': '亞服', 'os_cht': '台港澳服',
     '1': '天空島', '2': '天空島', '5': '世界樹', '6': '美服', '7': '歐服', '8': '亞服', '9': '台港澳服'}

@@ -23,7 +23,7 @@ class Setting(commands.Cog, name='設定'):
             placeholder='請貼上從網頁上取得的Cookie，取得方式請使用指令 "/cookie設定 顯示說明如何取得Cookie"',
             style=discord.TextStyle.long,
             required=True,
-            min_length=100,
+            min_length=50,
             max_length=2000
         )
         async def on_submit(self, interaction: discord.Interaction):
@@ -48,15 +48,17 @@ class Setting(commands.Cog, name='設定'):
     async def slash_cookie(self, interaction: discord.Interaction, option: int):
         if option == 0:
             embed = EmbedTemplate.normal(
-                "1.先複製本文最底下整段程式碼\n"
-                "2.PC或手機使用Chrome開啟 [Hoyolab網頁](https://www.hoyolab.com) 並登入帳號\n"
-                "3.在網址列先輸入 `java`，然後貼上程式碼，確保網址開頭變成 `javascript:`\n"
-                "4.按Enter，網頁會變成顯示你的Cookie，全選然後複製\n"
-               f"5.在這裡使用 {getAppCommandMention('cookie設定')} 提交已取得的Cookie\n"
-                "· 遇到問題嗎？點 [教學連結](https://bit.ly/3LgQkg0) 看其他方法\n"
+                "**1.** 先複製本文最底下整段程式碼\n"
+                "**2.** PC或手機使用**Chrome**開啟 [Hoyolab網頁](https://www.hoyolab.com)"
+                "，若網頁已經登入帳號，請先**手動登出**然後重新登入\n"
+                "**3.** 如下圖，在網址列輸入 `java`，然後貼上程式碼\n"
+                "**4.** 按Enter，網頁會變成顯示你的Cookie，全選然後複製\n"
+               f"**5.** 在這裡使用 {getAppCommandMention('cookie設定')} 提交已取得的Cookie\n"
+                "． 遇到問題嗎？點 [教學連結](https://bit.ly/3LgQkg0) 查看其他方法\n",
+                title='原神小幫手 | 取得Cookie說明'
             )
             embed.set_image(url="https://i.imgur.com/OQ8arx0.gif")
-            code_msg = "```script:d=document.cookie; c=d.includes('account_id') || alert('過期或無效的Cookie,請先登出帳號再重新登入!'); c && document.write(d)```"
+            code_msg = "script: document.write(document.cookie)"
             await interaction.response.send_message(embed=embed)
             await interaction.followup.send(content=code_msg)
         elif option == 1:

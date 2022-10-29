@@ -32,7 +32,7 @@ class RedeemCode:
             msg += f"[{code}](https://genshin.hoyoverse.com/gift?code={code})：{result}\n"
         
         embed = discord.Embed(color=0x8fce00, description=msg)
-        embed.set_footer(text='點擊上述兌換碼可至官網兌換')
+        embed.set_footer(text='點擊上述兌換碼可代入兌換碼至官網兌換')
         await interaction.edit_original_response(embed=embed)
 
 class GenshinTool(commands.Cog, name='原神工具'):
