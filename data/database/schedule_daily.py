@@ -44,8 +44,12 @@ class ScheduleDailyTable:
         await self.db.commit()
 
     async def add(self, user: ScheduleDaily) -> None:
-        await self.db.execute('INSERT OR REPLACE INTO schedule_daily VALUES(?, ?, ?, ?, ?)',
-            [user.id, user.channel_id, int(user.is_mention), int(user.has_honkai), None])
+        if (await self.get(user.id)) != None: # 當使用者已存在時
+            await self.db.execute('UPDATE schedule_daily SET channel_id=?, is_mention=?, has_honkai=? WHERE id=?',
+                [user.channel_id, int(user.is_mention), int(user.has_honkai), user.id])
+        else:
+            await self.db.execute('INSERT OR REPLACE INTO schedule_daily VALUES(?, ?, ?, ?, ?)',
+                [user.id, user.channel_id, int(user.is_mention), int(user.has_honkai), user.last_checkin_date])
         await self.db.commit()
     
     async def remove(self, user_id: int) -> None:
