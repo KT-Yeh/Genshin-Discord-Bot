@@ -49,8 +49,8 @@ class Setting(commands.Cog, name='設定'):
         if option == 0:
             embed = EmbedTemplate.normal(
                 "**1.** 先複製本文最底下整段程式碼\n"
-                "**2.** PC或手機使用**Chrome**開啟 [Hoyolab網頁](https://www.hoyolab.com)"
-                "，若網頁已經登入帳號，請先**手動登出**然後重新登入\n"
+                "**2.** PC或手機使用**Chrome**開啟 [Hoyolab網頁](https://www.hoyolab.com) 並登入帳號"
+                " (若之前已登入過帳號，請先**手動登出**然後重新登入)\n"
                 "**3.** 如下圖，在網址列輸入 `java`，然後貼上程式碼\n"
                 "**4.** 按Enter，網頁會變成顯示你的Cookie，全選然後複製\n"
                f"**5.** 在這裡使用 {getAppCommandMention('cookie設定')} 提交已取得的Cookie\n"
