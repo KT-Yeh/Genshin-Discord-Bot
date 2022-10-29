@@ -70,7 +70,6 @@ class Schedule(commands.Cog, name='自動化'):
         resin = discord.ui.TextInput(
             label='原粹樹脂：設定樹脂額滿之前幾小時發送提醒 (不填表示不提醒)',
             placeholder='請輸入一個介於 0 ~ 5 的整數',
-            default='1',
             required=False,
             max_length=1
         )
@@ -92,14 +91,23 @@ class Schedule(commands.Cog, name='自動化'):
             required=False,
             max_length=1
         )
+        def __init__(self, user_setting: Optional[ScheduleResin] = None) -> None:
+            # 設定表單預設值；若使用者在資料庫已有設定值，則帶入表單預設值
+            int_to_str: Callable[[Optional[int]], Optional[str]] = lambda i: str(i) if isinstance(i, int) else None
+            self.resin.default = int_to_str(user_setting.threshold_resin) if user_setting else '1'
+            self.realm_currency.default = int_to_str(user_setting.threshold_currency) if user_setting else None
+            self.transformer.default = int_to_str(user_setting.threshold_transformer) if user_setting else None
+            self.expedition.default = int_to_str(user_setting.threshold_expedition) if user_setting else None
+            super().__init__()
+
         async def on_submit(self, interaction: discord.Interaction) -> None:
             try:
                 # 將字串轉為數字
-                to_int = lambda string: int(string) if len(string) > 0 else None
-                resin = to_int(self.resin.value)
-                realm_currency = to_int(self.realm_currency.value)
-                transformer = to_int(self.transformer.value)
-                expedition = to_int(self.expedition.value)
+                str_to_int: Callable[[str], Optional[int]] = lambda string: int(string) if len(string) > 0 else None
+                resin = str_to_int(self.resin.value)
+                realm_currency = str_to_int(self.realm_currency.value)
+                transformer = str_to_int(self.transformer.value)
+                expedition = str_to_int(self.expedition.value)
                 
                 # 檢查數字範圍
                 if resin == None and realm_currency == None and transformer == None and expedition == None:
@@ -208,7 +216,8 @@ class Schedule(commands.Cog, name='自動化'):
                 await interaction.response.send_message(embed=EmbedTemplate.normal('每日自動簽到已關閉'))
         elif function == 'resin': # 即時便箋檢查提醒
             if switch == 1: # 開啟即時便箋檢查功能
-                await interaction.response.send_modal(self.CheckingNotesThresholdModal())
+                user_setting = await db.schedule_resin.get(interaction.user.id)
+                await interaction.response.send_modal(self.CheckingNotesThresholdModal(user_setting))
             elif switch == 0: # 關閉即時便箋檢查功能
                 await db.schedule_resin.remove(interaction.user.id)
                 await interaction.response.send_message(embed=EmbedTemplate.normal('即時便箋檢查提醒已關閉'))
