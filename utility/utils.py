@@ -12,18 +12,19 @@ sentry_logging = LoggingIntegration(
 )
 
 def trimCookie(cookie: str) -> Optional[str]:
-    try: # 嘗試取得 ltoken、ltuid
-        ltoken: str = re.search('ltoken=[0-9A-Za-z]{30,}', cookie).group(0)
-        ltuid: str = re.search('ltuid=[0-9]{5,}', cookie).group(0)
-    except:
-        return None
+    """取得 Cookie 中的 ltoken, ltuid, cookie_token 與 account_id"""
+    ltoken = match.group() if (match := re.search('ltoken=[0-9A-Za-z]{30,}', cookie)) else None
+    ltuid = match.group() if (match := re.search('ltuid=[0-9]{5,}', cookie)) else None
+    cookie_token = match.group() if (match := re.search('cookie_token=[0-9A-Za-z]{30,}', cookie)) else None
+    account_id = match.group() if (match := re.search('account_id=[0-9]{5,}', cookie)) else None
     
-    try: # 嘗試取得 cookie_token
-        cookie_token: str = re.search('cookie_token=[0-9A-Za-z]{30,}', cookie).group(0)
-    except:
-        return ' '.join([ltoken, ltuid])
+    cookie_list: list[str] = []
+    if ltoken and ltuid:
+        cookie_list += [ltoken, ltuid]
+    if cookie_token and account_id:
+        cookie_list += [cookie_token, account_id]
     
-    return ' '.join([ltoken, ltuid, cookie_token, ltuid.replace('ltuid', 'account_id')])
+    return None if len(cookie_list) == 0 else ' '.join(cookie_list)
 
 __server_dict = {'os_usa': '美服', 'os_euro': '歐服', 'os_asia': '亞服', 'os_cht': '台港澳服',
     '1': '天空島', '2': '天空島', '5': '世界樹', '6': '美服', '7': '歐服', '8': '亞服', '9': '台港澳服'}
