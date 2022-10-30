@@ -3,6 +3,7 @@ from functools import wraps
 import discord
 import os
 import platform
+import logging
 import re
 import time
 import traceback
@@ -26,6 +27,8 @@ elif platform.system() == 'Java':
 else:
     pass
 
+#   設定 logging
+logging.basicConfig(format='%(message)s', level=logging.INFO)
 
 #   Log更改顏色用
 class ColorTool():
@@ -231,62 +234,67 @@ class LogTool(ColorTool):
         else:
             return f'{self._STD_BLACK}[{time_stamp}]{self.RESET}'
 
-    def __print_with_tag__(self, tag: str | None, message: str = "", show_timestamp: bool = True) -> None:
+    def __print_with_tag__(self, tag: str | None, logging_level: int = logging.INFO, message: str = "", show_timestamp: bool = True) -> None:
         message = message[:-1] if (len(message) > 0 and message[-1] == '\n') else message
         msg = str(message).replace(
             "\n", (self.indent if tag != None else self.indent_noTag)
         )
-        print(
-            f'{self.__get_timestamp__(show_timestamp)}{(tag if tag != None else " ")}{msg}'
-        )
+        msg = f'{self.__get_timestamp__(show_timestamp)}{(tag if tag != None else " ")}{msg}'
+        for level, func in zip(
+            [logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL],
+            [logging.debug, logging.info, logging.warning, logging.error, logging.critical]
+        ):
+            if logging_level == level:
+                func(msg)
+                break
 
     def System(self, message: str = "", show_timestamp: bool = True) -> None:
         """[YYYY-MM-DD hh:mm:ss]【系統】"""
-        self.__print_with_tag__(self.SYSTEM, message, show_timestamp)
+        self.__print_with_tag__(self.SYSTEM, logging.INFO, message, show_timestamp)
 
     def Ok(self, message: str = "", show_timestamp: bool = True) -> None:
         """[YYYY-MM-DD hh:mm:ss]【完成】"""
-        self.__print_with_tag__(self.OK, message, show_timestamp)
+        self.__print_with_tag__(self.OK, logging.INFO, message, show_timestamp)
 
     def Event(self, message: str = "", show_timestamp: bool = True) -> None:
         """[YYYY-MM-DD hh:mm:ss]【事件】"""
-        self.__print_with_tag__(self.EVENT, message, show_timestamp)
+        self.__print_with_tag__(self.EVENT, logging.INFO, message, show_timestamp)
 
     def Cmd(self, message: str = "", show_timestamp: bool = True) -> None:
         """[YYYY-MM-DD hh:mm:ss]【指令】"""
-        self.__print_with_tag__(self.COMMAND, message, show_timestamp)
+        self.__print_with_tag__(self.COMMAND, logging.INFO, message, show_timestamp)
 
     def Interact(self, message: str = "", show_timestamp: bool = True) -> None:
         """[YYYY-MM-DD hh:mm:ss]【互動】"""
-        self.__print_with_tag__(self.INTERACTION, message, show_timestamp)
+        self.__print_with_tag__(self.INTERACTION, logging.INFO, message, show_timestamp)
 
     def Debug(self, message: str = "", show_timestamp: bool = True) -> None:
         """[YYYY-MM-DD hh:mm:ss]【除錯】"""
-        self.__print_with_tag__(self.DEBUG, message, show_timestamp)
+        self.__print_with_tag__(self.DEBUG, logging.DEBUG, message, show_timestamp)
 
     def Info(self, message: str = "", show_timestamp: bool = True) -> None:
         """[YYYY-MM-DD hh:mm:ss]【資訊】"""
-        self.__print_with_tag__(self.INFO, message, show_timestamp)
+        self.__print_with_tag__(self.INFO, logging.INFO, message, show_timestamp)
 
     def Warn(self, message: str = "", show_timestamp: bool = True) -> None:
         """[YYYY-MM-DD hh:mm:ss]【警告】"""
-        self.__print_with_tag__(self.WARN, message, show_timestamp)
+        self.__print_with_tag__(self.WARN, logging.WARN, message, show_timestamp)
 
     def Error(self, message: str = "", show_timestamp: bool = True) -> None:
         """[YYYY-MM-DD hh:mm:ss]【錯誤】"""
-        self.__print_with_tag__(self.ERROR, message, show_timestamp)
+        self.__print_with_tag__(self.ERROR, logging.WARN, message, show_timestamp)
 
     def Except(self, message: str = "", show_timestamp: bool = True) -> None:
         """[YYYY-MM-DD hh:mm:ss]【例外】"""
-        self.__print_with_tag__(self.EXCEPTION, message, show_timestamp)
+        self.__print_with_tag__(self.EXCEPTION, logging.INFO, message, show_timestamp)
 
     def Test(self, message: str = "", show_timestamp: bool = True) -> None:
         """[YYYY-MM-DD hh:mm:ss]【測試】"""
-        self.__print_with_tag__(self.DEBUG, message, show_timestamp)
+        self.__print_with_tag__(self.DEBUG, logging.DEBUG, message, show_timestamp)
 
     def NoTag(self, message: str = "", show_timestamp: bool = True) -> None:
         """[YYYY-MM-DD hh:mm:ss] (message...)"""
-        self.__print_with_tag__(None, message, show_timestamp)
+        self.__print_with_tag__(None, logging.INFO, message, show_timestamp)
 
     def User(self, user: discord.User | discord.Member | str | int):
         if isinstance(user, (str, int)):
@@ -328,11 +336,10 @@ class LogTool(ColorTool):
                 f'{self._GRAY_SCALE_4}{id}{self.RESET}'
             )
 
-    def ErrorType(self, error: discord.DiscordException) -> str:
+    def ErrorType(self, error: discord.DiscordException | Exception) -> str:
         if isinstance(error, commands.CommandInvokeError):
             return f'({self._LIGHT_MAGENTA}{type(error).__qualname__}{self.RESET} -> {self._LIGHT_MAGENTA}{type(error.original).__qualname__}{self.RESET})'
         else:
-
             return f'({self._LIGHT_MAGENTA}{type(error).__qualname__}{self.RESET})'
 
     def CmdCall(self, ctx: discord.Interaction, *args, **kwargs) -> None:
@@ -401,15 +408,21 @@ class LogTool(ColorTool):
 
     def ErrorLog(self,
                  ctx: commands.Context | discord.Interaction,
-                 error: commands.CommandError | discord.app_commands.AppCommandError | Exception) -> None:
+                 error: commands.CommandInvokeError | commands.CommandError | discord.app_commands.AppCommandError | Exception) -> None:
         """指令內發生錯誤時Log模板"""
         msg = ''
-        if isinstance(ctx, commands.Context) and isinstance(error, commands.CommandInvokeError):
-            msg = f"{self.User(ctx.author)}執行指令期間發生錯誤{self.ErrorType(error)}：\n錯誤訊息:{self.__ErrorMsg__(error.original)}"
-        elif isinstance(ctx, commands.Context) and isinstance(error, commands.CommandError):
-            msg = f"{self.User(ctx.author)}引發指令錯誤{self.ErrorType(error)}：\n錯誤訊息:{self.__ErrorMsg__(error)}"
-        elif isinstance(ctx, discord.Interaction) and isinstance(error, discord.app_commands.AppCommandError):
-            msg = f"{self.User(ctx.user)}引發斜線指令錯誤{self.ErrorType(error)}：\n錯誤訊息:{self.__ErrorMsg__(error)}"
+        if isinstance(ctx, commands.Context):
+            if isinstance(error, commands.CommandInvokeError):
+                msg = f"{self.User(ctx.author)}執行指令期間發生錯誤{self.ErrorType(error)}：\n錯誤訊息：{self.__ErrorMsg__(error.original)}"
+            elif isinstance(error, commands.CommandError):
+                msg = f"{self.User(ctx.author)}引發指令錯誤{self.ErrorType(error)}：\n錯誤訊息：{self.__ErrorMsg__(error)}"
+            else:
+                msg = f"{self.User(ctx.author)}執行指令期間發生錯誤{self.ErrorType(error)}：\n錯誤訊息：{self.__ErrorMsg__(error)}"
+        elif isinstance(ctx, discord.Interaction):
+            if isinstance(error, discord.app_commands.AppCommandError):
+                msg = f"{self.User(ctx.user)}引發斜線指令錯誤{self.ErrorType(error)}：\n錯誤訊息：{self.__ErrorMsg__(error)}"
+            else:
+                msg = f"{self.User(ctx.user)}執行斜線指令期間發生錯誤{self.ErrorType(error)}：\n錯誤訊息：{self.__ErrorMsg__(error)}"
         self.Error(msg)
         # if not isinstance(error, discord.NotFound):  # 忽略 Not Found 例外
         #     traceback.print_tb(error.__traceback__)
