@@ -374,7 +374,7 @@ class Schedule(commands.Cog, name='自動化'):
                 else: # 成功發送訊息
                     # 若使用者不在發送訊息的頻道則移除
                     if _user.mentioned_in(msg_sent) == False:
-                        LOG.Except(f'自動檢查樹脂使用者不在頻道，移除此使用者 {LOG.User(_user)}：{e}')
+                        LOG.Except(f'自動檢查樹脂使用者不在頻道，移除此使用者 {LOG.User(_user)}')
                         await db.schedule_resin.remove(user.id)
             await asyncio.sleep(config.schedule_loop_delay)
         LOG.System(f'自動檢查樹脂結束，{count}/{len(resin_users)} 人已檢查')
