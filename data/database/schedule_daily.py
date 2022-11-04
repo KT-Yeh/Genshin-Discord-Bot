@@ -71,3 +71,8 @@ class ScheduleDailyTable:
         async with self.db.execute('SELECT * FROM schedule_daily') as cursor:
             rows = await cursor.fetchall()
             return [ScheduleDaily.fromRow(row) for row in rows]
+
+    async def getTotalNumber(self) -> int:
+        async with self.db.execute('SELECT COUNT(id) FROM schedule_daily') as cursor:
+            row = await cursor.fetchone()
+            return row[0]

@@ -2,7 +2,7 @@ import asyncio
 import discord
 import shutil
 import sentry_sdk
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, time
 from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands, tasks
@@ -16,6 +16,7 @@ from data.database import db, ScheduleDaily, ScheduleResin
 class Schedule(commands.Cog, name='自動化'):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+        self.avg_user_daily_time = 3.0 # 初始化平均一位使用者的簽到時間(單位：秒)
         self.schedule.start()
     
     async def cog_unload(self) -> None:
@@ -163,10 +164,13 @@ class Schedule(commands.Cog, name='自動化'):
     @SlashCommandLogger
     async def slash_schedule(self, interaction: discord.Interaction, function: str, switch: int):
         if function == 'help': # 排程功能使用說明
+            total_users = await db.schedule_daily.getTotalNumber()
+            predicted_checkin_time = datetime.combine(date.today(), time(config.schedule_daily_reward_time)) + timedelta(seconds=(self.avg_user_daily_time * total_users))
             msg = ('· 排程會在特定時間執行功能，執行結果會在設定指令的頻道推送\n'
             '· 設定前請先確認小幫手有在該頻道發言的權限，如果推送訊息失敗，小幫手會自動移除排程設定\n'
             '· 若要更改推送頻道，請在新的頻道重新設定指令一次\n\n'
-            f'· 每日自動簽到：每日 {config.schedule_daily_reward_time} 開始依照登記順序自動簽到，設定前請先使用 {getAppCommandMention("daily每日簽到")} 指令確認小幫手能正確幫你簽到\n'
+            f'· 每日自動簽到：每日 {config.schedule_daily_reward_time} 點依照使用者登記順序開始自動簽到，'
+            f'現在登記預計簽到時間為 {predicted_checkin_time.strftime("%H:%M")}，設定前請先使用 {getAppCommandMention("daily每日簽到")} 指令確認小幫手能幫你簽到\n'
             f'· 即時便箋提醒：當超過設定值時會發送提醒，設定前請先用 {getAppCommandMention("notes即時便箋")} 指令確認小幫手能讀到你的樹脂資訊\n')
             await interaction.response.send_message(embed=EmbedTemplate.normal(msg, title='排程功能使用說明'), ephemeral=True)
             return
@@ -298,10 +302,11 @@ class Schedule(commands.Cog, name='自動化'):
         # 發送統計結果到通知頻道
         if config.notification_channel_id:
             end_time = datetime.now()
+            self.avg_user_daily_time = (end_time - start_time).total_seconds() / (total if total > 0 else 1)
             embed = EmbedTemplate.normal(
                 f"總共 {total} 人簽到，其中 {honkai_count} 人也簽到崩壞3\n"
                 f"簽到時間：{start_time.strftime('%H:%M:%S')} ~ {end_time.strftime('%H:%M:%S')}\n"
-                f"平均時間：{(end_time - start_time).total_seconds() / (total if total > 0 else 1):.2f} 秒/人",
+                f"平均時間：{self.avg_user_daily_time:.2f} 秒/人",
                 title='每日自動簽到結果')
             await self.bot.get_channel(config.notification_channel_id).send(embed=embed)
 
