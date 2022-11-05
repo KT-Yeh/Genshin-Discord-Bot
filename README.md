@@ -14,10 +14,10 @@ Discord 支援伺服器：https://discord.gg/myugWxgRjd
 - 查詢即時便箋，包含樹脂、洞天寶錢、參數質變儀、探索派遣完成時間...等
 - 查詢深境螺旋紀錄
 - 查詢旅行者札記
-- 個人紀錄卡片（遊戲天數、成就、神瞳...等等）
+- 個人紀錄卡片（遊戲天數、成就、神瞳、世界探索度...等等）
 - 使用 Hoyolab 兌換碼
-- 每日早上 8~10 點 Hoyolab 自動簽到 (包含簽到崩壞3)
-- 每小時自動檢查樹脂，當樹脂超過 150 時推送提醒
+- 每日早上 8 點開始 Hoyolab 自動簽到 (包含簽到崩壞3)
+- 自動檢查樹脂、寶錢、質變儀、探索派遣，當快額滿時發送提醒
 - 查詢任意玩家的展示櫃，顯示展示櫃內角色的面板、聖遺物詳情
 - 採用新的斜線指令，輸入 / 自動彈出指令提示，不需要記憶任何指令的使用方式
 
@@ -81,7 +81,7 @@ python .\main.py
 ```
 6. 若要在多個伺服器間使用，請在 Discord 測試伺服器的頻道內輸入 `/sync  範圍:全域伺服器`，並等待（約 1 小時）Discord 將指令推送，稱為「全域同步」。
 
-註1：當運行後看到 `[資訊][System]on_ready: You have logged in as XXXXX` 表示參數設置正確並成功啟動，此時機器人會自動同步所有指令到你的測試伺服器，稱為「本地同步」。
+註1：當運行後看到 `【系統】on_ready: You have logged in as XXXXX` 表示參數設置正確並成功啟動，此時機器人會自動同步所有指令到你的測試伺服器，稱為「本地同步」。
 
 註2：若你輸入斜線 / 後看不到指令的話，請嘗試 CTRL + R 重新整理或是完全關閉 Discord 軟體並重啟 Discord。
 
@@ -92,14 +92,16 @@ python .\main.py
     "application_id": 123456789123456789,   # 機器人 Application ID，從 Discord Developer 網頁上取得
     "test_server_id": 212340008888812345,   # 測試伺服器 ID，用來測試斜線指令，管理員指令只能在本伺服器使用
     "bot_token": "ABCDEFG",                 # 機器人 Token，從 Discord Developer 網頁取得
-    "schedule_daily_reward_time": 8,        # 每日 Hoyolab 自動簽到時間 (單位：時)
-    "schedule_check_resin_threshold": 150,  # 每小時檢查一次，當超過多少樹脂時發送提醒
+    "schedule_daily_reward_time": 8,        # 每日 Hoyolab 自動簽到的開始時間 (單位：時)
+    "schedule_check_resin_interval": 10,    # 自動檢查即時便箋的間隔 (單位：分鐘)
     "schedule_loop_delay": 2.0,             # 排程執行時每位使用者之間的等待間隔（單位：秒）
     "expired_user_days": 30,                # 過期使用者天數，會刪除超過此天數未使用任何指令的使用者
     "slash_cmd_cooldown": 5.0,              # 使用者重複呼叫部分斜線指令的冷卻時間（單位：秒）
     "discord_view_long_timeout": 1800,      # Discord 長時間互動介面（例：下拉選單） 的逾時時間（單位：秒）
     "discord_view_short_timeout": 60,       # Discord 短時間互動介面（例：確認、選擇按鈕）的逾時時間（單位：秒）
-    "sentry_sdk_dsn": "https://XXX@XXX"     # Sentry DSN 位址設定，參考底下說明
+    "database_file_path": "data/bot.db",    # 資料庫儲存的資料夾位置與檔名
+    "sentry_sdk_dsn": "https://XXX@XXX",    # Sentry DSN 位址設定，參考底下說明
+    "notification_channel_id"               # 每日簽到完成後統計訊息欲發送到的 Discord 頻道 ID
 }
 ```
 ## 表情符號配置說明 (data/emoji.json)
@@ -132,6 +134,7 @@ python .\main.py
 /system reload：重新載入模組，非開發者不需要使用，重新載入後須使用 /sync，否則指令不會同步
 /system precense 字串1,字串2,字串3,...：變更機器人顯示狀態(正在玩 ...)，每分鐘隨機變更為設定的其中一個字串，字串數量不限
 /maintenance：設定遊戲維護時間，在此時間內自動排程(簽到、檢查樹脂)不會執行
+/config：動態改動 config.json 部分配置的值
 ```
 
 ## 致謝
