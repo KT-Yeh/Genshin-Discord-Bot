@@ -2,7 +2,7 @@ import asyncio
 import discord
 import genshin
 import sentry_sdk
-from typing import Sequence, Tuple, Optional
+from typing import Sequence, Tuple, Optional, Callable
 from data.database import db, User, SpiralAbyssData
 from .emoji import emoji
 from .CustomLog import LOG
@@ -11,12 +11,21 @@ from .utils import trimCookie, getServerName, getDayOfWeek, getAppCommandMention
 class UserDataNotFound(Exception):
     pass
 
-def generalErrorHandler(func):
+def generalErrorHandler(func: Callable):
     """對於使用genshin.py函式的通用例外處理裝飾器"""
     async def wrapper(*args, **kwargs):
         user_id = args[1] if (len(args) >= 2 and isinstance(args[1], int)) else -1
         try:
-            return await func(*args, **kwargs)
+            for retry in range(2, -1, -1):
+                try:
+                    return await func(*args, **kwargs)
+                except genshin.errors.InternalDatabaseError as e:
+                    LOG.FuncExceptionLog(user_id, f"{func.__name__} (retry={retry})", e)
+                    if retry == 0:
+                        raise
+                    else:
+                        await asyncio.sleep(1.0)
+                        continue
         except genshin.errors.DataNotPublic as e:
             LOG.FuncExceptionLog(user_id, func.__name__, e)
             raise Exception('此功能權限未開啟，請先從Hoyolab網頁或App上的個人戰績->設定，將此功能啟用')
