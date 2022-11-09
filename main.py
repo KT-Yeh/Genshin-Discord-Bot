@@ -19,7 +19,7 @@ class GenshinDiscordBot(commands.AutoShardedBot):
         )
 
     async def is_owner(self, user: discord.User) -> bool:
-        return (user.id == 969869284518015008) or (await super().is_owner(user))
+        return (await super().is_owner(user))
 
     async def setup_hook(self) -> None:
         # 載入 jishaku
@@ -54,6 +54,9 @@ class GenshinDiscordBot(commands.AutoShardedBot):
         LOG.System('on_close: 資料庫已關閉')
         await super().close()
         LOG.System('on_close: 機器人已結束')
+
+    async def on_command(self, ctx: commands.Context):
+        LOG.CmdResult(ctx)
 
     async def on_command_error(self, ctx: commands.Context, error):
         LOG.ErrorLog(ctx, error)
