@@ -1,6 +1,7 @@
 import discord
 import random
 import typing
+import asyncio
 from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands, tasks
@@ -93,7 +94,7 @@ class Admin(commands.Cog):
         elif option == 'claimdailyreward': # 立即執行領取每日獎勵
             await interaction.response.send_message('開始執行每日自動簽到')
             cog: Schedule = self.bot.cogs['自動化']
-            await cog.autoClaimDailyReward()
+            asyncio.create_task(cog.autoClaimDailyReward())
     
     # 設定config配置檔案的參數值
     @app_commands.command(name='config', description='更改config配置內容')
