@@ -164,13 +164,11 @@ class Schedule(commands.Cog, name='自動化'):
     @SlashCommandLogger
     async def slash_schedule(self, interaction: discord.Interaction, function: str, switch: int):
         if function == 'help': # 排程功能使用說明
-            total_users = await db.schedule_daily.getTotalNumber()
-            predicted_checkin_time = datetime.combine(date.today(), time(config.schedule_daily_reward_time)) + timedelta(seconds=(self.avg_user_daily_time * total_users))
             msg = ('· 排程會在特定時間執行功能，執行結果會在設定指令的頻道推送\n'
             '· 設定前請先確認小幫手有在該頻道發言的權限，如果推送訊息失敗，小幫手會自動移除排程設定\n'
             '· 若要更改推送頻道，請在新的頻道重新設定指令一次\n\n'
             f'· 每日自動簽到：每日 {config.schedule_daily_reward_time} 點依照使用者登記順序開始自動簽到，'
-            f'現在登記預計簽到時間為 {predicted_checkin_time.strftime("%H:%M")}，設定前請先使用 {getAppCommandMention("daily每日簽到")} 指令確認小幫手能幫你簽到\n'
+            f'現在登記預計簽到時間為 {await self.predict_daily_checkin_time()}，設定前請先使用 {getAppCommandMention("daily每日簽到")} 指令確認小幫手能幫你簽到\n'
             f'· 即時便箋提醒：當超過設定值時會發送提醒，設定前請先用 {getAppCommandMention("notes即時便箋")} 指令確認小幫手能讀到你的樹脂資訊\n')
             await interaction.response.send_message(embed=EmbedTemplate.normal(msg, title='排程功能使用說明'), ephemeral=True)
             return
@@ -212,9 +210,12 @@ class Schedule(commands.Cog, name='自動化'):
                     has_honkai=(True if choose_game_btn.value == '原神+崩3' else False))
                 )
                 await interaction.edit_original_response(embed=EmbedTemplate.normal(
-                    f'{choose_game_btn.value}每日自動簽到已開啟，簽到時小幫手{"會" if daily_mention_btn.value else "不會"}tag你 (今日已幫你簽到)'), content=None, view=None)
+                    f'{choose_game_btn.value}每日自動簽到已開啟，簽到時小幫手{"會" if daily_mention_btn.value else "不會"}tag你\n'
+                    f'今日已幫你簽到，明日預計簽到的時間為 {await self.predict_daily_checkin_time()} 左右'), content=None, view=None
+                )
                 # 設定完成後幫使用者當日簽到
                 await genshin_app.claimDailyReward(interaction.user.id, honkai=(choose_game_btn.value == '原神+崩3'))
+                await db.schedule_daily.update(interaction.user.id, last_checkin_date=True)
             elif switch == 0: # 關閉簽到功能
                 await db.schedule_daily.remove(interaction.user.id)
                 await interaction.response.send_message(embed=EmbedTemplate.normal('每日自動簽到已關閉'))
@@ -383,6 +384,13 @@ class Schedule(commands.Cog, name='自動化'):
                         await db.schedule_resin.remove(user.id)
             await asyncio.sleep(config.schedule_loop_delay)
         LOG.System(f'自動檢查樹脂結束，{count}/{len(resin_users)} 人已檢查')
+
+    async def predict_daily_checkin_time(self) -> str:
+        """現在登記簽到，預計的簽到時間 (%H:%M)"""
+        total_users = await db.schedule_daily.getTotalNumber()
+        base_time = datetime.combine(date.today(), time(config.schedule_daily_reward_time)) # 每日開始簽到的時間
+        elapsed_time = timedelta(seconds=(self.avg_user_daily_time * total_users)) # 簽到全部使用者需要的時間
+        return (base_time + elapsed_time).strftime("%H:%M")
 
 async def setup(client: commands.Bot):
     await client.add_cog(Schedule(client))
