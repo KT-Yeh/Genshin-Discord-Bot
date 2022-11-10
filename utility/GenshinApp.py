@@ -2,6 +2,7 @@ import asyncio
 import discord
 import genshin
 import sentry_sdk
+import aiohttp
 from typing import Sequence, Tuple, Optional, Callable
 from data.database import db, User, SpiralAbyssData
 from .emoji import emoji
@@ -19,7 +20,7 @@ def generalErrorHandler(func: Callable):
             for retry in range(2, -1, -1):
                 try:
                     return await func(*args, **kwargs)
-                except genshin.errors.InternalDatabaseError as e:
+                except (genshin.errors.InternalDatabaseError, aiohttp.ClientOSError) as e:
                     LOG.FuncExceptionLog(user_id, f"{func.__name__} (retry={retry})", e)
                     if retry == 0:
                         raise
