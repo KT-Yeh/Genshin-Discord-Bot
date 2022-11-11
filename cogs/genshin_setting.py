@@ -49,11 +49,11 @@ class Setting(commands.Cog, name='設定'):
         if option == 0:
             embed = EmbedTemplate.normal(
                 "**1.** 先複製本文最底下整段程式碼\n"
-                "**2.** PC或手機使用**Chrome**開啟 [Hoyolab網頁](https://www.hoyolab.com) 並登入帳號"
-                " (若之前已登入過帳號，請先**手動登出**然後重新登入)\n"
+                "**2.** PC或手機使用 **Chrome** 開啟 [HoYoVerse官網](https://genshin.hoyoverse.com/zh-tw/gift)，並從右上角登入帳號"
+                " (若是已登入狀態，請先手動登出然後重新登入)\n"
                 "**3.** 如下圖，在網址列輸入 `java`，然後貼上程式碼\n"
-                "**4.** 按Enter，網頁會變成顯示你的Cookie，全選然後複製\n"
-               f"**5.** 在這裡使用 {getAppCommandMention('cookie設定')} 提交已取得的Cookie\n"
+                "**4.** 按 Enter，網頁會變成顯示你的 Cookie，全選然後複製\n"
+               f"**5.** 在這裡使用指令 {getAppCommandMention('cookie設定')} 提交已取得的Cookie\n"
                 "． 遇到問題嗎？點 [教學連結](https://bit.ly/3LgQkg0) 查看其他方法\n",
                 title='原神小幫手 | 取得Cookie說明'
             )

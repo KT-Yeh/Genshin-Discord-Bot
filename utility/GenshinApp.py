@@ -66,7 +66,7 @@ class GenshinApp:
         `str`: 回覆給使用者的訊息
         """
         LOG.Info(f"設定 {LOG.User(user_id)} 的Cookie：{cookie}")
-        cookie = trimCookie(cookie)
+        cookie = await trimCookie(cookie)
         if cookie == None:
             return f'錯誤或無效的Cookie，請重新輸入(使用 {getAppCommandMention("cookie設定")} 顯示說明)'
         client = genshin.Client(lang='zh-tw')
