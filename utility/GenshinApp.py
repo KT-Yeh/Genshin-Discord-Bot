@@ -17,7 +17,8 @@ def generalErrorHandler(func: Callable):
     async def wrapper(*args, **kwargs):
         user_id = args[1] if (len(args) >= 2 and isinstance(args[1], int)) else -1
         try:
-            for retry in range(2, -1, -1):
+            RETRY_MAX = 3
+            for retry in range(RETRY_MAX, -1, -1):
                 try:
                     return await func(*args, **kwargs)
                 except (genshin.errors.InternalDatabaseError, aiohttp.ClientOSError) as e:
@@ -25,7 +26,7 @@ def generalErrorHandler(func: Callable):
                     if retry == 0:
                         raise
                     else:
-                        await asyncio.sleep(1.0)
+                        await asyncio.sleep(1.0 + RETRY_MAX - retry)
                         continue
         except genshin.errors.DataNotPublic as e:
             LOG.FuncExceptionLog(user_id, func.__name__, e)
