@@ -375,7 +375,7 @@ class Schedule(commands.Cog, name='自動化'):
                     _user = await self.bot.fetch_user(user.id)
                     msg_sent = await channel.send(f"{_user.mention}，{msg}", embed=embed)
                 except Exception as e: # 發送訊息失敗，移除此使用者
-                    LOG.Except(f'自動檢查樹脂發送訊息失敗，移除此使用者 {LOG.User(_user)}：{e}')
+                    LOG.Except(f'自動檢查樹脂發送訊息失敗，移除此使用者 {LOG.User(user.id)}：{e}')
                     await db.schedule_resin.remove(user.id)
                 else: # 成功發送訊息
                     # 若使用者不在發送訊息的頻道則移除
