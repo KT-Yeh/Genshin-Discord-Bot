@@ -25,7 +25,7 @@ async def trimCookie(cookie: str) -> Optional[str]:
     if cookie_token and account_id:
         try:
             new_cookie = await genshin.complete_cookies(f"{cookie_token} {account_id}", refresh=True)
-            return ' '.join(f"{key}={value}" for key, value in new_cookie.items())
+            return ' '.join([f"{key}={value}" for key, value in new_cookie.items()] + [cookie_token, account_id])
         except: # 失敗則將現有 cookie_token 加到列表
             cookie_list += [cookie_token, account_id]
 
