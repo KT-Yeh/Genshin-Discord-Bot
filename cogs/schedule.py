@@ -323,7 +323,7 @@ class Schedule(commands.Cog, name='自動化'):
             try:
                 notes = await genshin_app.getRealtimeNote(user.id, schedule=True)
             except Exception as e:
-                msg = f"自動檢查樹脂時發生錯誤：{str(e)}"
+                msg = f"自動檢查樹脂時發生錯誤：{str(e)}\n預計5小時後再檢查"
                 # 當發生錯誤時，預計5小時後再檢查
                 await db.schedule_resin.update(user.id, next_check_time=(datetime.now() + timedelta(hours=5)))
                 embed = None
@@ -337,20 +337,20 @@ class Schedule(commands.Cog, name='自動化'):
                 if isinstance(user.threshold_resin, int):
                     # 當樹脂距離額滿時間低於設定值，則設定要發送的訊息
                     if notes.remaining_resin_recovery_time <= timedelta(hours=user.threshold_resin, seconds=10):
-                        msg += "樹脂(快要)溢出啦！"
+                        msg += "樹脂已經額滿啦！" if notes.remaining_resin_recovery_time <= timedelta(0) else "樹脂快要額滿啦！"
                     # 設定下次檢查時間，當樹脂完全額滿時，預計6小時後再檢查；否則依照(預計完成-使用者設定的時間)
                     next_check_time.append(datetime.now() + timedelta(hours=6) if notes.current_resin >= notes.max_resin
                                            else cal_nxt_check_time(notes.remaining_resin_recovery_time, user.threshold_resin))
                 # 檢查洞天寶錢
                 if isinstance(user.threshold_currency, int):
                     if notes.remaining_realm_currency_recovery_time <= timedelta(hours=user.threshold_currency, seconds=10):
-                        msg += "洞天寶錢(快要)溢出啦！"
+                        msg += "洞天寶錢已經額滿啦！" if notes.remaining_realm_currency_recovery_time <= timedelta(0) else "洞天寶錢快要額滿啦！"
                     next_check_time.append(datetime.now() + timedelta(hours=6) if notes.current_realm_currency >= notes.max_realm_currency
                                            else cal_nxt_check_time(notes.remaining_realm_currency_recovery_time, user.threshold_currency))
                 # 檢查質變儀
                 if isinstance(user.threshold_transformer, int) and isinstance(notes.transformer_recovery_time, datetime):
                     if notes.remaining_transformer_recovery_time <= timedelta(hours=user.threshold_transformer, seconds=10):
-                        msg += "質變儀(快要)完成了！"
+                        msg += "質變儀已經完成了！" if notes.remaining_transformer_recovery_time <= timedelta(0) else "質變儀快要完成了！"
                     next_check_time.append(datetime.now() + timedelta(hours=6) if notes.remaining_transformer_recovery_time.total_seconds() <= 5
                                            else cal_nxt_check_time(notes.remaining_transformer_recovery_time, user.threshold_transformer))
                 # 檢查探索派遣
@@ -358,12 +358,12 @@ class Schedule(commands.Cog, name='自動化'):
                     # 選出剩餘時間最多的派遣
                     longest_expedition = max(notes.expeditions, key=lambda epd: epd.remaining_time)
                     if longest_expedition.remaining_time <= timedelta(hours=user.threshold_expedition, seconds=10):
-                        msg += "探索派遣(快要)完成了！"
+                        msg += "探索派遣已經完成了！" if longest_expedition.remaining_time <= timedelta(0) else "探索派遣快要完成了！"
                     next_check_time.append(datetime.now() + timedelta(hours=6) if longest_expedition.finished == True
                                            else cal_nxt_check_time(longest_expedition.remaining_time, user.threshold_expedition))
-                # 設定下次檢查時間，從上面中取最小的值
+                # 設定下次檢查時間，從上面設定的時間中取最小的值
                 check_time = min(next_check_time)
-                # 若此次要發送訊息，則將下次檢查時間設為至少1小時
+                # 若此次需要發送訊息，則將下次檢查時間設為至少1小時
                 if len(msg) > 0:
                     check_time = max(check_time, datetime.now() + timedelta(minutes=60))
                 await db.schedule_resin.update(user.id, next_check_time=check_time)
