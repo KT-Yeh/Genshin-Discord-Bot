@@ -4,21 +4,8 @@ services:
   genshin-discord-bot:
     image: ghcr.io/kt-yeh/genshin-discord-bot:latest
     container_name: GenshinDiscordBot
-    environment:
-      - APPLICATION_ID= # 需填 機器人 Application ID
-      - TEST_SERVER_ID= # 需填 測試伺服器 ID
-      - BOT_TOKEN= # 需填 機器人 Token
-      # - SCHEDULE_DAILY_REWARD_TIME= # 可選 預設值 10
-      # - SCHEDULE_CHECK_RESIN_INTERVAL= # 可選 預設值 10
-      # - SCHEDULE_LOOP_DELAY= # 可選 預設值 2.0
-      # - EXPIRED_USER_DAYS= # 可選 預設值 30
-      # - SLASH_CMD_COOLDOWN= # 可選 預設值 5.0
-      # - DISCORD_VIEW_LONG_TIMEOUT= # 可選 預設值 1800
-      # - DISCORD_VIEW_SHORT_TIMEOUT= # 可選 預設值 60
-      # - DATABASE_FILE_PATH=/app/database/bot.db # 可選 預設值/app/database/bot.db
-      # - SENTRY_SDK_DSN= # 可選 預設值 null
-      # - NOTIFICATION_CHANNEL_ID= # 可選 預設值 null
     volumes:
-      - ./database:/app/database
+      - ./config.json:/app/config.json
+      - ./data:/app/data
       # - ./emoji.json:/app/data/emoji.json # 可選 設置你自己的 Emoji
     restart: always
