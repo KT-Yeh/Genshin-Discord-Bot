@@ -1,0 +1,3 @@
+*.example
+docker-compose.yml
+Dockerfile
