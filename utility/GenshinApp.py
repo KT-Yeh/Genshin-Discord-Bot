@@ -72,14 +72,13 @@ class GenshinApp:
             return f'錯誤或無效的Cookie，請重新輸入(使用 {getAppCommandMention("cookie設定")} 顯示說明)'
         client = genshin.Client(lang='zh-tw')
         client.set_cookies(cookie)
+        # 先以國際服 client 取得帳號資訊，若失敗則嘗試使用中國服 client
         try:
             accounts = await client.get_game_accounts()
         except genshin.errors.InvalidCookies:
-            try:
-                client.region = genshin.Region.CHINESE
-                accounts = await client.get_game_accounts()
-            except genshin.errors.InvalidCookies as e:
-                return str(e)
+            client.region = genshin.Region.CHINESE
+            accounts = await client.get_game_accounts()
+
         if len(accounts) == 0:
             LOG.Info(f"{LOG.User(user_id)} 帳號內沒有任何角色")
             result = '帳號內沒有任何角色，取消設定Cookie'
