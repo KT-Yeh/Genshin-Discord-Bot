@@ -32,13 +32,25 @@ async def trimCookie(cookie: str) -> Optional[str]:
     # 當有 ltoken 時，加到列表
     if ltoken and ltuid:
         cookie_list += [ltoken, ltuid]
-    
+
     return None if len(cookie_list) == 0 else ' '.join(cookie_list)
 
-__server_dict = {'os_usa': '美服', 'os_euro': '歐服', 'os_asia': '亞服', 'os_cht': '台港澳服',
-    '1': '天空島', '2': '天空島', '5': '世界樹', '6': '美服', '7': '歐服', '8': '亞服', '9': '台港澳服'}
 def getServerName(key: str) -> str:
-    return __server_dict.get(key)
+    return {
+        'cn_gf01': '天空島',
+        'cn_qd01': '世界樹',
+        'os_usa': '美服',
+        'os_euro': '歐服',
+        'os_asia': '亞服',
+        'os_cht': '台港澳服',
+        '1': '天空島',
+        '2': '天空島',
+        '5': '世界樹',
+        '6': '美服',
+        '7': '歐服',
+        '8': '亞服',
+        '9': '台港澳服'
+    }.get(key)
 
 __weekday_dict = {0: '週一', 1: '週二', 2: '週三', 3: '週四', 4: '週五', 5: '週六', 6: '週日'}
 def getDayOfWeek(time: datetime) -> str:
@@ -64,7 +76,7 @@ class EmbedTemplate:
     @staticmethod
     def normal(message: str, **kwargs):
         return discord.Embed(color=0x7289da, description=message, **kwargs)
-    
+
     @staticmethod
     def error(message: str, **kwargs):
         return discord.Embed(color=0xb54031, description=message, **kwargs)
