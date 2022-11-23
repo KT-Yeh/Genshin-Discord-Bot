@@ -12,6 +12,8 @@ class RedeemCode:
     """使用兌換碼"""
     @staticmethod
     async def redeem(interaction: discord.Interaction, user: discord.User, code: str):
+        # 若兌換碼包含兌換網址，則移除該網址
+        code = re.sub(r"(https://){0,1}genshin.hoyoverse.com(/.*){0,1}/gift\?code=", '', code)
         # 匹配多組兌換碼並存成list
         codes = re.findall(r"[A-Za-z0-9]{3,30}", code)
         if len(codes) == 0:
