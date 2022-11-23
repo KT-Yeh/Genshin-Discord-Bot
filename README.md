@@ -69,21 +69,44 @@ Discord 支援伺服器：https://discord.gg/myugWxgRjd
 
 ### 本地端
 1. 下載 [本專案](https://github.com/KT-Yeh/Genshin-Discord-Bot/archive/refs/heads/master.zip)
-2. 下載並安裝 Python（版本 3.8 以上）: https://www.python.org/downloads/
-3. 在專案資料夾（Genshin-Discord-Bot）內，用文字編輯器開啟 `config.json.example` 檔案，把剛才取得的 Application ID、機器人 Token、伺服器 ID 貼在 `application_id`、`bot_token`、`test_server_id` 欄位，並將檔案名稱另存為 `config.json`
-4. 在專案資料夾內開啟 cmd 或 powershell，輸入底下命令安裝相關套件：
+
+2. 新增 `config.json` 檔案：在專案資料夾（Genshin-Discord-Bot）內，用文字編輯器開啟 `config.json.example` 檔案，把剛才取得的 Application ID、機器人 Token、伺服器 ID 貼在 `application_id`、`bot_token`、`test_server_id` 欄位，並將檔案名稱**另存**為 `config.json`
+
+接下來下面兩種方式**二選一**：一種是使用 Docker 容器，優點是你不用管 Python 的版本與套件的安裝可能導致的衝突或是未知原因的錯誤，若你套件一直裝不好的話建議使用此方法；另一種是傳統的安裝 Python 環境以及相關套件。
+
+#### 方法1. Docker 容器
+1. 至 [Docker 官網](https://www.docker.com/) 下載並安裝，安裝完成後啟動 Docker Desktop，Windows 桌面右下角會有一隻鯨魚圖示 (不會安裝的請自行 Google 教學)
+
+2. 在機器人專案資料夾內開啟 cmd 或 powershell，輸入底下命令啟動機器人
+```
+docker-compose up
+```
+若你想要可以關掉 cmd 在背景執行的話，則使用
+```
+docker-compose up -d
+```
+Windows 右下角的鯨魚圖示打開 Docker Desktop 可以隨時管理機器人運行的狀態
+
+#### 方法2. Python + 套件安裝
+1. 下載並安裝 [Python](https://www.python.org/downloads/)（版本 3.8 以上，推薦使用 3.10）
+
+2. 在專案資料夾內開啟 cmd 或 powershell，輸入底下命令安裝相關套件：
 ```
 pip3 install -U -r requirements.txt
 ```
-5. 輸入底下命令或是直接滑鼠雙擊開啟 main.py 檔案，開始運行機器人
+
+3. 輸入底下命令或是直接滑鼠雙擊開啟 main.py 檔案，開始運行機器人
 ```
 python .\main.py
 ```
-6. 若要在多個伺服器間使用，請在 Discord 測試伺服器的頻道內輸入 `/sync  範圍:全域伺服器`，並等待（約 1 小時）Discord 將指令推送，稱為「全域同步」。
+
+---
 
 註1：當運行後看到 `【系統】on_ready: You have logged in as XXXXX` 表示參數設置正確並成功啟動，此時機器人會自動同步所有指令到你的測試伺服器，稱為「本地同步」。
 
 註2：若你輸入斜線 / 後看不到指令的話，請嘗試 CTRL + R 重新整理或是完全關閉 Discord 軟體並重啟 Discord。
+
+註3：若要在多個伺服器間使用，請在 Discord 測試伺服器的頻道內使用指令 `/sync 範圍:全域伺服器`，並等待（約幾分鐘）Discord 將指令推送，稱為「全域同步」。
 
 ## 配置檔案說明 (config.json)
 前三行必需改成自己的設定值，其他行可以不改保留預設值
