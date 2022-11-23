@@ -182,8 +182,8 @@ class GenshinApp:
                 return f'{game_name[game]}今日獎勵已經領過了！'
             except genshin.errors.InvalidCookies:
                 return 'Cookie已失效，請從Hoyolab重新取得新Cookie'
-            except genshin.errors.GenshinException as e:
-                if e.retcode == -10002 and game == genshin.Game.HONKAI:
+            except Exception as e:
+                if isinstance(e, genshin.errors.GenshinException) and e.retcode == -10002 and game == genshin.Game.HONKAI:
                     return '崩壞3簽到失敗，未查詢到角色資訊，請確認艦長是否已綁定新HoYoverse通行證'
                 
                 LOG.FuncExceptionLog(user_id, 'claimDailyReward', e)
@@ -192,10 +192,6 @@ class GenshinApp:
                     return await claimReward(game, retry - 1)
                 
                 LOG.Error(f"{LOG.User(user_id)} {game_name[game]}簽到失敗")
-                sentry_sdk.capture_exception(e)
-                return f'{game_name[game]}簽到失敗：[retcode]{e.retcode} [內容]{e.original}'
-            except Exception as e:
-                LOG.FuncExceptionLog(user_id, 'claimDailyReward', e)
                 sentry_sdk.capture_exception(e)
                 return f'{game_name[game]}簽到失敗：{e}'
             else:
