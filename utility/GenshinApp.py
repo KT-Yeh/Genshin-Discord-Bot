@@ -79,9 +79,11 @@ class GenshinApp:
             client.region = genshin.Region.CHINESE
             accounts = await client.get_game_accounts()
 
+        # 篩選出帳號內原神角色
+        accounts = [account for account in accounts if account.game == genshin.types.Game.GENSHIN]
         if len(accounts) == 0:
             LOG.Info(f"{LOG.User(user_id)} 帳號內沒有任何角色")
-            result = '帳號內沒有任何角色，取消設定Cookie'
+            result = '帳號內沒有任何原神角色，取消設定Cookie'
         else:
             await db.users.add(User(id=user_id, cookie=cookie))
             LOG.Info(f"{LOG.User(user_id)} Cookie設置成功")
@@ -105,7 +107,8 @@ class GenshinApp:
         Sequence[genshin.models.GenshinAccount]`: 查詢結果
         """
         client = await self.__getGenshinClient(user_id, check_uid=False)
-        return await client.genshin_accounts()
+        accounts = await client.get_game_accounts()
+        return [account for account in accounts if account.game == genshin.types.Game.GENSHIN]
     
     async def setUID(self, user_id: int, uid: int) -> str:
         """保存指定的UID

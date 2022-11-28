@@ -102,6 +102,8 @@ class Setting(commands.Cog, name='設定'):
                 interaction.response.defer(ephemeral=True),
                 genshin_app.getGameAccounts(interaction.user.id)
             )
+            if len(accounts) == 0:
+                raise Exception('此帳號內沒有任何原神角色')
         except Exception as e:
             await interaction.edit_original_response(embed=EmbedTemplate.error(str(e)))
         else:
