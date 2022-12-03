@@ -9,6 +9,24 @@ from .showcase import ShowcaseTable
 
 
 class Database:
+    """資料庫主類別，用來管理所有資料庫內的 Table
+
+    Attributes
+    -----
+    db: `aiosqlite.Connection`
+        資料庫的連線，可以使用此變數直接操作資料庫
+    users: `UsersTable`
+        使用者資料的 Table
+    schedule_daily: `ScheduleDailyTable`
+        每日簽到的 Table
+    schedule_resin: `ScheduleResinTable`
+        即時便箋自動檢查的 Table
+    spiral_abyss: `SpiralAbyssTable`
+        深境螺旋資料的 Table
+    showcase: `ShowcaseTable`
+        展示櫃資料的 Table
+    """
+
     db: aiosqlite.Connection
 
     async def create(self, filepath: str) -> None:

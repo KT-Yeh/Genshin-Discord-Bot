@@ -11,7 +11,18 @@ sentry_logging = LoggingIntegration(level=logging.INFO, event_level=logging.ERRO
 
 
 async def trimCookie(cookie: str) -> Optional[str]:
-    """取得 Cookie 中的 ltoken, ltuid, cookie_token 與 account_id"""
+    """將從 Hoyolab 取得的 Cookie 內容中擷取 ltoken, ltuid, cookie_token 與 account_id，其中 cookie_token 與 account_id 為非必需
+
+    Parameters
+    -----
+    cookie: `str`
+        從 Hoyolab 取得的原始 Cookie 字串
+
+    Returns
+    -----
+    `str`
+        包含 ltoken, ltuid, cookie_token 與 account_id 的字串
+    """
     # 嘗試匹配各式 token
     cookie_token = (
         match.group() if (match := re.search("cookie_token=[0-9A-Za-z]{30,}", cookie)) else None
@@ -42,6 +53,18 @@ async def trimCookie(cookie: str) -> Optional[str]:
 
 
 def getServerName(key: str) -> str:
+    """從伺服器代號或UID的開頭取得伺服器的名字
+
+    Parameters
+    -----
+    key: `str`
+        伺服器代號或是UID開頭第一位數字
+
+    Returns
+    -----
+    `str`
+        伺服器名字
+    """
     return {
         "cn_gf01": "天空島",
         "cn_qd01": "世界樹",
@@ -59,20 +82,18 @@ def getServerName(key: str) -> str:
     }.get(key)
 
 
-__weekday_dict = {0: "週一", 1: "週二", 2: "週三", 3: "週四", 4: "週五", 5: "週六", 6: "週日"}
-
-
 def getDayOfWeek(time: datetime) -> str:
+    """從時間中取得星期幾的字串，若時間在兩天內則以"今天"、"明天"表示"""
     delta = time.date() - datetime.now().astimezone().date()
     if delta.days == 0:
         return "今天"
     elif delta.days == 1:
         return "明天"
-    return __weekday_dict.get(time.weekday())
+    return {0: "週一", 1: "週二", 2: "週三", 3: "週四", 4: "週五", 5: "週六", 6: "週日"}.get(time.weekday())
 
 
 def getAppCommandMention(name: str) -> str:
-    """取得斜線指令的Mention格式"""
+    """取得斜線指令的 Mention 格式"""
     if not hasattr(getAppCommandMention, "appcmd_id"):
         try:
             with open("data/app_commands.json", "r", encoding="utf-8") as f:
@@ -84,10 +105,14 @@ def getAppCommandMention(name: str) -> str:
 
 
 class EmbedTemplate:
+    """Discord Embed 訊息的範本"""
+
     @staticmethod
     def normal(message: str, **kwargs):
+        """正常訊息的 Embed 範本"""
         return discord.Embed(color=0x7289DA, description=message, **kwargs)
 
     @staticmethod
     def error(message: str, **kwargs):
+        """錯誤訊息的 Embed 範本"""
         return discord.Embed(color=0xB54031, description=message, **kwargs)

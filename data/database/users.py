@@ -6,6 +6,20 @@ from utility.utils import getAppCommandMention
 
 
 class User:
+    """機器人使用者 Table 的資料類別
+
+    Attributes
+    -----
+    id: `int`
+        使用者 Discord ID
+    cookie: `str`
+        Hoyolab 或米游社網頁的 Cookie
+    uid: `Optional[int]`
+        使用者原神角色的 UID
+    last_used_time: `Optional[datetime]`
+        使用者最後一次使用機器人指令的時間
+    """
+
     id: int
     cookie: str
     uid: Optional[int]
@@ -39,10 +53,13 @@ class User:
 
 
 class UsersTable:
+    """機器人使用者資料的 Table"""
+
     def __init__(self, db: aiosqlite.Connection):
         self.db = db
 
     async def create(self) -> None:
+        """在資料庫新建 Table"""
         await self.db.execute(
             """CREATE TABLE IF NOT EXISTS users (
                 id int NOT NULL PRIMARY KEY,
@@ -54,6 +71,7 @@ class UsersTable:
         await self.db.commit()
 
     async def add(self, user: User) -> None:
+        """新增使用者到 Table"""
         await self.db.execute(
             "INSERT OR REPLACE INTO users VALUES(?, ?, ?, ?)",
             [user.id, user.cookie, user.uid, user.last_used_time or datetime.now().isoformat()],
@@ -61,16 +79,19 @@ class UsersTable:
         await self.db.commit()
 
     async def get(self, user_id: int) -> Optional[User]:
+        """取得指定使用者的資料"""
         async with self.db.execute("SELECT * FROM users WHERE id=?", [user_id]) as cursor:
             row = await cursor.fetchone()
             return User.fromRow(row) if row else None
 
     async def getAll(self) -> List[User]:
+        """取得所有使用者的資料"""
         async with self.db.execute("SELECT * FROM users") as cursor:
             rows = await cursor.fetchall()
             return [User.fromRow(row) for row in rows]
 
     async def remove(self, user_id: int) -> None:
+        """從 Table 移除指定的使用者"""
         await self.db.execute("DELETE FROM users WHERE id=?", [user_id])
         await self.db.commit()
 
@@ -82,6 +103,7 @@ class UsersTable:
         uid: Optional[int] = None,
         last_used_time: bool = False,
     ) -> None:
+        """更新指定使用者的 Column 資料"""
         if cookie:
             await self.db.execute("UPDATE users SET cookie=? WHERE id=?", [cookie, user_id])
         if uid:
@@ -96,17 +118,22 @@ class UsersTable:
     async def exist(
         self, user: Optional[User], *, check_uid=True, update_using_time=True
     ) -> Tuple[bool, Optional[str]]:
-        """檢查使用者相關資料是否已保存在資料庫內
+        """檢查使用者特定的資料是否已保存在資料庫內
 
-        ------
         Parameters
-        user `database.User | None`: 使用者
-        check_uid `bool`: 是否檢查UID
-        update_using_time `bool`: 是否更新使用者最後使用時間
         ------
+        user: `database.User | None`
+            資料庫使用者 Table 的資料類別
+        check_uid: `bool`
+            是否檢查UID
+        update_using_time: `bool`
+            是否更新使用者最後使用時間
+
         Returns
-        `bool`: `True`檢查成功，資料存在資料庫內；`False`檢查失敗，資料不存在資料庫內
-        `str`: 檢查失敗時，回覆給使用者的訊息
+        ------
+        `(bool, str | None)`
+            - `True` 檢查成功，資料存在資料庫內；`False` 檢查失敗，資料不存在資料庫內
+            - 檢查失敗時，回覆給使用者的訊息
         """
         if user == None:
             return False, f'找不到使用者，請先設定Cookie(使用 {getAppCommandMention("cookie設定")} 顯示說明)'
