@@ -16,21 +16,6 @@ from data.database import db, SpiralAbyssData
 class SpiralAbyss:
     """深境螺旋"""
 
-    class AuthorOnlyView(discord.ui.View):
-        """只有原本Interaction使用者才能使用的View"""
-
-        def __init__(self, author: discord.User):
-            self.author = author
-            super().__init__(timeout=config.discord_view_short_timeout)
-
-        async def interaction_check(self, interaction: discord.Interaction) -> bool:
-            if interaction.user.id != self.author.id:
-                await interaction.response.send_message(
-                    embed=EmbedTemplate.error("指令呼叫者才能進行操作"), ephemeral=True
-                )
-                return False
-            return True
-
     class AbyssRecordDropdown(discord.ui.Select):
         """選擇深淵歷史紀錄的下拉選單"""
 
@@ -143,7 +128,7 @@ class SpiralAbyss:
         embed.set_thumbnail(url=user.display_avatar.url)
         view = None
         if len(abyss_data.abyss.floors) > 0:
-            view = SpiralAbyss.AuthorOnlyView(interaction.user)
+            view = discord.ui.View(timeout=config.discord_view_short_timeout)
             if view_item:  # 從歷史紀錄取得資料，所以第一個選項是刪除紀錄
                 view.add_item(SpiralAbyss.AbyssFloorDropdown(embed, abyss_data, "REMOVE"))
                 view.add_item(view_item)
@@ -164,7 +149,7 @@ class SpiralAbyss:
                     embed=EmbedTemplate.normal("此使用者沒有保存任何歷史紀錄")
                 )
             else:
-                view = SpiralAbyss.AuthorOnlyView(interaction.user)
+                view = discord.ui.View(timeout=config.discord_view_short_timeout)
                 view.add_item(SpiralAbyss.AbyssRecordDropdown(user, abyss_data_list))
                 await interaction.response.send_message(view=view)
         else:  # 查詢Hoyolab紀錄
