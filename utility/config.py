@@ -52,7 +52,7 @@ class Config(BaseModel):
     slash_cmd_cooldown: float = 5.0
     discord_view_long_timeout: float = 1800
     discord_view_short_timeout: float = 60
-    database_file_path: str = "data/bot.db"
+    database_file_path: str = "data/bot/bot.db"
     sentry_sdk_dsn: typing.Optional[str] = None
     notification_channel_id: typing.Optional[int] = None
     game_maintenance_time: typing.Optional[typing.Tuple[datetime, datetime]] = None
