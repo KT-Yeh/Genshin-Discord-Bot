@@ -3,9 +3,7 @@ import genshin
 import sentry_sdk
 from discord.ext import commands
 from pathlib import Path
-from utility.config import config
-from utility.utils import sentry_logging
-from utility.custom_log import LOG
+from utility import config, sentry_logging, LOG
 from data import database
 
 intents = discord.Intents.default()

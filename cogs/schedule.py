@@ -7,9 +7,7 @@ from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands, tasks
 from typing import Callable, Optional
-from utility.config import config
-from utility.utils import EmbedTemplate, getAppCommandMention
-from utility.genshin_app import genshin_app
+from utility import genshin_app, config, getAppCommandMention, EmbedTemplate
 from utility.custom_log import LOG, SlashCommandLogger
 from data.database import db, ScheduleDaily, ScheduleResin
 

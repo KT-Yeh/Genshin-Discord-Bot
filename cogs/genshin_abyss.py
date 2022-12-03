@@ -5,11 +5,7 @@ from discord import app_commands
 from discord.ext import commands
 from discord.app_commands import Choice
 from typing import Sequence, Literal
-from utility.genshin_app import genshin_app
-from utility.draw import drawAbyssCard
-from utility.utils import EmbedTemplate
-from utility.config import config
-from utility import custom_log
+from utility import genshin_app, config, drawAbyssCard, EmbedTemplate, custom_log
 from data.database import db, SpiralAbyssData
 
 

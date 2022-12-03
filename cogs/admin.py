@@ -8,8 +8,7 @@ from discord.ext import commands, tasks
 from datetime import datetime, timedelta
 from pathlib import Path
 from .schedule import Schedule
-from utility.custom_log import SlashCommandLogger
-from utility.config import config
+from utility import config, SlashCommandLogger
 
 
 class Admin(commands.Cog):

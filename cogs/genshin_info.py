@@ -7,11 +7,8 @@ from typing import Sequence, Literal
 from discord import app_commands
 from discord.ext import commands
 from discord.app_commands import Choice
-from utility.genshin_app import genshin_app
+from utility import genshin_app, config, emoji, EmbedTemplate
 from utility.draw import drawRecordCard, drawExplorationCard
-from utility.utils import EmbedTemplate
-from utility.config import config
-from utility.emoji import emoji
 from utility.custom_log import LOG, SlashCommandLogger, ContextCommandLogger
 
 

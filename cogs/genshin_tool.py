@@ -4,9 +4,7 @@ import re
 from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands
-from utility.genshin_app import genshin_app
-from utility.utils import EmbedTemplate
-from utility import custom_log
+from utility import genshin_app, custom_log, EmbedTemplate
 
 
 class RedeemCode:
