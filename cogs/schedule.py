@@ -92,6 +92,13 @@ class Schedule(commands.Cog, name='自動化'):
             required=False,
             max_length=1
         )
+        commission = discord.ui.TextInput(
+            label='每日委託：設定每天幾點提醒今天的委託任務還未完成 (不填表示不提醒)',
+            placeholder='請輸入一個介於 0000~2359 的數，例如 0200、2135',
+            required=False,
+            max_length=4,
+            min_length=4
+        )
         def __init__(self, user_setting: Optional[ScheduleResin] = None) -> None:
             # 設定表單預設值；若使用者在資料庫已有設定值，則帶入表單預設值
             int_to_str: Callable[[Optional[int]], Optional[str]] = lambda i: str(i) if isinstance(i, int) else None
@@ -99,6 +106,7 @@ class Schedule(commands.Cog, name='自動化'):
             self.realm_currency.default = int_to_str(user_setting.threshold_currency) if user_setting else None
             self.transformer.default = int_to_str(user_setting.threshold_transformer) if user_setting else None
             self.expedition.default = int_to_str(user_setting.threshold_expedition) if user_setting else None
+            self.commission.default = user_setting.check_commission_time.strftime("%H%M") if user_setting.check_commission_time else None
             super().__init__()
 
         async def on_submit(self, interaction: discord.Interaction) -> None:
@@ -109,9 +117,10 @@ class Schedule(commands.Cog, name='自動化'):
                 realm_currency = str_to_int(self.realm_currency.value)
                 transformer = str_to_int(self.transformer.value)
                 expedition = str_to_int(self.expedition.value)
+                commission = str_to_int(self.commission.value)
                 
                 # 檢查數字範圍
-                if resin == None and realm_currency == None and transformer == None and expedition == None:
+                if resin == None and realm_currency == None and transformer == None and expedition == None and commission == None:
                     raise ValueError()
                 if ((isinstance(resin, int) and not(0 <= resin <= 5)) or
                     (isinstance(realm_currency, int) and not(0 <= realm_currency <= 8)) or
@@ -119,6 +128,14 @@ class Schedule(commands.Cog, name='自動化'):
                     (isinstance(expedition, int) and not(0 <= expedition <= 5))
                 ):
                     raise ValueError()
+                commission_time = None
+                if isinstance(commission, int):
+                    _time = time(commission // 100, commission % 100) # 當數字超過範圍時time會拋出例外
+                    _date = date.today()
+                    commission_time = datetime.combine(_date, _time)
+                    # 當今天已經超過設定的時間，則將檢查時間設為明日
+                    if commission_time < datetime.now():
+                        commission_time += timedelta(days=1)
             except Exception:
                 await interaction.response.send_message(
                     embed=EmbedTemplate.error('輸入數值有誤，請確認輸入的數值為整數且在規定範圍內'),
@@ -133,17 +150,22 @@ class Schedule(commands.Cog, name='自動化'):
                         threshold_resin=resin,
                         threshold_currency=realm_currency,
                         threshold_transformer=transformer,
-                        threshold_expedition=expedition)
+                        threshold_expedition=expedition,
+                        check_commission_time=commission_time)
                 )
                 to_msg: Callable[[str, Optional[int]], str] = (lambda title, value:
                     '' if value == None else f"． {title}：當完成時提醒\n" if value == 0 else f"． {title}：完成前 {value} 小時提醒\n")
+                commission_to_msg: Callable[[str, Optional[datetime]], str] = (lambda title, value:
+                    '' if value == None else f"． {title}：每天 {value.strftime('%H:%M')} 檢查\n")
                 await interaction.response.send_message(
                     embed=EmbedTemplate.normal(
                         f"設定完成，當達到以下設定值時會發送提醒訊息：\n"
                         f"{to_msg('原粹樹脂', resin)}"
                         f"{to_msg('洞天寶錢', realm_currency)}"
                         f"{to_msg('質變儀　', transformer)}"
-                        f"{to_msg('探索派遣', expedition)}")
+                        f"{to_msg('探索派遣', expedition)}"
+                        f"{commission_to_msg('每日委託', commission_time)}"
+                    )
                 )
 
     # 設定自動排程功能的斜線指令
@@ -361,6 +383,18 @@ class Schedule(commands.Cog, name='自動化'):
                         msg += "探索派遣已經完成了！" if longest_expedition.remaining_time <= timedelta(0) else "探索派遣快要完成了！"
                     next_check_time.append(datetime.now() + timedelta(hours=6) if longest_expedition.finished == True
                                            else cal_nxt_check_time(longest_expedition.remaining_time, user.threshold_expedition))
+                # 檢查每日委託
+                if isinstance(user.check_commission_time, datetime):
+                    _next_check_time = user.check_commission_time
+                    # 當現在時間已超過設定的檢查時間
+                    if datetime.now() >= user.check_commission_time:
+                        if not notes.claimed_commission_reward:
+                            msg += '今日的委託任務還未完成！'
+                        # 下次檢查時間為今天+1天，並更新至資料庫
+                        _next_check_time += timedelta(days=1)
+                        await db.schedule_resin.update(user.id, check_commission_time=_next_check_time)
+                    next_check_time.append(_next_check_time)
+                
                 # 設定下次檢查時間，從上面設定的時間中取最小的值
                 check_time = min(next_check_time)
                 # 若此次需要發送訊息，則將下次檢查時間設為至少1小時

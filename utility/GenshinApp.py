@@ -404,17 +404,17 @@ class GenshinApp:
             recover_time = f'{day_msg} {notes.resin_recovery_time.strftime("%H:%M")}'
         resin_msg = f'{emoji.notes.resin}全部恢復時間：{recover_time}\n'
         # 每日、週本
+        resin_msg += f'{emoji.notes.commission}每日委託任務：'
+        resin_msg += (
+            '獎勵已領\n' if notes.claimed_commission_reward == True else
+            '**尚未領獎**\n' if notes.max_commissions == notes.completed_commissions else
+            f'剩餘 {notes.max_commissions - notes.completed_commissions} 個\n'
+        )
         if not shortForm:
-            resin_msg += f'{emoji.notes.commission}每日委託任務：'
-            resin_msg += (
-                '獎勵已領\n' if notes.claimed_commission_reward == True else
-                '**尚未領獎**\n' if notes.max_commissions == notes.completed_commissions else
-                f'剩餘 {notes.max_commissions - notes.completed_commissions} 個\n'
-            )
             resin_msg += f'{emoji.notes.enemies_of_note}週本樹脂減半：剩餘 {notes.remaining_resin_discounts} 次\n'
         # 洞天寶錢恢復時間
         resin_msg += f'{emoji.notes.realm_currency}當前洞天寶錢：{notes.current_realm_currency}/{notes.max_realm_currency}\n'
-        if notes.max_realm_currency > 0:
+        if not shortForm and notes.max_realm_currency > 0:
             if notes.current_realm_currency >= notes.max_realm_currency:
                 recover_time = '已額滿！'
             else:
