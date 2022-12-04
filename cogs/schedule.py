@@ -411,7 +411,10 @@ class Schedule(commands.Cog, name="自動化"):
         LOG.System("自動檢查樹脂開始")
         resin_users = await db.schedule_resin.getAll()
         count = 0  # 統計人數
-        for user in resin_users:
+        for _u in resin_users:
+            # 要檢查的當下從資料庫重新取得最新的使用者資料
+            if (user := await db.schedule_resin.get(_u.id)) == None:
+                continue
             # 若還沒到檢查時間則跳過此使用者
             if user.next_check_time and datetime.now() < user.next_check_time:
                 continue
