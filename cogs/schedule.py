@@ -104,24 +104,25 @@ class Schedule(commands.Cog, name="自動化"):
 
         def __init__(self, user_setting: Optional[ScheduleResin] = None) -> None:
             # 設定表單預設值；若使用者在資料庫已有設定值，則帶入表單預設值
-            int_to_str: Callable[[Optional[int]], Optional[str]] = (
-                lambda i: str(i) if isinstance(i, int) else None
-            )
-            self.resin.default = int_to_str(user_setting.threshold_resin) if user_setting else "1"
-            self.realm_currency.default = (
-                int_to_str(user_setting.threshold_currency) if user_setting else None
-            )
-            self.transformer.default = (
-                int_to_str(user_setting.threshold_transformer) if user_setting else None
-            )
-            self.expedition.default = (
-                int_to_str(user_setting.threshold_expedition) if user_setting else None
-            )
-            self.commission.default = (
-                user_setting.check_commission_time.strftime("%H%M")
-                if user_setting.check_commission_time
-                else None
-            )
+            self.resin.default = "1"
+            self.realm_currency.default = None
+            self.transformer.default = None
+            self.expedition.default = None
+            self.commission.default = None
+
+            if user_setting:
+                int_to_str: Callable[[Optional[int]], Optional[str]] = (
+                    lambda i: str(i) if isinstance(i, int) else None
+                )
+                self.resin.default = int_to_str(user_setting.threshold_resin)
+                self.realm_currency.default = int_to_str(user_setting.threshold_currency)
+                self.transformer.default = int_to_str(user_setting.threshold_transformer)
+                self.expedition.default = int_to_str(user_setting.threshold_expedition)
+                self.commission.default = (
+                    user_setting.check_commission_time.strftime("%H%M")
+                    if user_setting.check_commission_time
+                    else None
+                )
             super().__init__()
 
         async def on_submit(self, interaction: discord.Interaction) -> None:
