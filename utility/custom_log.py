@@ -6,7 +6,6 @@ import platform
 import logging
 import re
 import time
-import traceback
 import genshin
 from datetime import datetime as dt
 from discord.ext import commands
@@ -30,6 +29,7 @@ else:
 #   設定 logging
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
+
 #   Log更改顏色用
 class ColorTool:
     """顏色小工具"""
@@ -44,10 +44,12 @@ class ColorTool:
             if len(custom_color) != 0:
                 color = ""
                 if isinstance(custom_color[0], int):
-                    font = custom_color[3] if len(custom_color) > 3 else True
-                    color = self.RGB(custom_color[0], custom_color[1], custom_color[2], font)
+                    font = bool(custom_color[3]) if len(custom_color) > 3 else True
+                    color = self.RGB(
+                        int(custom_color[0]), int(custom_color[1]), int(custom_color[2]), font
+                    )
                 else:
-                    font = custom_color[1] if len(custom_color) > 1 else True
+                    font = bool(custom_color[1]) if len(custom_color) > 1 else True
                     color = self.CODE(custom_color[0], font)
                 if color != "":
                     self._CUSTOM.append(color)
@@ -246,7 +248,7 @@ class LogTool(ColorTool):
         show_timestamp: bool = True,
     ) -> None:
         message = message[:-1] if (len(message) > 0 and message[-1] == "\n") else message
-        msg = str(message).replace("\n", (self.indent if tag != None else self.indent_noTag))
+        msg = str(message).replace("\n", (self.indent if tag is not None else self.indent_noTag))
         msg = f'{self.__get_timestamp__(show_timestamp)}{(tag if tag != None else " ")}{msg}'
         for level, func in zip(
             [logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL],
@@ -310,7 +312,10 @@ class LogTool(ColorTool):
         display_name = (
             user.display_name if len(user.display_name) <= 15 else f"{user.display_name[:13]}..."
         )
-        return f"{self._BRIGHT_ORANGE}@{display_name}#{user.discriminator}{self.RESET}({self._BRIGHT_YELLOW}{user.id}{self.RESET})"
+        return (
+            f"{self._BRIGHT_ORANGE}@{display_name}#{user.discriminator}{self.RESET}"
+            f"({self._BRIGHT_YELLOW}{user.id}{self.RESET})"
+        )
 
     def Server(self, server: discord.Guild | None):
         if server:
@@ -327,7 +332,12 @@ class LogTool(ColorTool):
         if isinstance(channel, discord.ForumChannel):
             return f"{self._MIKU_GREEN}#{channel.name}{self.RESET}({self._BRIGHT_CYAN}{channel.id}{self.RESET})"
         elif isinstance(channel, discord.Thread):
-            return f"{self._MIKU_GREEN}#{channel.parent.name}({self._BRIGHT_CYAN}{channel.parent.id}{self.RESET}) => 討論串：{channel.name}{self.RESET}({self._BRIGHT_CYAN}{channel.id}{self.RESET})"
+            if channel.parent is not None:
+                return (
+                    f"{self._MIKU_GREEN}#{channel.parent.name}({self._BRIGHT_CYAN}{channel.parent.id}{self.RESET})"
+                    f" => 討論串：{channel.name}{self.RESET}({self._BRIGHT_CYAN}{channel.id}{self.RESET})"
+                )
+            return "channel.parent is None"
         else:
             return (
                 f"{self._MIKU_GREEN}#私訊頻道{self.RESET}({self._BRIGHT_CYAN}{channel.id}{self.RESET})"
@@ -353,7 +363,10 @@ class LogTool(ColorTool):
 
     def ErrorType(self, error: discord.DiscordException | Exception) -> str:
         if isinstance(error, commands.CommandInvokeError):
-            return f"({self._LIGHT_MAGENTA}{type(error).__qualname__}{self.RESET} -> {self._LIGHT_MAGENTA}{type(error.original).__qualname__}{self.RESET})"
+            return (
+                f"({self._LIGHT_MAGENTA}{type(error).__qualname__}{self.RESET} -> "
+                f"{self._LIGHT_MAGENTA}{type(error.original).__qualname__}{self.RESET})"
+            )
         else:
             return f"({self._LIGHT_MAGENTA}{type(error).__qualname__}{self.RESET})"
 
@@ -386,7 +399,7 @@ class LogTool(ColorTool):
     def CmdResult(
         self,
         ctx: commands.Context | discord.Interaction,
-        start_time: float = None,
+        start_time: float | None = None,
         message: str | None = None,
         command_name: str | None = None,
         success: bool | None = True,
@@ -409,24 +422,42 @@ class LogTool(ColorTool):
                 是否顯示時間戳；預設為`True`。
         """
         if isinstance(ctx, commands.Context):
-            cmd_name = command_name if command_name != None else (ctx.prefix + ctx.command.name)
-            log = f'{self.User(ctx.author)} 使用 {self.__CmdName__(cmd_name)} {("" if success == None else "成功" if success else "失敗")}。'
+            if command_name is not None:
+                cmd_name = command_name
+            else:
+                cmd_name = (
+                    f"{ctx.prefix if ctx.prefix else ''}{ctx.command.name if ctx.command else ''}"
+                )
+            log = (
+                f"{self.User(ctx.author)} 使用 {self.__CmdName__(cmd_name)} "
+                f"{('' if success == None else '成功' if success else '失敗')}。"
+            )
         else:  # discord.Interaction
             cmd_name = (
                 command_name
-                if command_name != None
+                if command_name is not None
                 else f"/{ctx.command.name}"
                 if isinstance(ctx.command, discord.app_commands.Command)
                 else f"\u200b{ctx.command.name}"
                 if isinstance(ctx.command, discord.app_commands.ContextMenu)
                 else "(無相關指令)"
             )
-            log = f'{self.User(ctx.user)} 使用 {self.__CmdName__(cmd_name)} {("" if success == None else "成功" if success else "失敗")}。'
-        cost_time = f"耗時：{self.CostTime(start_time)}" if start_time != None else ""
-        postition = f"\n伺服器：{self.Server(ctx.guild)}　頻道：{self.Channel(ctx.channel)}\n"
+            log = (
+                f"{self.User(ctx.user)} 使用 {self.__CmdName__(cmd_name)} "
+                f"{('' if success == None else '成功' if success else '失敗')}。"
+            )
+        cost_time = f"耗時：{self.CostTime(start_time)}" if start_time is not None else ""
+        postition = (
+            f"\n伺服器：{self.Server(ctx.guild)}　頻道：{self.Channel(ctx.channel)}\n"
+            if isinstance(
+                ctx.channel,
+                (discord.TextChannel, discord.ForumChannel, discord.Thread, discord.DMChannel),
+            )
+            else ""
+        )
         msg = (
             f"\n訊息：{self._BRIGHT_PINK}{message}{self.RESET}\n"
-            if message != None and message != ""
+            if message is not None and message != ""
             else ""
         )
         #   輸出Log

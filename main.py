@@ -39,7 +39,7 @@ class GenshinDiscordBot(commands.AutoShardedBot):
             await self.load_extension(f"cogs.{cog_name}")
 
         # 同步Slash commands到測試伺服器，全域伺服器用 /sync 指令
-        if config.test_server_id != None:
+        if config.test_server_id is not None:
             test_guild = discord.Object(id=config.test_server_id)
             self.tree.copy_global_to(guild=test_guild)
             await self.tree.sync(guild=test_guild)

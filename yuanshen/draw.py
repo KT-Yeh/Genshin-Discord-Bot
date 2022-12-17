@@ -5,11 +5,11 @@ from PIL import Image, ImageFont, ImageDraw
 from typing import Tuple, Sequence, Optional, List
 from io import BytesIO
 from pathlib import Path
-from utility.utils import getServerName
+from utility import get_server_name
 from data.database import CharacterData
 
 
-def drawAvatar(img: Image.Image, avatar: Image.Image, pos: Tuple[float, float]):
+def draw_avatar(img: Image.Image, avatar: Image.Image, pos: Tuple[float, float]):
     """以圓形畫個人頭像"""
     mask = Image.new("L", avatar.size, 0)
     draw = ImageDraw.Draw(mask)
@@ -17,43 +17,43 @@ def drawAvatar(img: Image.Image, avatar: Image.Image, pos: Tuple[float, float]):
     img.paste(avatar, pos, mask=mask)
 
 
-def drawRoundedRect(img: Image.Image, pos: Tuple[float, float, float, float], **kwargs):
+def draw_rounded_rect(img: Image.Image, pos: Tuple[float, float, float, float], **kwargs):
     """畫半透明圓角矩形"""
-    transparent = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    transparent = Image.new("RGBA", img.size, 0)
     draw = ImageDraw.Draw(transparent, "RGBA")
     draw.rounded_rectangle(pos, **kwargs)
     img.paste(Image.alpha_composite(img, transparent))
 
 
-def drawText(
+def draw_text(
     img: Image.Image, pos: Tuple[float, float], text: str, font: str, size: int, fill, anchor=None
 ):
     """在圖片上印文字"""
     draw = ImageDraw.Draw(img)
-    font = ImageFont.truetype(f"data/font/{font}", size)
+    font = ImageFont.truetype(f"data/font/{font}", size)  # type: ignore
     draw.text(pos, text, fill, font, anchor=anchor)
 
 
-def drawBasicCard(
+def draw_basic_card(
     avatar_bytes: bytes, uid: int, user_stats: genshin.models.PartialGenshinUserStats
 ) -> Image.Image:
     img: Image.Image = Image.open(f"data/image/record_card/{random.randint(1, 12)}.jpg")
     img = img.convert("RGBA")
 
     avatar: Image.Image = Image.open(BytesIO(avatar_bytes)).resize((250, 250))
-    drawAvatar(img, avatar, (70, 210))
+    draw_avatar(img, avatar, (70, 210))
 
-    drawRoundedRect(img, (340, 270, 990, 460), radius=30, fill=(0, 0, 0, 120))
-    drawRoundedRect(img, (90, 520, 990, 1730), radius=30, fill=(0, 0, 0, 120))
+    draw_rounded_rect(img, (340, 270, 990, 460), radius=30, fill=(0, 0, 0, 120))
+    draw_rounded_rect(img, (90, 520, 990, 1730), radius=30, fill=(0, 0, 0, 120))
 
     info = user_stats.info
-    drawText(
+    draw_text(
         img, (665, 335), info.nickname, "SourceHanSerifTC-Bold.otf", 88, (255, 255, 255, 255), "mm"
     )
-    drawText(
+    draw_text(
         img,
         (665, 415),
-        f"{getServerName(info.server)}  Lv.{info.level}  UID:{uid}",
+        f"{get_server_name(info.server)}  Lv.{info.level}  UID:{uid}",
         "SourceHanSansTC-Medium.otf",
         40,
         (255, 255, 255, 255),
@@ -63,7 +63,7 @@ def drawBasicCard(
     return img
 
 
-def drawRecordCard(
+def draw_record_card(
     avatar_bytes: bytes, uid: int, user_stats: genshin.models.PartialGenshinUserStats
 ) -> BytesIO:
     """製作個人紀錄卡片圖
@@ -77,7 +77,7 @@ def drawRecordCard(
     Returns
     `BytesIO`: 製作完成的圖片存在記憶體，回傳file pointer，存取前需要先`seek(0)`
     """
-    img = drawBasicCard(avatar_bytes, uid, user_stats)
+    img = draw_basic_card(avatar_bytes, uid, user_stats)
 
     white = (255, 255, 255, 255)
     grey = (230, 230, 230, 255)
@@ -104,7 +104,7 @@ def drawRecordCard(
     for n, stat in enumerate(stat_list):
         column = int(n % 3)
         row = int(n / 3)
-        drawText(
+        draw_text(
             img,
             (245 + column * 295, 630 + row * 230),
             str(stat[0]),
@@ -113,7 +113,7 @@ def drawRecordCard(
             white,
             "mm",
         )
-        drawText(
+        draw_text(
             img,
             (245 + column * 295, 700 + row * 230),
             str(stat[1]),
@@ -129,7 +129,7 @@ def drawRecordCard(
     return fp
 
 
-def drawExplorationCard(
+def draw_exploration_card(
     avatar_bytes: bytes, uid: int, user_stats: genshin.models.PartialGenshinUserStats
 ) -> BytesIO:
     """製作個人世界探索度卡片圖
@@ -143,7 +143,7 @@ def drawExplorationCard(
     Returns
     `BytesIO`: 製作完成的圖片存在記憶體，回傳file pointer，存取前需要先`seek(0)`
     """
-    img = drawBasicCard(avatar_bytes, uid, user_stats)
+    img = draw_basic_card(avatar_bytes, uid, user_stats)
 
     white = (255, 255, 255, 255)
     grey = (230, 230, 230, 255)
@@ -180,7 +180,7 @@ def drawExplorationCard(
     for n, stat in enumerate(stat_list):
         column = int(n % 3)
         row = int(n / 3)
-        drawText(
+        draw_text(
             img,
             (245 + column * 295, 620 + row * 270),
             stat[0],
@@ -189,7 +189,7 @@ def drawExplorationCard(
             grey,
             "mm",
         )
-        drawText(
+        draw_text(
             img,
             (245 + column * 295, 691 + row * 270),
             f"{stat[1]:g}",
@@ -198,7 +198,7 @@ def drawExplorationCard(
             white,
             "mm",
         )
-        drawText(
+        draw_text(
             img,
             (245 + column * 295, 770 + row * 270),
             stat[2],
@@ -214,7 +214,7 @@ def drawExplorationCard(
     return fp
 
 
-def drawCharacter(
+def draw_character(
     img: Image.Image,
     character: genshin.models.AbyssCharacter,
     size: Tuple[int, int],
@@ -235,14 +235,16 @@ def drawCharacter(
     )
     avatar_file = Path(f"data/image/character/{character.id}.png")
     # 若本地沒有圖檔則從URL下載
-    if avatar_file.exists() == False:
+    if avatar_file.exists() is False:
         request.urlretrieve(character.icon, f"data/image/character/{character.id}.png")
     avatar = Image.open(avatar_file).resize((size[0], size[0]))
     img.paste(background, pos, background)
     img.paste(avatar, pos, avatar)
 
 
-def drawAbyssStar(img: Image.Image, number: int, size: Tuple[int, int], pos: Tuple[float, float]):
+def draw_abyss_star(
+    img: Image.Image, number: int, size: Tuple[int, int], pos: Tuple[float, float]
+):
     """畫深淵星星數量
 
     ------
@@ -251,14 +253,14 @@ def drawAbyssStar(img: Image.Image, number: int, size: Tuple[int, int], pos: Tup
     size `Tuple[int, int]`: 單顆星星大小
     pos `Tuple[float, float]`: 正中央位置，星星會自動置中
     """
-    star = Image.open(f"data/image/spiral_abyss/star.png").convert("RGBA").resize(size)
+    star = Image.open("data/image/spiral_abyss/star.png").convert("RGBA").resize(size)
     pad = 5
     upper_left = (pos[0] - number / 2 * size[0] - (number - 1) * pad, pos[1] - size[1] / 2)
     for i in range(0, number):
         img.paste(star, (int(upper_left[0] + i * (size[0] + 2 * pad)), int(upper_left[1])), star)
 
 
-def drawAbyssCard(
+def draw_abyss_card(
     abyss_floor: genshin.models.Floor, characters: Optional[Sequence[CharacterData]] = None
 ) -> BytesIO:
     """繪製深淵樓層紀錄圖，包含每一間星數以及上下半所使用的角色和等級
@@ -277,7 +279,7 @@ def drawAbyssCard(
     character_size = (172, 210)
     character_pad = 8
     # 顯示第幾層深淵
-    drawText(
+    draw_text(
         img,
         (1050, 145),
         f"{abyss_floor.floor}",
@@ -289,7 +291,7 @@ def drawAbyssCard(
     # 繪製每一間
     for i, chamber in enumerate(abyss_floor.chambers):
         # 顯示此間星星數
-        drawAbyssStar(img, chamber.stars, (70, 70), (1050, 500 + i * 400))
+        draw_abyss_star(img, chamber.stars, (70, 70), (1050, 500 + i * 400))
         # 上下半間
         for j, battle in enumerate(chamber.battles):
             middle = 453 + j * 1196
@@ -304,15 +306,15 @@ def drawAbyssCard(
             for k, character in enumerate(battle.characters):
                 x = left_upper[0] + k * (character_size[0] + 2 * character_pad)
                 y = left_upper[1]
-                drawCharacter(img, character, (172, 210), (x, y))
-                if characters != None:
+                draw_character(img, character, (172, 210), (x, y))
+                if characters is not None:
                     constellation = next(
                         (c.constellation for c in characters if c.id == character.id), 0
                     )  # 匹配角色ID並取得命座
                     text = f"{constellation}命 {character.level}級"
                 else:
                     text = f"{character.level}級"
-                drawText(
+                draw_text(
                     img,
                     (x + character_size[0] / 2, y + character_size[1] * 0.90),
                     text,

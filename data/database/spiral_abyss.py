@@ -118,7 +118,9 @@ class SpiralAbyssData:
     def fromRow(cls, row: aiosqlite.Row) -> SpiralAbyssData:
         abyss: SpiralAbyss = pickle.loads(zlib.decompress(row["abyss"]))
         characters: Optional[Sequence[CharacterData]] = (
-            pickle.loads(zlib.decompress(row["characters"])) if row["characters"] != None else None
+            pickle.loads(zlib.decompress(row["characters"]))
+            if row["characters"] is not None
+            else None
         )
         return cls(row["id"], abyss=abyss, characters=characters)
 
@@ -147,7 +149,7 @@ class SpiralAbyssTable:
         abyss = zlib.compress(pickle.dumps(data.abyss), level=5)
         characters = (
             zlib.compress(pickle.dumps(data.characters), level=5)
-            if data.characters != None
+            if data.characters is not None
             else None
         )
         await self.db.execute(

@@ -4,8 +4,9 @@ import genshin
 from discord import app_commands
 from discord.ext import commands
 from discord.app_commands import Choice
-from typing import Sequence, Literal
-from utility import genshin_app, config, drawAbyssCard, EmbedTemplate, custom_log
+from typing import Sequence, Literal, Optional, Union
+from yuanshen import genshin_app, parser, draw
+from utility import config, EmbedTemplate, custom_log
 from data.database import db, SpiralAbyssData
 
 
@@ -15,7 +16,11 @@ class SpiralAbyss:
     class AbyssRecordDropdown(discord.ui.Select):
         """選擇深淵歷史紀錄的下拉選單"""
 
-        def __init__(self, user: discord.User, abyss_data_list: Sequence[SpiralAbyssData]):
+        def __init__(
+            self,
+            user: Union[discord.User, discord.Member],
+            abyss_data_list: Sequence[SpiralAbyssData],
+        ):
             def honor(abyss: genshin.models.SpiralAbyss) -> str:
                 """判斷一些特殊紀錄，例如12通、單通、雙通"""
                 if abyss.total_stars == 36:
@@ -33,11 +38,14 @@ class SpiralAbyss:
 
             options = [
                 discord.SelectOption(
-                    label=f"[第 {abyss_data.season} 期] ★ {abyss_data.abyss.total_stars} {honor(abyss_data.abyss)}",
-                    description=f"{abyss_data.abyss.start_time.astimezone().strftime('%Y.%m.%d')} ~ {abyss_data.abyss.end_time.astimezone().strftime('%Y.%m.%d')}",
+                    label=f"[第 {abyss.season} 期] ★ {abyss.abyss.total_stars} {honor(abyss.abyss)}",
+                    description=(
+                        f"{abyss.abyss.start_time.astimezone().strftime('%Y.%m.%d')} ~ "
+                        f"{abyss.abyss.end_time.astimezone().strftime('%Y.%m.%d')}"
+                    ),
                     value=str(i),
                 )
-                for i, abyss_data in enumerate(abyss_data_list)
+                for i, abyss in enumerate(abyss_data_list)
             ]
             super().__init__(placeholder="選擇期數：", options=options)
             self.user = user
@@ -60,18 +68,18 @@ class SpiralAbyss:
             save_or_remove: Literal["SAVE", "REMOVE"],
         ):
             # 第一個選項依據參數顯示為保存或是刪除紀錄
+            _description = "保存此次紀錄到資料庫，之後可從歷史紀錄查看" if save_or_remove == "SAVE" else "從資料庫中刪除本次深淵紀錄"
             option = [
                 discord.SelectOption(
                     label=f"{'📁 儲存本次紀錄' if save_or_remove == 'SAVE' else '❌ 刪除本次紀錄'}",
-                    # emoji="📁" if save_or_remove == 'SAVE' else '❌',
-                    description=f"{'保存此次紀錄到資料庫，之後可從歷史紀錄查看' if save_or_remove == 'SAVE' else '從資料庫中刪除本次深淵紀錄'}",
+                    description=_description,
                     value=save_or_remove,
                 )
             ]
             options = option + [
                 discord.SelectOption(
                     label=f"[★{floor.stars}] 第 {floor.floor} 層",
-                    description=genshin_app.parseAbyssChamber(floor.chambers[-1]),
+                    description=parser.parse_abyss_chamber(floor.chambers[-1]),
                     value=str(i),
                 )
                 for i, floor in enumerate(abyss_data.abyss.floors)
@@ -101,7 +109,7 @@ class SpiralAbyss:
                         embed=EmbedTemplate.error("僅限本人才能操作"), ephemeral=True
                     )
             else:  # 繪製樓層圖片
-                fp = drawAbyssCard(
+                fp = draw.draw_abyss_card(
                     self.abyss_data.abyss.floors[int(self.values[0])],
                     self.abyss_data.characters,
                 )
@@ -114,12 +122,12 @@ class SpiralAbyss:
     @staticmethod
     async def presentation(
         interaction: discord.Interaction,
-        user: discord.User,
+        user: Union[discord.User, discord.Member],
         abyss_data: SpiralAbyssData,
         *,
-        view_item: discord.ui.Item = None,
+        view_item: Optional[discord.ui.Item] = None,
     ):
-        embed = genshin_app.parseAbyssOverview(abyss_data.abyss)
+        embed = parser.parse_abyss_overview(abyss_data.abyss)
         embed.title = f"{user.display_name} 的深境螺旋戰績"
         embed.set_thumbnail(url=user.display_avatar.url)
         view = None
@@ -135,10 +143,10 @@ class SpiralAbyss:
     @staticmethod
     async def abyss(
         interaction: discord.Interaction,
-        user: discord.User,
-        season_choice: Literal[-1, 0, 1],
+        user: Union[discord.User, discord.Member],
+        season_choice: Literal["THIS_SEASON", "PREVIOUS_SEASON", "HISTORICAL_RECORD"],
     ):
-        if season_choice == -1:  # 查詢歷史紀錄
+        if season_choice == "HISTORICAL_RECORD":  # 查詢歷史紀錄
             abyss_data_list = await db.spiral_abyss.get(user.id)
             if len(abyss_data_list) == 0:
                 await interaction.response.send_message(
@@ -148,14 +156,14 @@ class SpiralAbyss:
                 view = discord.ui.View(timeout=config.discord_view_short_timeout)
                 view.add_item(SpiralAbyss.AbyssRecordDropdown(user, abyss_data_list))
                 await interaction.response.send_message(view=view)
-        else:  # 查詢Hoyolab紀錄
+        else:  # 查詢 Hoyolab 紀錄 (THIS_SEASON、PREVIOUS_SEASON)
             try:
                 defer, abyss_data = await asyncio.gather(
                     interaction.response.defer(),
-                    genshin_app.getSpiralAbyss(user.id, bool(season_choice)),
+                    genshin_app.get_spiral_abyss(user.id, (season_choice == "PREVIOUS_SEASON")),
                 )
             except Exception as e:
-                await interaction.edit_original_response(embed=EmbedTemplate.error(str(e)))
+                await interaction.edit_original_response(embed=EmbedTemplate.error(e))
             else:
                 await SpiralAbyss.presentation(interaction, user, abyss_data)
 
@@ -174,14 +182,17 @@ class SpiralAbyssCog(commands.Cog, name="深境螺旋"):
     @app_commands.describe(season="選擇本期、上期或是歷史紀錄", user="查詢其他成員的資料，不填寫則查詢自己")
     @app_commands.choices(
         season=[
-            Choice(name="本期紀錄", value=0),
-            Choice(name="上期紀錄", value=1),
-            Choice(name="歷史紀錄", value=-1),
+            Choice(name="本期紀錄", value="THIS_SEASON"),
+            Choice(name="上期紀錄", value="PREVIOUS_SEASON"),
+            Choice(name="歷史紀錄", value="HISTORICAL_RECORD"),
         ]
     )
     @custom_log.SlashCommandLogger
     async def slash_abyss(
-        self, interaction: discord.Interaction, season: int, user: discord.User = None
+        self,
+        interaction: discord.Interaction,
+        season: Literal["THIS_SEASON", "PREVIOUS_SEASON", "HISTORICAL_RECORD"],
+        user: Optional[discord.User] = None,
     ):
         await SpiralAbyss.abyss(interaction, user or interaction.user, season)
 
@@ -204,9 +215,9 @@ async def setup(client: commands.Bot):
     @client.tree.context_menu(name="深淵紀錄(上期)")
     @custom_log.ContextCommandLogger
     async def context_abyss_previous(interaction: discord.Interaction, user: discord.User):
-        await SpiralAbyss.abyss(interaction, user, 1)
+        await SpiralAbyss.abyss(interaction, user, "PREVIOUS_SEASON")
 
     @client.tree.context_menu(name="深淵紀錄(本期)")
     @custom_log.ContextCommandLogger
     async def context_abyss(interaction: discord.Interaction, user: discord.User):
-        await SpiralAbyss.abyss(interaction, user, 0)
+        await SpiralAbyss.abyss(interaction, user, "THIS_SEASON")

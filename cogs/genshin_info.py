@@ -3,12 +3,12 @@ import discord
 import genshin
 import asyncio
 import sentry_sdk
-from typing import Sequence, Literal
+from typing import Sequence, Literal, Optional, Union
 from discord import app_commands
 from discord.ext import commands
 from discord.app_commands import Choice
-from utility import genshin_app, config, emoji, EmbedTemplate
-from utility.draw import drawRecordCard, drawExplorationCard
+from yuanshen import genshin_app, parser, draw
+from utility import config, emoji, EmbedTemplate
 from utility.custom_log import LOG, SlashCommandLogger, ContextCommandLogger
 
 
@@ -17,16 +17,19 @@ class RealtimeNotes:
 
     @staticmethod
     async def notes(
-        interaction: discord.Interaction, user: discord.User, *, shortForm: bool = False
+        interaction: discord.Interaction,
+        user: Union[discord.User, discord.Member],
+        *,
+        shortForm: bool = False,
     ):
         try:
             defer, notes = await asyncio.gather(
-                interaction.response.defer(), genshin_app.getRealtimeNote(user.id)
+                interaction.response.defer(), genshin_app.get_realtime_notes(user.id)
             )
         except Exception as e:
-            await interaction.edit_original_response(embed=EmbedTemplate.error(str(e)))
+            await interaction.edit_original_response(embed=EmbedTemplate.error(e))
         else:
-            embed = await genshin_app.parseNotes(notes, user=user, shortForm=shortForm)
+            embed = await parser.parse_realtime_notes(notes, user=user, shortForm=shortForm)
             await interaction.edit_original_response(embed=embed)
 
 
@@ -34,14 +37,17 @@ class TravelerDiary:
     """旅行者札記"""
 
     @staticmethod
-    async def diary(interaction: discord.Interaction, user: discord.User, month: int):
+    async def diary(
+        interaction: discord.Interaction, user: Union[discord.User, discord.Member], month: int
+    ):
         try:
-            defer, embed = await asyncio.gather(
+            defer, diary = await asyncio.gather(
                 interaction.response.defer(),
-                genshin_app.getTravelerDiary(user.id, month),
+                genshin_app.get_traveler_diary(user.id, month),
             )
+            embed = parser.parse_diary(diary, month)
         except Exception as e:
-            await interaction.edit_original_response(embed=EmbedTemplate.error(str(e)))
+            await interaction.edit_original_response(embed=EmbedTemplate.error(e))
         else:
             embed.set_thumbnail(url=user.display_avatar.url)
             await interaction.edit_original_response(embed=embed)
@@ -53,27 +59,27 @@ class RecordCard:
     @staticmethod
     async def card(
         interaction: discord.Interaction,
-        user: discord.User,
+        user: Union[discord.User, discord.Member],
         option: Literal["RECORD", "EXPLORATION"],
     ):
         try:
             defer, (uid, userstats) = await asyncio.gather(
-                interaction.response.defer(), genshin_app.getRecordCard(user.id)
+                interaction.response.defer(), genshin_app.get_record_card(user.id)
             )
         except Exception as e:
-            await interaction.edit_original_response(embed=EmbedTemplate.error(str(e)))
+            await interaction.edit_original_response(embed=EmbedTemplate.error(e))
             return
 
         try:
             avatar_bytes = await user.display_avatar.read()
             if option == "RECORD":
-                fp = drawRecordCard(avatar_bytes, uid, userstats)
+                fp = draw.draw_record_card(avatar_bytes, uid, userstats)
             elif option == "EXPLORATION":
-                fp = drawExplorationCard(avatar_bytes, uid, userstats)
+                fp = draw.draw_exploration_card(avatar_bytes, uid, userstats)
         except Exception as e:
             LOG.ErrorLog(interaction, e)
             sentry_sdk.capture_exception(e)
-            await interaction.edit_original_response(embed=EmbedTemplate.error("發生錯誤，卡片製作失敗"))
+            await interaction.edit_original_response(embed=EmbedTemplate.error(e))
         else:
             fp.seek(0)
             await interaction.edit_original_response(
@@ -90,18 +96,21 @@ class Characters:
 
         def __init__(
             self,
-            user: discord.User,
+            user: Union[discord.User, discord.Member],
             characters: Sequence[genshin.models.Character],
             index: int = 1,
         ):
             options = [
                 discord.SelectOption(
-                    label=f"★{character.rarity} C{character.constellation} Lv.{character.level} {character.name}",
-                    description=f"★{character.weapon.rarity} R{character.weapon.refinement} Lv.{character.weapon.level} {character.weapon.name}",
+                    label=f"★{c.rarity} C{c.constellation} Lv.{c.level} {c.name}",
+                    description=(
+                        f"★{c.weapon.rarity} R{c.weapon.refinement} "
+                        f"Lv.{c.weapon.level} {c.weapon.name}"
+                    ),
                     value=str(i),
-                    emoji=emoji.elements.get(character.element.lower()),
+                    emoji=emoji.elements.get(c.element.lower()),
                 )
-                for i, character in enumerate(characters)
+                for i, c in enumerate(characters)
             ]
             super().__init__(
                 placeholder=f"選擇角色 (第 {index}~{index + len(characters) - 1} 名)",
@@ -113,7 +122,7 @@ class Characters:
             self.characters = characters
 
         async def callback(self, interaction: discord.Interaction):
-            embed = genshin_app.parseCharacter(self.characters[int(self.values[0])])
+            embed = parser.parse_character(self.characters[int(self.values[0])])
             embed.set_author(
                 name=f"{self.user.display_name} 的角色一覽",
                 icon_url=self.user.display_avatar.url,
@@ -123,20 +132,26 @@ class Characters:
     class DropdownView(discord.ui.View):
         """顯示角色下拉選單的View，依照選單欄位上限25個分割選單"""
 
-        def __init__(self, user: discord.User, characters: Sequence[genshin.models.Character]):
+        def __init__(
+            self,
+            user: Union[discord.User, discord.Member],
+            characters: Sequence[genshin.models.Character],
+        ):
             super().__init__(timeout=config.discord_view_long_timeout)
             max_row = 25
             for i in range(0, len(characters), max_row):
                 self.add_item(Characters.Dropdown(user, characters[i : i + max_row], i + 1))
 
     @staticmethod
-    async def characters(interaction: discord.Interaction, user: discord.User):
+    async def characters(
+        interaction: discord.Interaction, user: Union[discord.User, discord.Member]
+    ):
         try:
             defer, characters = await asyncio.gather(
-                interaction.response.defer(), genshin_app.getCharacters(user.id)
+                interaction.response.defer(), genshin_app.get_characters(user.id)
             )
         except Exception as e:
-            await interaction.edit_original_response(embed=EmbedTemplate.error(str(e)))
+            await interaction.edit_original_response(embed=EmbedTemplate.error(e))
         else:
             view = Characters.DropdownView(user, characters)
             await interaction.edit_original_response(content="請選擇角色：", view=view)
@@ -159,7 +174,7 @@ class GenshinInfo(commands.Cog, name="原神資訊"):
         self,
         interaction: discord.Interaction,
         shortForm: int = 0,
-        user: discord.User = None,
+        user: Optional[discord.User] = None,
     ):
         await RealtimeNotes.notes(interaction, user or interaction.user, shortForm=bool(shortForm))
 
@@ -195,7 +210,10 @@ class GenshinInfo(commands.Cog, name="原神資訊"):
     @app_commands.checks.cooldown(1, config.slash_cmd_cooldown)
     @SlashCommandLogger
     async def slash_card(
-        self, interaction: discord.Interaction, option: str, user: discord.User = None
+        self,
+        interaction: discord.Interaction,
+        option: Literal["RECORD", "EXPLORATION"],
+        user: Optional[discord.User] = None,
     ):
         await RecordCard.card(interaction, user or interaction.user, option)
 

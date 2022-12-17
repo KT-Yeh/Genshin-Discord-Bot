@@ -2,7 +2,7 @@ from __future__ import annotations
 import aiosqlite
 from typing import Optional, Union, Tuple, List
 from datetime import datetime
-from utility.utils import getAppCommandMention
+from utility.utils import get_app_command_mention
 
 
 class User:
@@ -135,10 +135,10 @@ class UsersTable:
             - `True` 檢查成功，資料存在資料庫內；`False` 檢查失敗，資料不存在資料庫內
             - 檢查失敗時，回覆給使用者的訊息
         """
-        if user == None:
-            return False, f'找不到使用者，請先設定Cookie(使用 {getAppCommandMention("cookie設定")} 顯示說明)'
-        elif check_uid and user.uid == None:
-            return False, f'找不到角色UID，請先設定UID(使用 {getAppCommandMention("uid設定")} 來設定UID)'
+        if user is None:
+            return False, f'找不到使用者，請先設定Cookie(使用 {get_app_command_mention("cookie設定")} 顯示說明)'
+        elif check_uid and user.uid is None:
+            return False, f'找不到角色UID，請先設定UID(使用 {get_app_command_mention("uid設定")} 來設定UID)'
         if update_using_time:
             await self.update(user.id, last_used_time=True)
         return True, None

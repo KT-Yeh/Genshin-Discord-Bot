@@ -38,7 +38,7 @@ class ShowcaseTable:
         """取得指定使用者的資料"""
         async with self.db.execute("SELECT * FROM showcase WHERE uid=?", [uid]) as cursor:
             row = await cursor.fetchone()
-            if row != None:
+            if row is not None:
                 data = zlib.decompress(row["data"]).decode(encoding="utf8")
                 return json.loads(data)
             return None

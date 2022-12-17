@@ -1,14 +1,13 @@
 import discord
 import genshin
 import asyncio
-import sentry_sdk
 import typing
 from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands
-from utility import genshin_app, config, custom_log, EmbedTemplate
-from utility.utils import getServerName, getAppCommandMention
-from data import database
+from yuanshen import genshin_app
+from utility import config, custom_log, EmbedTemplate, get_server_name, get_app_command_mention
+from data.database import db
 
 
 class Setting(commands.Cog, name="設定"):
@@ -31,9 +30,9 @@ class Setting(commands.Cog, name="設定"):
                 embed=EmbedTemplate.normal("設定中，請稍後..."), ephemeral=True
             )
             try:
-                msg = await genshin_app.setCookie(interaction.user.id, self.cookie.value)
+                msg = await genshin_app.set_cookie(interaction.user.id, self.cookie.value)
             except Exception as e:
-                await interaction.edit_original_response(embed=EmbedTemplate.error(str(e)))
+                await interaction.edit_original_response(embed=EmbedTemplate.error(e))
             else:
                 await interaction.edit_original_response(embed=EmbedTemplate.normal(msg))
 
@@ -52,11 +51,11 @@ class Setting(commands.Cog, name="設定"):
         if option == 0:
             embed = EmbedTemplate.normal(
                 "**1.** 先複製本文最底下整段程式碼\n"
-                "**2.** PC或手機使用 **Chrome** 開啟 [HoYoVerse官網](https://genshin.hoyoverse.com/zh-tw/gift)，並從右上角登入帳號"
-                " (若是已登入狀態，請先手動登出然後重新登入)\n"
+                "**2.** PC或手機使用 **Chrome** 開啟 [HoYoVerse官網](https://genshin.hoyoverse.com/"
+                "zh-tw/gift)，並從右上角登入帳號 (若是已登入狀態，請先手動登出然後重新登入)\n"
                 "**3.** 如下圖，在網址列輸入 `java`，然後貼上程式碼\n"
                 "**4.** 按 Enter，網頁會變成顯示你的 Cookie，全選然後複製\n"
-                f"**5.** 在這裡使用指令 {getAppCommandMention('cookie設定')} 提交已取得的Cookie\n"
+                f"**5.** 在這裡使用指令 {get_app_command_mention('cookie設定')} 提交已取得的Cookie\n"
                 "． 遇到問題嗎？點 [教學連結](https://bit.ly/3LgQkg0) 查看其他方法\n",
                 title="原神小幫手 | 取得Cookie說明",
             )
@@ -73,9 +72,10 @@ class Setting(commands.Cog, name="設定"):
                 "`ltoken=xxxx ltuid=1234 cookie_token=yyyy account_id=1234`\n"
                 "· 小幫手保存並使用Cookie是為了在Hoyolab網站上取得你的原神資料並提供服務\n"
                 "· 小幫手將資料保存於雲端主機獨立環境，只與Discord、Hoyolab伺服器連線\n"
-                "· 更詳細說明可以到 [巴哈說明文](https://forum.gamer.com.tw/Co.php?bsn=36730&sn=162433) 查看，若仍有疑慮請不要使用小幫手\n"
+                "· 更詳細說明可以到 [巴哈說明文](https://forum.gamer.com.tw/Co.php?bsn=36730&sn=162433) 查看，"
+                "若仍有疑慮請不要使用小幫手\n"
                 "· 當提交Cookie給小幫手時，表示你已同意小幫手保存並使用你的資料\n"
-                f'· 你可以隨時刪除保存在小幫手的資料，請使用 {getAppCommandMention("清除資料")} 指令\n'
+                f'· 你可以隨時刪除保存在小幫手的資料，請使用 {get_app_command_mention("清除資料")} 指令\n'
             )
             embed = EmbedTemplate.normal(msg, title="小幫手Cookie使用與保存告知")
             await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -85,7 +85,7 @@ class Setting(commands.Cog, name="設定"):
         def __init__(self, accounts: typing.Sequence[genshin.models.GenshinAccount]):
             options = [
                 discord.SelectOption(
-                    label=f"[{getServerName(str(account.uid)[0])}] {account.uid}",
+                    label=f"[{get_server_name(str(account.uid)[0])}] {account.uid}",
                     description=f"Lv.{account.level} {account.nickname}",
                     value=str(i),
                 )
@@ -95,10 +95,11 @@ class Setting(commands.Cog, name="設定"):
             self.accounts = accounts
 
         async def callback(self, interaction: discord.Interaction):
-            msg = await genshin_app.setUID(
-                interaction.user.id, self.accounts[int(self.values[0])].uid
+            uid = self.accounts[int(self.values[0])].uid
+            await db.users.update(interaction.user.id, uid=uid)
+            await interaction.response.edit_message(
+                embed=EmbedTemplate.normal(f"角色UID: {uid} 已設定完成"), view=None
             )
-            await interaction.response.edit_message(embed=EmbedTemplate.normal(msg), view=None)
 
     # 設定原神UID，當帳號內有多名角色時，保存指定的UID
     @app_commands.command(name="uid設定", description="帳號內多角色時需保存指定的UID，只有單一角色不需要使用本指令")
@@ -107,12 +108,12 @@ class Setting(commands.Cog, name="設定"):
         try:
             defer, accounts = await asyncio.gather(
                 interaction.response.defer(ephemeral=True),
-                genshin_app.getGameAccounts(interaction.user.id),
+                genshin_app.get_game_accounts(interaction.user.id),
             )
             if len(accounts) == 0:
                 raise Exception("此帳號內沒有任何原神角色")
         except Exception as e:
-            await interaction.edit_original_response(embed=EmbedTemplate.error(str(e)))
+            await interaction.edit_original_response(embed=EmbedTemplate.error(e))
         else:
             view = discord.ui.View(timeout=config.discord_view_short_timeout)
             view.add_item(self.UidDropdown(accounts))
@@ -144,8 +145,8 @@ class Setting(commands.Cog, name="設定"):
         await interaction.response.send_message("是否確定刪除？", view=view, ephemeral=True)
 
         await view.wait()
-        if view.value == True:
-            await database.db.removeUser(interaction.user.id)
+        if view.value is True:
+            await db.removeUser(interaction.user.id)
             await interaction.edit_original_response(content="使用者資料已全部刪除", view=None)
         else:
             await interaction.edit_original_response(content="取消指令", view=None)

@@ -51,7 +51,7 @@ class ScheduleDaily:
             has_honkai=bool(row["has_honkai"]),
             last_checkin_date=(
                 None
-                if row["last_checkin_date"] == None
+                if row["last_checkin_date"] is None
                 else date.fromisoformat(row["last_checkin_date"])
             ),
         )
@@ -78,7 +78,7 @@ class ScheduleDailyTable:
 
     async def add(self, user: ScheduleDaily) -> None:
         """新增使用者到 Table"""
-        if (await self.get(user.id)) != None:  # 當使用者已存在時
+        if (await self.get(user.id)) is not None:  # 當使用者已存在時
             await self.db.execute(
                 "UPDATE schedule_daily SET channel_id=?, is_mention=?, has_honkai=? WHERE id=?",
                 [user.channel_id, int(user.is_mention), int(user.has_honkai), user.id],
@@ -126,4 +126,4 @@ class ScheduleDailyTable:
         """取得 Table 內的資料總筆數"""
         async with self.db.execute("SELECT COUNT(id) FROM schedule_daily") as cursor:
             row = await cursor.fetchone()
-            return row[0]
+            return row[0] if row else 0

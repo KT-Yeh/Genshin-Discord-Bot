@@ -7,7 +7,7 @@ from discord.app_commands import Choice
 from discord.ext import commands, tasks
 from datetime import datetime, timedelta
 from pathlib import Path
-from .schedule import Schedule
+from yuanshen import automation
 from utility import config, SlashCommandLogger
 
 
@@ -24,7 +24,7 @@ class Admin(commands.Cog):
     @SlashCommandLogger
     async def slash_sync(self, interaction: discord.Interaction, area: int = 0):
         await interaction.response.defer()
-        if area == 0:  # 複製全域指令，同步到當前伺服器，不需等待
+        if area == 0 and interaction.guild:  # 複製全域指令，同步到當前伺服器，不需等待
             self.bot.tree.copy_global_to(guild=interaction.guild)
             result = await self.bot.tree.sync(guild=interaction.guild)
         else:  # 同步到全域，需等待一小時
@@ -69,14 +69,16 @@ class Admin(commands.Cog):
         ]
     )
     @SlashCommandLogger
-    async def slash_system(self, interaction: discord.Interaction, option: str, param: str = None):
+    async def slash_system(
+        self, interaction: discord.Interaction, option: str, param: typing.Optional[str] = None
+    ):
         async def operateCogs(
             func: typing.Callable[[str], typing.Awaitable[None]],
             param: typing.Optional[str] = None,
             *,
             pass_self: bool = False,
         ):
-            if param == None:  # 操作全部cog
+            if param is None:  # 操作全部cog
                 for filepath in Path("./cogs").glob("**/*.py"):
                     cog_name = Path(filepath).stem
                     if pass_self and cog_name == "admin":
@@ -97,14 +99,13 @@ class Admin(commands.Cog):
             await operateCogs(self.bot.reload_extension, param)
             await interaction.response.send_message(f"{param or '全部'}指令集重新載入完成")
 
-        elif option == "presence":  # Change presence string
+        elif option == "presence" and param is not None:  # Change presence string
             self.presence_string = param.split(",")
             await interaction.response.send_message(f"Presence list已變更為：{self.presence_string}")
 
         elif option == "claimdailyreward":  # 立即執行領取每日獎勵
             await interaction.response.send_message("開始執行每日自動簽到")
-            cog: Schedule = self.bot.cogs["自動化"]
-            asyncio.create_task(cog.autoClaimDailyReward())
+            asyncio.create_task(automation.claim_daily_reward(self.bot))
 
     # 設定config配置檔案的參數值
     @app_commands.command(name="config", description="更改config配置內容")
@@ -158,11 +159,11 @@ class Admin(commands.Cog):
     # 每一定時間更改機器人狀態
     @tasks.loop(minutes=1)
     async def change_presence(self):
-        l = len(self.presence_string)
-        n = random.randint(0, l)
-        if n < l:
+        length = len(self.presence_string)
+        n = random.randint(0, length)
+        if n < length:
             await self.bot.change_presence(activity=discord.Game(self.presence_string[n]))
-        elif n == l:
+        elif n == length:
             await self.bot.change_presence(activity=discord.Game(f"{len(self.bot.guilds)} 個伺服器"))
 
     @change_presence.before_loop

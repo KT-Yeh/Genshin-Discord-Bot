@@ -1,5 +1,4 @@
 import logging
-import discord
 import genshin
 import re
 import json
@@ -10,7 +9,7 @@ from sentry_sdk.integrations.logging import LoggingIntegration
 sentry_logging = LoggingIntegration(level=logging.INFO, event_level=logging.ERROR)
 
 
-async def trimCookie(cookie: str) -> Optional[str]:
+async def trim_cookie(cookie: str) -> Optional[str]:
     """將從 Hoyolab 取得的 Cookie 內容中擷取 ltoken, ltuid, cookie_token 與 account_id，其中 cookie_token 與 account_id 為非必需
 
     Parameters
@@ -42,7 +41,7 @@ async def trimCookie(cookie: str) -> Optional[str]:
                 [f"{key}={value}" for key, value in new_cookie.items()]
                 + [cookie_token, account_id]
             )
-        except:  # 失敗則將現有 cookie_token 加到列表
+        except Exception:  # 失敗則將現有 cookie_token 加到列表
             cookie_list += [cookie_token, account_id]
 
     # 當有 ltoken 時，加到列表
@@ -52,7 +51,7 @@ async def trimCookie(cookie: str) -> Optional[str]:
     return None if len(cookie_list) == 0 else " ".join(cookie_list)
 
 
-def getServerName(key: str) -> str:
+def get_server_name(key: str) -> str:
     """從伺服器代號或UID的開頭取得伺服器的名字
 
     Parameters
@@ -79,40 +78,26 @@ def getServerName(key: str) -> str:
         "7": "歐服",
         "8": "亞服",
         "9": "台港澳服",
-    }.get(key)
+    }.get(key, "")
 
 
-def getDayOfWeek(time: datetime) -> str:
+def get_day_of_week(time: datetime) -> str:
     """從時間中取得星期幾的字串，若時間在兩天內則以"今天"、"明天"表示"""
     delta = time.date() - datetime.now().astimezone().date()
     if delta.days == 0:
         return "今天"
     elif delta.days == 1:
         return "明天"
-    return {0: "週一", 1: "週二", 2: "週三", 3: "週四", 4: "週五", 5: "週六", 6: "週日"}.get(time.weekday())
+    return {0: "週一", 1: "週二", 2: "週三", 3: "週四", 4: "週五", 5: "週六", 6: "週日"}.get(time.weekday(), "")
 
 
-def getAppCommandMention(name: str) -> str:
+def get_app_command_mention(name: str) -> str:
     """取得斜線指令的 Mention 格式"""
-    if not hasattr(getAppCommandMention, "appcmd_id"):
+    if not hasattr(get_app_command_mention, "appcmd_id"):
         try:
             with open("data/app_commands.json", "r", encoding="utf-8") as f:
-                getAppCommandMention.appcmd_id: dict[str, int] = json.load(f)
-        except:
-            getAppCommandMention.appcmd_id = dict()
-    id = getAppCommandMention.appcmd_id.get(name)
-    return f"</{name}:{id}>" if id != None else f"`/{name}`"
-
-
-class EmbedTemplate:
-    """Discord Embed 訊息的範本"""
-
-    @staticmethod
-    def normal(message: str, **kwargs):
-        """正常訊息的 Embed 範本"""
-        return discord.Embed(color=0x7289DA, description=message, **kwargs)
-
-    @staticmethod
-    def error(message: str, **kwargs):
-        """錯誤訊息的 Embed 範本"""
-        return discord.Embed(color=0xB54031, description=message, **kwargs)
+                setattr(get_app_command_mention, "appcmd_id", json.load(f))
+        except Exception:
+            get_app_command_mention.appcmd_id = dict()
+    id = get_app_command_mention.appcmd_id.get(name)
+    return f"</{name}:{id}>" if id is not None else f"`/{name}`"

@@ -63,7 +63,7 @@ class Database:
         count = 0
         users = await self.users.getAll()
         for user in users:
-            if user.last_used_time == None:
+            if user.last_used_time is None:
                 continue
             interval = now - user.last_used_time
             if interval.days > diff_days:
