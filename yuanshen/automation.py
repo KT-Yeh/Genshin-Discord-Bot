@@ -99,7 +99,7 @@ async def check_realtime_notes(bot: commands.Bot):
             continue
         # 檢查使用者即時便箋
         msg = ""
-        embed = discord.Embed()
+        embed = None
         try:
             notes = await genshin_app.get_realtime_notes(user.id, schedule=True)
         except Exception as e:
@@ -111,7 +111,8 @@ async def check_realtime_notes(bot: commands.Bot):
                     user.id, next_check_time=(datetime.now() + timedelta(hours=1))
                 )
             else:
-                msg = f"自動檢查樹脂時發生錯誤：{str(e)}\n預計5小時後再檢查"
+                msg = "自動檢查樹脂時發生錯誤，預計5小時後再檢查"
+                embed = EmbedTemplate.error(e)
                 # 當發生錯誤時，預計5小時後再檢查
                 await db.schedule_resin.update(
                     user.id, next_check_time=(datetime.now() + timedelta(hours=5))
