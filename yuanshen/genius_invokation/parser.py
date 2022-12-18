@@ -9,12 +9,16 @@ def parse_costs(costs: list[DiceCost]) -> str:
 
 def parse_character_card(card: CharacterCard) -> discord.Embed:
     """解析角色牌內容，傳回 discord.Embed"""
-    _description = f"屬性：{card.element}\n武器：{card.weapon}\n生命：{card.hp}\n"
-    if len(card.belong_to) > 0 and card.belong_to[0] != "":
-        _description += f"陣營：{card.belong_to[0]}"
-
-    embed = discord.Embed(title=card.name, description=_description)
+    embed = discord.Embed(
+        title=card.name,
+        description=f"屬性：{card.element}\n武器：{card.weapon}\n生命：{card.hp}\n",
+        color=0x5992C4,
+    )
     embed.set_image(url=card.icon_url)
+    if len(card.belong_to) > 0:
+        embed.set_footer(
+            text=f"陣營：{'、'.join([belong for belong in card.belong_to if belong != ''])}"
+        )
 
     for talent in card.talents:
         _value = "花費：" + parse_costs(talent.costs) + "\n"
@@ -26,14 +30,12 @@ def parse_character_card(card: CharacterCard) -> discord.Embed:
 
 def parse_action_card(card: ActionCard) -> discord.Embed:
     """解析行動牌內容，傳回 discord.Embed"""
-    _description = (
-        f"花費：{parse_costs(card.costs)}\n標籤："
-        + "、".join([tag.text for tag in card.tags if tag.text != ""])
-        + "\n"
-        + card.effect
+    embed = discord.Embed(
+        title=f"{card.name} ({card.type})",
+        description=f"花費：{parse_costs(card.costs)}\n" + card.effect,
+        color=0x5992C4,
     )
-
-    embed = discord.Embed(title=f"{card.name} ({card.type})", description=_description)
+    embed.set_footer(text=f"標籤：{'、'.join([tag.text for tag in card.tags if tag.text != ''])}")
     embed.set_image(url=card.icon_url)
 
     return embed

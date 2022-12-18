@@ -27,4 +27,5 @@ def remove_html_tags(data: Union[dict, list, str, int]):
             data[i] = remove_html_tags(item)
     elif isinstance(data, str):
         data = re.sub(r"<.*?>", "", data)
+        data = data.replace("\\n", "\n")
     return data
