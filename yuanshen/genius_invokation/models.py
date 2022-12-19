@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Any
 from pydantic import BaseModel, Field, root_validator, validator
 from .enums import Element, CostElement, ActionType
 
@@ -49,6 +49,11 @@ class CharacterCard(BaseModel):
     hp: int
     icon_url: str = Field(..., alias="resource")
 
+    @validator("belong_to", pre=True)
+    def remove_empty_belong_to(cls, belong_to: List[str]) -> List[str]:
+        """將空的文字從 belong_to 移除"""
+        return [_belong for _belong in belong_to if _belong != ""]
+
 
 class ActionCardTag(BaseModel):
     """行動牌標籤"""
@@ -69,15 +74,24 @@ class ActionCard(BaseModel):
     icon_url: str = Field(..., alias="resource")
 
     @root_validator(pre=True)
-    def combine_dice_cost(cls, data: Dict):
+    def combine_dice_cost(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         """將 cost_num1、cost_num2 合併成一個 list，與角色牌的格式一樣"""
-        costs = []
+        costs: List[Dict[str, str]] = []
         if bool(data["cost_num1"]) and bool(data["cost_type1_icon"]):
             costs.append({"cost_num": data["cost_num1"], "cost_icon": data["cost_type1_icon"]})
         if bool(data["cost_num2"]) and bool(data["cost_type2_icon"]):
             costs.append({"cost_num": data["cost_num2"], "cost_icon": data["cost_type2_icon"]})
         data["costs"] = costs
         return data
+
+    @validator("tags", pre=True)
+    def remove_empty_tag(cls, tags: List[Dict[str, str]]) -> List[Dict[str, str]]:
+        """將空的標籤從 action_card_tags 移除"""
+        new_tags: List[Dict[str, str]] = []
+        for tag in tags:
+            if all(list(tag.values())):
+                new_tags.append(tag)
+        return new_tags
 
 
 class Cards(BaseModel):

@@ -48,5 +48,17 @@
         "沙": "",
         "杯": "",
         "冠": ""
+    },
+    "tcg_dice_cost_elements": {
+        "ENERGY": "",
+        "WHITE": "",
+        "BLACK": "",
+        "CRYO": "",
+        "HYDRO": "",
+        "PYRO": "",
+        "ELECTRO": "",
+        "GEO": "",
+        "DENDRO": "",
+        "ANEMO": ""
     }
 }

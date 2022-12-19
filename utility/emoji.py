@@ -20,10 +20,17 @@ class Items(BaseModel):
 
 class Emoji(BaseModel):
     notes: Notes = Notes()
+    """即時便箋圖示"""
     items: Items = Items()
+    """物品圖示"""
     elements: typing.Dict[str, str] = {}
+    """原神元素圖示"""
     fightprop: typing.Dict[str, str] = {}
+    """角色面板屬性圖示，例：攻擊力、生命值...等"""
     artifact_type: typing.Dict[str, str] = {}
+    """聖遺物部位圖示"""
+    tcg_dice_cost_elements: typing.Dict[str, str] = {}
+    """七聖召喚骰子花費元素類型圖示"""
 
 
 path = Path("data/emoji.json")

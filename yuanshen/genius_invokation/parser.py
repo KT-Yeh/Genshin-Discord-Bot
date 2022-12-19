@@ -1,10 +1,20 @@
 import discord
 from .models import CharacterCard, ActionCard, DiceCost
+from utility import emoji
 
 
 def parse_costs(costs: list[DiceCost]) -> str:
     """解析骰子花費"""
-    return " / ".join([f"{cost.element} ({cost.amount})" for cost in costs])
+    if len(costs) == 0:
+        return "無"
+    cost_texts: list[str] = []
+    for cost in costs:
+        if _emoji := emoji.tcg_dice_cost_elements.get(cost.element.name):
+            _text = _emoji
+        else:
+            _text = str(cost.element)
+        cost_texts.append(f"{_text} ({cost.amount})")
+    return " / ".join(cost_texts)
 
 
 def parse_character_card(card: CharacterCard) -> discord.Embed:
@@ -16,9 +26,7 @@ def parse_character_card(card: CharacterCard) -> discord.Embed:
     )
     embed.set_image(url=card.icon_url)
     if len(card.belong_to) > 0:
-        embed.set_footer(
-            text=f"陣營：{'、'.join([belong for belong in card.belong_to if belong != ''])}"
-        )
+        embed.set_footer(text=f"陣營：{'、'.join(card.belong_to)}")
 
     for talent in card.talents:
         _value = "花費：" + parse_costs(talent.costs) + "\n"
@@ -35,7 +43,8 @@ def parse_action_card(card: ActionCard) -> discord.Embed:
         description=f"花費：{parse_costs(card.costs)}\n" + card.effect,
         color=0x5992C4,
     )
-    embed.set_footer(text=f"標籤：{'、'.join([tag.text for tag in card.tags if tag.text != ''])}")
+    if len(card.tags) > 0:
+        embed.set_footer(text=f"標籤：{'、'.join([tag.text for tag in card.tags])}")
     embed.set_image(url=card.icon_url)
 
     return embed
