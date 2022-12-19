@@ -7,6 +7,7 @@ on:
       - "cogs/**"
       - "data/**"
       - "utility/**"
+      - "yuanshen/**"
       - ".dockerignore"
       - "Dockerfile"
       - "main.py"
