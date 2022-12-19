@@ -39,7 +39,12 @@ def generalErrorHandler(func: Callable):
     """對於使用genshin.py函式的通用例外處理裝飾器"""
 
     async def wrapper(*args, **kwargs):
-        user_id = args[1] if (len(args) >= 2 and isinstance(args[1], int)) else -1
+        user_id = -1
+        # 從函式參數找出 user_id
+        for arg in args:
+            if isinstance(arg, int) and len(str(arg)) >= 15:
+                user_id = arg
+                break
         try:
             # 針對特定錯誤加入重試機制
             RETRY_MAX = 3
