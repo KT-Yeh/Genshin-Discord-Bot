@@ -17,10 +17,10 @@ class Search(commands.Cog):
     @app_commands.command(name="tcg卡牌搜尋", description="搜尋七聖召喚卡牌")
     @app_commands.rename(card_name="名稱")
     async def slash_tcg_cards(self, interaction: discord.Interaction, card_name: str):
-        if card := self.tcg_cards.character_name_card.get(card_name):
-            embed = tcg_parser.parse_character_card(card)
-        elif card := self.tcg_cards.action_name_card.get(card_name):
-            embed = tcg_parser.parse_action_card(card)
+        if _character := self.tcg_cards.character_name_card.get(card_name):
+            embed = tcg_parser.parse_character_card(_character)
+        elif _action := self.tcg_cards.action_name_card.get(card_name):
+            embed = tcg_parser.parse_action_card(_action)
         else:
             embed = EmbedTemplate.error(f"找不到卡牌：{card_name}")
 

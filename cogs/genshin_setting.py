@@ -11,7 +11,7 @@ from data.database import db
 
 
 class Setting(commands.Cog, name="設定"):
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
 
     # 提交Cookie的表單

@@ -12,7 +12,7 @@ from utility import config, SlashCommandLogger
 
 
 class Admin(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot: commands.Bot = bot
         self.presence_string: list[str] = ["原神"]
         self.change_presence.start()

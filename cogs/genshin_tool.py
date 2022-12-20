@@ -60,7 +60,7 @@ class RedeemCode:
 class GenshinTool(commands.Cog, name="原神工具"):
     """斜線指令"""
 
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
 
     # 為使用者使用指定的兌換碼

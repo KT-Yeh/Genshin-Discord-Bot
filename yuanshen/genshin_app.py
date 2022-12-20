@@ -206,8 +206,8 @@ async def get_spiral_abyss(user_id: int, previous: bool = False) -> SpiralAbyssD
     if isinstance(abyss, BaseException):
         raise abyss
     if isinstance(characters, BaseException):
-        characters = None
-    return SpiralAbyssData(user_id, abyss=abyss, characters=characters)
+        return SpiralAbyssData(user_id, abyss, characters=None)
+    return SpiralAbyssData(user_id, abyss, characters=characters)
 
 
 @generalErrorHandler

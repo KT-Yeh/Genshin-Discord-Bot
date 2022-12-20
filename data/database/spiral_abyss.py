@@ -3,7 +3,7 @@ import aiosqlite
 import pickle
 import zlib
 import genshin
-from typing import Sequence, Optional
+from typing import Sequence, Optional, Union
 from genshin.models import SpiralAbyss, Character
 
 
@@ -104,15 +104,23 @@ class SpiralAbyssData:
     id: int
     season: int
     abyss: SpiralAbyss
-    characters: Optional[Sequence[CharacterData]]
+    characters: Optional[Sequence[CharacterData]] = None
 
     def __init__(
-        self, id: int, abyss: SpiralAbyss, *, characters: Optional[Sequence[Character]] = None
+        self,
+        id: int,
+        abyss: SpiralAbyss,
+        *,
+        characters: Union[Sequence[Character], Sequence[CharacterData], None] = None,
     ):
         self.id = id
         self.season = abyss.season
         self.abyss = abyss
-        self.characters = [CharacterData(c) for c in characters] if characters else None
+        if characters is not None:
+            self.characters = []
+            # 這邊檢查角色是否為 genshin.py 的 Character 型態，若是的話則轉型為 CharacterData
+            for c in characters:
+                self.characters.append(CharacterData(c) if isinstance(c, Character) else c)
 
     @classmethod
     def fromRow(cls, row: aiosqlite.Row) -> SpiralAbyssData:

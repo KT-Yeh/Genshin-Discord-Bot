@@ -54,7 +54,7 @@ def parse_abyss_chamber(chamber: genshin.models.Chamber) -> str:
     Returns
     `str`: 角色名字組成的字串
     """
-    chara_list = [[], []]  # 分成上下半間
+    chara_list: list[list[str]] = [[], []]  # 分成上下半間
     for i, battle in enumerate(chamber.battles):
         for chara in battle.characters:
             chara_list[i].append(chara.name)

@@ -171,7 +171,7 @@ class SpiralAbyss:
 class SpiralAbyssCog(commands.Cog, name="深境螺旋"):
     """斜線指令"""
 
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
 
     # -------------------------------------------------------------

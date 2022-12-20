@@ -160,7 +160,7 @@ class Characters:
 class GenshinInfo(commands.Cog, name="原神資訊"):
     """斜線指令"""
 
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
 
     # -------------------------------------------------------------

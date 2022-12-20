@@ -27,7 +27,7 @@ class Schedule(commands.Cog, name="自動化"):
 
         def __init__(self, author: Union[discord.User, discord.Member]):
             super().__init__(timeout=config.discord_view_short_timeout)
-            self.value = None
+            self.value: Optional[str] = None
             self.author = author
 
         async def interaction_check(self, interaction: discord.Interaction) -> bool:
