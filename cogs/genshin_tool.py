@@ -6,7 +6,7 @@ from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands
 from typing import Optional, Union
-from yuanshen import genshin_app, GenshinAPIException
+from yuanshen import genshin_app, errors
 from utility import custom_log, EmbedTemplate
 
 
@@ -39,7 +39,7 @@ class RedeemCode:
                 await asyncio.sleep(5)
             try:
                 result = "✅" + await genshin_app.redeem_code(user.id, code)
-            except GenshinAPIException as e:
+            except errors.GenshinAPIException as e:
                 result = "❌"
                 if isinstance(e.origin, genshin.errors.InvalidCookies):
                     result += "無效的Cookie"

@@ -6,7 +6,7 @@ import genshin
 from discord.ext import commands
 from datetime import datetime, date, timedelta
 from typing import Callable
-from . import genshin_app, parser, GenshinAPIException
+from . import genshin_app, parser, errors
 from cogs.schedule import Schedule
 from utility import config, EmbedTemplate, LOG
 from data.database import db
@@ -104,7 +104,7 @@ async def check_realtime_notes(bot: commands.Bot):
             notes = await genshin_app.get_realtime_notes(user.id, schedule=True)
         except Exception as e:
             # 當錯誤為 InternalDatabaseError 時，忽略並設定1小時後檢查
-            if isinstance(e, GenshinAPIException) and isinstance(
+            if isinstance(e, errors.GenshinAPIException) and isinstance(
                 e.origin, genshin.errors.InternalDatabaseError
             ):
                 await db.schedule_resin.update(

@@ -1,6 +1,6 @@
 import discord
 from typing import Union
-from yuanshen import GenshinAPIException
+from yuanshen.errors import GenshinAPIException
 
 
 class EmbedTemplate:
