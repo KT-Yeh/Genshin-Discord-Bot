@@ -35,11 +35,13 @@ class Search(commands.Cog):
         for card in cards:
             if current.lower() in card.name.lower():
                 choices.append(Choice(name=card.name, value=card.name))
-
+        # 使用者沒輸入的情況下，隨機找 20 張不重複的牌
         if current == "":
-            choices = random.choices(choices, k=20)
-
-        return choices[:20]
+            choices = random.sample(choices, k=20)
+        # 取前 20 張牌並依照名稱排序
+        choices = choices[:20]
+        choices.sort(key=lambda choice: choice.name)
+        return choices
 
 
 async def setup(client: commands.Bot):
