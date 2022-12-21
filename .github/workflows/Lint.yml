@@ -1,0 +1,37 @@
+name: Lint
+
+on: [push, pull_request]
+
+jobs:
+  black-lint:
+    runs-on: ubuntu-latest
+    name: black-lint
+    steps:
+      - name: Check out source repository
+        uses: actions/checkout@v3
+      
+      - name: Run black
+        uses: psf/black@stable
+        with:
+          options: "--line-length=99"
+  
+  flake8-lint:
+    runs-on: ubuntu-latest
+    name: flake8-lint
+    steps:
+      - name: Check out source repository
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+      
+      - name: Install dependencies
+        run: |
+          pip install flake8
+          pip install -r requirements.txt
+
+      - name: Run flake8
+        run: |
+          flake8 .
