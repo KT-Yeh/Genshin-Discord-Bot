@@ -68,11 +68,15 @@ Discord 支援伺服器：https://discord.gg/myugWxgRjd
 ![](https://i.imgur.com/tCMhEhv.png)
 
 ### 本地端
-1. 下載 [本專案](https://github.com/KT-Yeh/Genshin-Discord-Bot/archive/refs/heads/master.zip)
+1. [點此下載本專案](https://github.com/KT-Yeh/Genshin-Discord-Bot/archive/refs/heads/master.zip) 或是：
+```
+git clone https://github.com/KT-Yeh/Genshin-Discord-Bot.git
+```
 
-2. 新增 `config.json` 檔案：在專案資料夾（Genshin-Discord-Bot）內，用文字編輯器開啟 `config.json.example` 檔案，把剛才取得的 Application ID、機器人 Token、伺服器 ID 貼在 `application_id`、`bot_token`、`test_server_id` 欄位，並將檔案名稱**另存**為 `config.json`
+2. 新增 `config.json` 檔案：
+在專案資料夾（Genshin-Discord-Bot）內，用文字編輯器開啟 `config.json.example` 檔案，把剛才取得的 Application ID、機器人 Token、伺服器 ID 貼在 `application_id`、`bot_token`、`test_server_id` 欄位，並將檔案名稱另存為 **`config.json`**
 
-接下來下面兩種方式**二選一**：一種是使用 Docker 容器，優點是你不用管 Python 的版本與套件的安裝可能導致的衝突或是未知原因的錯誤，若你套件一直裝不好的話建議使用此方法；另一種是傳統的安裝 Python 環境以及相關套件。
+接下來下面兩種方式**二選一**：一種是使用 Docker 容器，另一種是安裝 Python 環境以及相關套件。
 
 #### 方法1. Docker 容器
 1. 至 [Docker 官網](https://www.docker.com/) 下載並安裝，安裝完成後啟動 Docker Desktop，Windows 桌面右下角會有一隻鯨魚圖示 (不會安裝的請自行 Google 教學)
@@ -88,16 +92,21 @@ docker-compose up -d
 Windows 右下角的鯨魚圖示打開 Docker Desktop 可以隨時管理機器人運行的狀態
 
 #### 方法2. Python + 套件安裝
-1. 下載並安裝 [Python](https://www.python.org/downloads/)（版本請選擇 3.9 或 3.10）
+1. 至官網下載並安裝 [Python 3.10](https://www.python.org/downloads/release/python-3109/)，安裝時記得將 `Add Python 3.10 to PATH` 選項打勾
 
-2. 在專案資料夾內開啟 cmd 或 powershell，輸入底下命令安裝相關套件：
+2. 在專案資料夾內開啟 cmd 或 powershell，輸入底下命令安裝 pipenv 虛擬環境套件：
 ```
-pip3 install -U -r requirements.txt
+pip3 install -U pipenv
 ```
 
-3. 輸入底下命令或是直接滑鼠雙擊開啟 main.py 檔案，開始運行機器人
+3. 輸入底下命令安裝運行機器人的虛擬環境：
 ```
-python .\main.py
+pipenv install
+```
+
+4. 輸入底下命令開始運行機器人：
+```
+pipenv run python .\main.py
 ```
 
 ---
