@@ -1,4 +1,4 @@
-git+https://github.com/thesadru/genshin.py
+git+https://github.com/thesadru/genshin.py#egg=genshin
 discord.py
 Pillow
 sentry-sdk

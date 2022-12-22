@@ -1,0 +1,21 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+genshin = {git = "https://github.com/thesadru/genshin.py"}
+"discord.py" = "*"
+pillow = "*"
+sentry-sdk = "*"
+jishaku = "*"
+aiosqlite = "*"
+
+[dev-packages]
+"enkanetwork.py" = "*"
+black = "*"
+flake8 = "*"
+mypy = "*"
+
+[requires]
+python_version = "3.10"
