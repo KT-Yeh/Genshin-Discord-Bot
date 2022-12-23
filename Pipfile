@@ -16,6 +16,7 @@ aiosqlite = "*"
 black = "*"
 flake8 = "*"
 mypy = "*"
+psutil = "*"
 
 [requires]
 python_version = "3.10"
