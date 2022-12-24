@@ -20,7 +20,7 @@ class EmbedTemplate:
             embed.title = "發生錯誤！"
 
         if isinstance(exception, GenshinAPIException):
-            embed.description = f"{exception.message}\n```{exception.origin}```"
+            embed.description = f"{exception.message}\n```{repr(exception.origin)}```"
         else:  # Exception | str
             embed.description = str(exception)
 
