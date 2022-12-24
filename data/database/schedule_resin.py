@@ -1,9 +1,11 @@
 from __future__ import annotations
 import aiosqlite
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional, List
 
 
+@dataclass
 class ScheduleResin:
     """自動檢查即時便箋 Table 的資料類別
 
@@ -29,33 +31,12 @@ class ScheduleResin:
 
     id: int
     channel_id: int
-    next_check_time: Optional[datetime]
-    threshold_resin: Optional[int]
-    threshold_currency: Optional[int]
-    threshold_transformer: Optional[int]
-    threshold_expedition: Optional[int]
-    check_commission_time: Optional[datetime]
-
-    def __init__(
-        self,
-        id: int,
-        channel_id: int,
-        *,
-        next_check_time: Optional[datetime] = None,
-        threshold_resin: Optional[int] = None,
-        threshold_currency: Optional[int] = None,
-        threshold_transformer: Optional[int] = None,
-        threshold_expedition: Optional[int] = None,
-        check_commission_time: Optional[datetime] = None,
-    ):
-        self.id = id
-        self.channel_id = channel_id
-        self.next_check_time = next_check_time
-        self.threshold_resin = threshold_resin
-        self.threshold_currency = threshold_currency
-        self.threshold_transformer = threshold_transformer
-        self.threshold_expedition = threshold_expedition
-        self.check_commission_time = check_commission_time
+    next_check_time: Optional[datetime] = None
+    threshold_resin: Optional[int] = None
+    threshold_currency: Optional[int] = None
+    threshold_transformer: Optional[int] = None
+    threshold_expedition: Optional[int] = None
+    check_commission_time: Optional[datetime] = None
 
     @classmethod
     def fromRow(cls, row: aiosqlite.Row) -> ScheduleResin:

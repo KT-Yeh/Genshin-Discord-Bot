@@ -1,9 +1,11 @@
 from __future__ import annotations
 import aiosqlite
+from dataclasses import dataclass
 from datetime import date
 from typing import Optional, List
 
 
+@dataclass
 class ScheduleDaily:
     """每日簽到 Table 的資料類別
 
@@ -23,24 +25,9 @@ class ScheduleDaily:
 
     id: int
     channel_id: int
-    is_mention: bool
-    has_honkai: bool
-    last_checkin_date: Optional[date]
-
-    def __init__(
-        self,
-        id: int,
-        channel_id: int,
-        *,
-        is_mention: Optional[bool] = None,
-        has_honkai: Optional[bool] = None,
-        last_checkin_date: Optional[date] = None,
-    ):
-        self.id = id
-        self.channel_id = channel_id
-        self.is_mention = is_mention or False
-        self.has_honkai = has_honkai or False
-        self.last_checkin_date = last_checkin_date
+    is_mention: bool = False
+    has_honkai: bool = False
+    last_checkin_date: Optional[date] = None
 
     @classmethod
     def fromRow(cls, row: aiosqlite.Row) -> ScheduleDaily:
