@@ -4,7 +4,6 @@ import pickle
 import zlib
 import genshin
 from typing import Sequence, Optional, Union
-from genshin.models import SpiralAbyss, Character
 
 
 class CharacterData:
@@ -33,7 +32,7 @@ class CharacterData:
     weapon: Weapon
     artifacts: Sequence[Artifact]
 
-    def __init__(self, character: Character) -> None:
+    def __init__(self, character: genshin.models.Character) -> None:
         self.id = character.id
         self.level = character.level
         self.friendship = character.friendship
@@ -103,28 +102,33 @@ class SpiralAbyssData:
 
     id: int
     season: int
-    abyss: SpiralAbyss
+    abyss: genshin.models.SpiralAbyss
     characters: Optional[Sequence[CharacterData]] = None
 
     def __init__(
         self,
         id: int,
-        abyss: SpiralAbyss,
+        abyss: genshin.models.SpiralAbyss,
         *,
-        characters: Union[Sequence[Character], Sequence[CharacterData], None] = None,
+        characters: Union[
+            Sequence[genshin.models.Character], Sequence[CharacterData], None
+        ] = None,
     ):
         self.id = id
         self.season = abyss.season
+        # abyss 完整保存 genshin.py 資料格式，characters 將 genshin.py 的格式轉為自定義格式
         self.abyss = abyss
         if characters is not None:
             self.characters = []
             # 這邊檢查角色是否為 genshin.py 的 Character 型態，若是的話則轉型為 CharacterData
             for c in characters:
-                self.characters.append(CharacterData(c) if isinstance(c, Character) else c)
+                self.characters.append(
+                    CharacterData(c) if isinstance(c, genshin.models.Character) else c
+                )
 
     @classmethod
     def fromRow(cls, row: aiosqlite.Row) -> SpiralAbyssData:
-        abyss: SpiralAbyss = pickle.loads(zlib.decompress(row["abyss"]))
+        abyss: genshin.models.SpiralAbyss = pickle.loads(zlib.decompress(row["abyss"]))
         characters: Optional[Sequence[CharacterData]] = (
             pickle.loads(zlib.decompress(row["characters"]))
             if row["characters"] is not None
