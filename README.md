@@ -68,13 +68,13 @@ Discord 支援伺服器：https://discord.gg/myugWxgRjd
 ![](https://i.imgur.com/tCMhEhv.png)
 
 ### 本地端
-1. [點此下載本專案](https://github.com/KT-Yeh/Genshin-Discord-Bot/archive/refs/heads/master.zip) 或是：
+1. [點此下載本專案](https://github.com/KT-Yeh/Genshin-Discord-Bot/archive/refs/heads/master.zip) 或是使用 git：
 ```
 git clone https://github.com/KT-Yeh/Genshin-Discord-Bot.git
 ```
 
 2. 新增 `config.json` 檔案：
-在專案資料夾（Genshin-Discord-Bot）內，用文字編輯器開啟 `config.json.example` 檔案，把剛才取得的 Application ID、機器人 Token、伺服器 ID 貼在 `application_id`、`bot_token`、`test_server_id` 欄位，並將檔案名稱另存為 **`config.json`**
+在專案資料夾（Genshin-Discord-Bot）內，用文字編輯器開啟 `config.json.example` 檔案，把剛才取得的 Application ID、機器人 Token、伺服器 ID 分別貼在 `application_id`、`bot_token`、`test_server_id` 欄位，並將檔案名稱另存為 **`config.json`**
 
 接下來下面兩種方式**二選一**：一種是使用 Docker 容器，另一種是安裝 Python 環境以及相關套件。
 
@@ -92,19 +92,21 @@ docker-compose up -d
 Windows 右下角的鯨魚圖示打開 Docker Desktop 可以隨時管理機器人運行的狀態
 
 #### 方法2. Python + 套件安裝
-1. 至官網下載並安裝 [Python 3.10](https://www.python.org/downloads/release/python-3109/)，安裝時記得將 `Add Python 3.10 to PATH` 選項打勾
+1. 下載並安裝 [Python 3.10](https://www.python.org/downloads/release/python-3109/)，安裝時記得將 `Add Python 3.10 to PATH` 選項打勾
 
-2. 在專案資料夾內開啟 cmd 或 powershell，輸入底下命令安裝 pipenv 虛擬環境套件：
+2. 下載並安裝 [git (Windows)](https://git-scm.com/downloads)
+
+3. 在專案資料夾內開啟 cmd 或 powershell，輸入底下命令安裝 pipenv 虛擬環境套件：
 ```
 pip3 install -U pipenv
 ```
 
-3. 輸入底下命令安裝運行機器人的虛擬環境：
+4. 輸入底下命令安裝運行機器人的虛擬環境：
 ```
 pipenv install
 ```
 
-4. 輸入底下命令開始運行機器人：
+5. 輸入底下命令開始運行機器人：
 ```
 pipenv run python .\main.py
 ```
@@ -122,7 +124,7 @@ pipenv run python .\main.py
 ```python
 {
     "application_id": 123456789123456789,   # 機器人 Application ID，從 Discord Developer 網頁上取得
-    "test_server_id": 212340008888812345,   # 測試伺服器 ID，用來測試斜線指令，管理員指令只能在本伺服器使用
+    "test_server_id": 212340008888812345,   # Discord 測試伺服器 ID，用來測試斜線指令，管理員指令只能在本伺服器使用
     "bot_token": "ABCDEFG",                 # 機器人 Token，從 Discord Developer 網頁取得
     "schedule_daily_reward_time": 8,        # 每日 Hoyolab 自動簽到的開始時間 (單位：時)
     "schedule_check_resin_interval": 10,    # 自動檢查即時便箋的間隔 (單位：分鐘)
@@ -131,9 +133,9 @@ pipenv run python .\main.py
     "slash_cmd_cooldown": 5.0,              # 使用者重複呼叫部分斜線指令的冷卻時間（單位：秒）
     "discord_view_long_timeout": 1800,      # Discord 長時間互動介面（例：下拉選單） 的逾時時間（單位：秒）
     "discord_view_short_timeout": 60,       # Discord 短時間互動介面（例：確認、選擇按鈕）的逾時時間（單位：秒）
-    "database_file_path": "data/bot.db",    # 資料庫儲存的資料夾位置與檔名
+    "database_file_path": "data/bot/bot.db",# 資料庫儲存的資料夾位置與檔名
     "sentry_sdk_dsn": "https://XXX@XXX",    # Sentry DSN 位址設定，參考底下說明
-    "notification_channel_id"               # 每日簽到完成後統計訊息欲發送到的 Discord 頻道 ID
+    "notification_channel_id": 123456       # 每日簽到完成後統計訊息欲發送到的 Discord 頻道 ID
 }
 ```
 ## 表情符號配置說明 (data/emoji.json)
