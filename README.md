@@ -30,10 +30,15 @@ Discord 支援伺服器：https://discord.gg/myugWxgRjd
 ## 展示
 更多展示圖片、GIF 請參考巴哈介紹文章：https://forum.gamer.com.tw/Co.php?bsn=36730&sn=162433
 
-<img src="https://i.imgur.com/LcNJ2as.png" width="350"/> <img src="https://i.imgur.com/IEckUqY.jpg" width="500"/>
+<img src="https://i.imgur.com/LcNJ2as.png" width="350"/>
+<img src="https://i.imgur.com/IEckUqY.jpg" width="500"/>
+<img src="https://i.imgur.com/PA5HIDO.gif" width="500"/>
 
 
 ## 自己安裝 & 架設機器人
+
+<details><summary>點此查看完整內容</summary>
+
 安裝前請先確認自己遇到基本的問題有 Google 解決的能力，任何不關於本專案程式碼的問題（例如：python 安裝、套件安裝...等），請不要來問我。舉例來說：你不會拿著食譜去問食譜作者你家的瓦斯爐要怎麼開、烤箱沒插電怎麼辦之類的問題。若是有功能或是程式碼上的問題與建議，歡迎來討論。
 
 ### 網頁端
@@ -119,7 +124,12 @@ pipenv run python .\main.py
 
 註3：若要在多個伺服器間使用，請在 Discord 測試伺服器的頻道內使用指令 `/sync 範圍:全域伺服器`，並等待（約幾分鐘）Discord 將指令推送，稱為「全域同步」。
 
+</details>
+
 ## 配置檔案說明 (config.json)
+
+<details><summary>點此查看完整內容</summary>
+
 前三行必需改成自己的設定值，其他行可以不改保留預設值
 ```python
 {
@@ -138,7 +148,13 @@ pipenv run python .\main.py
     "notification_channel_id": 123456       # 每日簽到完成後統計訊息欲發送到的 Discord 頻道 ID
 }
 ```
+
+</details>
+
 ## 表情符號配置說明 (data/emoji.json)
+
+<details><summary>點此查看完整內容</summary>
+
 非必要，不配置表情符號也能正常運行機器人
 1. 將 `data/emoji.json.example` 重新命名為 `data/emoji.json`
 2. 自行上傳相關的表情符號至自己的伺服器
@@ -149,7 +165,12 @@ pipenv run python .\main.py
 - 可以在 Discord 訊息頻道輸入 `\:表符名字:` 取得上述格式
 - 若使用的表情符號不在同一個伺服器內，則機器人所在的頻道，「Everyone」身分組（不是機器人本身的身分組）需要有使用外部表情符號的權限
 
+</details>
+
 ## Sentry 配置說明
+
+<details><summary>點此查看完整內容</summary>
+
 非必要，Sentry 是用來追蹤程式執行中沒接到的例外，並將發生例外當時的函式呼叫、變數、例外...等詳細資訊傳送到網頁上供開發者追蹤，若不需要此功能的話可以跳過此設定
 
 1. 到官網註冊帳號：https://sentry.io/
@@ -160,7 +181,12 @@ pipenv run python .\main.py
 - 若沒有指定，Sentry 預設只發送沒有 try/except 的例外
 - 若要將特定接到的例外發送到 Sentry 的話，請在該 except 內使用 `sentry_sdk.capture_exception(exception)`
 
+</details>
+
 ## Admin 管理指令說明
+
+<details><summary>點此查看完整內容</summary>
+
 管理指令只能在配置檔案設定的測試伺服器內才能使用
 ```python
 /sync：同步斜線指令，範圍「當前伺服器」表示將指令同步到你配置檔案的測試伺服器、「全域伺服器」表示將指令推送到所有伺服器，需等待約幾分鐘
@@ -170,6 +196,8 @@ pipenv run python .\main.py
 /maintenance：設定遊戲維護時間，在此時間內自動排程(簽到、檢查樹脂)不會執行
 /config：動態改動 config.json 部分配置的值
 ```
+
+</details>
 
 ## 致謝
 - 原神 API 使用自: https://github.com/thesadru/genshin.py
