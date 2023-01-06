@@ -7,7 +7,6 @@ from discord.ext import commands
 from datetime import datetime, date, timedelta
 from typing import Callable
 from . import genshin_app, parser, errors
-from cogs.schedule import Schedule
 from utility import config, EmbedTemplate, LOG
 from data.database import db
 
@@ -60,8 +59,8 @@ async def claim_daily_reward(bot: commands.Bot) -> float:
 
     # 將平均簽到時間儲存到 schedule cog
     schedule_cog = bot.get_cog("自動化")
-    if isinstance(schedule_cog, Schedule):
-        schedule_cog.avg_user_daily_time = avg_user_daily_time
+    if schedule_cog is not None:
+        setattr(schedule_cog, "avg_user_daily_time", avg_user_daily_time)
 
     # 發送統計結果到通知頻道
     if config.notification_channel_id:
