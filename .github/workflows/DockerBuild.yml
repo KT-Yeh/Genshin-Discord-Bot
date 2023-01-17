@@ -11,7 +11,7 @@ on:
       - ".dockerignore"
       - "Dockerfile"
       - "main.py"
-      - "requirements.txt"
+      - "Pipfile.lock"
       - "start.sh"
   workflow_dispatch: {}
 jobs:

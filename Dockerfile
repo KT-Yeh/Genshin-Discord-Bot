@@ -7,7 +7,8 @@ COPY . .
 RUN set -xe; \
     apt-get update; \
     apt-get -y install git build-essential; \
-    pip3 install -r requirements.txt
+    pip3 install pipenv; \
+    pipenv install --system --deploy
 
 FROM python:3.10-slim-buster
 
