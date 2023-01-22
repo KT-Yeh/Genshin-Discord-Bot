@@ -271,6 +271,20 @@ async def get_characters(user_id: int) -> Sequence[genshin.models.Character]:
     return await client.get_genshin_characters(client.uid or 0)
 
 
+@generalErrorHandler
+async def get_game_notices() -> Sequence[genshin.models.Announcement]:
+    """取得遊戲內公告事項
+
+    Returns
+    ------
+    `Sequence[Announcement]`
+        公告事項查詢結果
+    """
+    client = genshin.Client(lang="zh-tw")
+    notices = await client.get_genshin_announcements()
+    return notices
+
+
 async def get_genshin_client(
     user_id: int, *, check_uid=True, update_using_time: bool = True
 ) -> genshin.Client:

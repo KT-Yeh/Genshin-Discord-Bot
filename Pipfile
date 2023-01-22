@@ -10,6 +10,7 @@ pillow = "*"
 sentry-sdk = "*"
 jishaku = "*"
 aiosqlite = "*"
+beautifulsoup4 = "*"
 
 [dev-packages]
 "enkanetwork.py" = "*"

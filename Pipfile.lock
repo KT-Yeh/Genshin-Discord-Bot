@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "299a229384133471ba78aed236121b1df104d222e35c0dac6ffa3ad74ef6d95a"
+            "sha256": "49fcb39ef40099ee8c2b849efb7c199dd78f0a098b5cea6388a4ab3c9e968bc9"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -148,6 +148,14 @@
             "markers": "python_version >= '3.6'",
             "version": "==22.2.0"
         },
+        "beautifulsoup4": {
+            "hashes": [
+                "sha256:58d5c3d29f5a36ffeb94f02f0d786cd53014cf9b3b3951d42e0080d8a9498d30",
+                "sha256:ad9aa55b65ef2808eb405f46cf74df7fcb7044d5cbc26487f96eb2ef2e436693"
+            ],
+            "index": "pypi",
+            "version": "==4.11.1"
+        },
         "braceexpand": {
             "hashes": [
                 "sha256:91332d53de7828103dcae5773fb43bc34950b0c8160e35e0f44c4427a3b85014",
@@ -277,7 +285,7 @@
         },
         "genshin": {
             "git": "https://github.com/thesadru/genshin.py",
-            "ref": "601bf809dc82fb50983946a29c99ed91f2bdfc7a"
+            "ref": "4af674ac0d663a6d31f02252577f945fe398e19c"
         },
         "idna": {
             "hashes": [
@@ -574,6 +582,14 @@
             ],
             "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'",
             "version": "==1.16.0"
+        },
+        "soupsieve": {
+            "hashes": [
+                "sha256:3b2503d3c7084a42b1ebd08116e5f81aadfaea95863628c80a3b774a11b7c759",
+                "sha256:fc53893b3da2c33de295667a0e19f078c14bf86544af307354de5fcf12a3f30d"
+            ],
+            "markers": "python_version >= '3.6'",
+            "version": "==2.3.2.post1"
         },
         "typing-extensions": {
             "hashes": [

@@ -159,6 +159,68 @@ class Characters:
             await interaction.edit_original_response(content="請選擇角色：", view=view)
 
 
+class Notices:
+    """原神遊戲內的遊戲與活動公告"""
+
+    class Dropdown(discord.ui.Select):
+        """選擇公告的下拉選單"""
+
+        def __init__(self, notices: Sequence[genshin.models.Announcement], placeholder: str):
+            self.notices = notices
+            options = [
+                discord.SelectOption(label=notice.subtitle, description=notice.title, value=str(i))
+                for i, notice in enumerate(notices)
+            ]
+            super().__init__(placeholder=placeholder, options=options[:25])
+
+        async def callback(self, interaction: discord.Interaction):
+            notice = self.notices[int(self.values[0])]
+            embed = EmbedTemplate.normal(
+                parser.parse_html_content(notice.content), title=notice.title
+            )
+            embed.set_image(url=notice.banner)
+            await interaction.response.edit_message(content=None, embed=embed)
+
+    class View(discord.ui.View):
+        def __init__(self):
+            self.last_response_time: Optional[datetime.datetime] = None
+            super().__init__(timeout=config.discord_view_short_timeout)
+
+        async def interaction_check(self, interaction: discord.Interaction) -> bool:
+            # 避免短時間內太多人按導致聊天版面混亂
+            if (
+                self.last_response_time is not None
+                and (interaction.created_at - self.last_response_time).seconds < 3
+            ):
+                await interaction.response.send_message(
+                    embed=EmbedTemplate.normal("短時間內(太多人)點選，請稍後幾秒再試..."), ephemeral=True
+                )
+                return False
+            else:
+                self.last_response_time = interaction.created_at
+                return True
+
+    @staticmethod
+    async def notices(interaction: discord.Interaction):
+        try:
+            defer, notices = await asyncio.gather(
+                interaction.response.defer(), genshin_app.get_game_notices()
+            )
+        except Exception as e:
+            await interaction.edit_original_response(embed=EmbedTemplate.error(e))
+        else:
+            event = [notice for notice in notices if notice.type == 1]
+            game = [notice for notice in notices if notice.type == 2]
+
+            view = Notices.View()
+            view.add_item(Notices.Dropdown(game, "遊戲公告："))
+            view.add_item(Notices.Dropdown(event, "活動公告："))
+
+            await interaction.edit_original_response(view=view)
+            await view.wait()
+            await interaction.edit_original_response(view=None)
+
+
 class GenshinInfo(commands.Cog, name="原神資訊"):
     """斜線指令"""
 
@@ -235,6 +297,12 @@ class GenshinInfo(commands.Cog, name="原神資訊"):
     @SlashCommandLogger
     async def slash_characters(self, interaction: discord.Interaction):
         await Characters.characters(interaction, interaction.user)
+
+    # -------------------------------------------------------------
+    # 遊戲公告與活動公告
+    @app_commands.command(name="notices原神公告", description="顯示原神的遊戲公告與活動公告")
+    async def slash_notices(self, interaction: discord.Interaction):
+        await Notices.notices(interaction)
 
 
 async def setup(client: commands.Bot):
