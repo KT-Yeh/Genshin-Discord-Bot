@@ -1,9 +1,11 @@
 from __future__ import annotations
-import aiosqlite
+
 import pickle
 import zlib
+from typing import Optional, Sequence, Union
+
+import aiosqlite
 import genshin
-from typing import Sequence, Optional, Union
 
 
 class CharacterData:

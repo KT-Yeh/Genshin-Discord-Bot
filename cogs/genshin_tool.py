@@ -1,13 +1,15 @@
-import discord
 import asyncio
 import re
+from typing import Optional, Union
+
+import discord
 import genshin
 from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands
-from typing import Optional, Union
-from yuanshen import genshin_app, errors
-from utility import custom_log, EmbedTemplate
+
+from utility import EmbedTemplate, custom_log
+from yuanshen import errors, genshin_app
 
 
 class RedeemCode:

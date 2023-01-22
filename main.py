@@ -1,10 +1,12 @@
+from pathlib import Path
+
 import discord
 import genshin
 import sentry_sdk
 from discord.ext import commands
-from pathlib import Path
-from utility import config, sentry_logging, LOG
+
 from data import database
+from utility import LOG, config, sentry_logging
 
 intents = discord.Intents.default()
 

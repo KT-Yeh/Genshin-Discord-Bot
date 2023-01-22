@@ -1,5 +1,7 @@
-import discord
 from typing import Union
+
+import discord
+
 from yuanshen.errors import GenshinAPIException
 
 

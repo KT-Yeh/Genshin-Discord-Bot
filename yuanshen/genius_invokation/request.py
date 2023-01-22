@@ -1,6 +1,8 @@
-import aiohttp
 import re
 from typing import Optional, Union
+
+import aiohttp
+
 from .models import TCGCards
 
 API_URL = "https://sg-hk4e-api-static.hoyoverse.com/event/e20221205drawcard/card_config?lang=zh-tw"

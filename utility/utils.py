@@ -1,9 +1,10 @@
-import logging
-import genshin
-import re
 import json
-from typing import Optional
+import logging
+import re
 from datetime import datetime
+from typing import Optional
+
+import genshin
 from sentry_sdk.integrations.logging import LoggingIntegration
 
 sentry_logging = LoggingIntegration(level=logging.INFO, event_level=logging.ERROR)

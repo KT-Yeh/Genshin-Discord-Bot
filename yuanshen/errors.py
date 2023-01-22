@@ -1,8 +1,10 @@
 import asyncio
+from typing import Callable
+
+import aiohttp
 import genshin
 import sentry_sdk
-import aiohttp
-from typing import Callable
+
 from utility import LOG
 
 

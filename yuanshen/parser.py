@@ -1,8 +1,10 @@
+from typing import Sequence, Union
+
 import discord
 import genshin
-from typing import Union, Sequence
-from utility import emoji, get_server_name, get_day_of_week
+
 from data.database import db
+from utility import emoji, get_day_of_week, get_server_name
 
 
 def parse_abyss_overview(abyss: genshin.models.SpiralAbyss) -> discord.Embed:

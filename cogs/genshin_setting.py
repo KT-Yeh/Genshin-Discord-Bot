@@ -1,13 +1,16 @@
-import discord
-import genshin
 import asyncio
 import typing
+
+import discord
+import genshin
 from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands
-from yuanshen import genshin_app
-from utility import config, custom_log, EmbedTemplate, get_server_name, get_app_command_mention
+
 from data.database import db
+from utility import (EmbedTemplate, config, custom_log,
+                     get_app_command_mention, get_server_name)
+from yuanshen import genshin_app
 
 
 class Setting(commands.Cog, name="設定"):

@@ -1,7 +1,8 @@
-import aiosqlite
 import json
 import zlib
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
+
+import aiosqlite
 
 
 class ShowcaseTable:

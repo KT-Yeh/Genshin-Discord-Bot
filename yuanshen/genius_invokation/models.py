@@ -1,6 +1,8 @@
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
 from pydantic import BaseModel, Field, root_validator, validator
-from .enums import Element, CostElement, ActionType
+
+from .enums import ActionType, CostElement, Element
 
 
 class DiceCost(BaseModel):

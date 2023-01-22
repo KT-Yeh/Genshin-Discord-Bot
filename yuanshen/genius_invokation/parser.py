@@ -1,6 +1,8 @@
 import discord
-from .models import CharacterCard, ActionCard, DiceCost
+
 from utility import emoji
+
+from .models import ActionCard, CharacterCard, DiceCost
 
 
 def parse_costs(costs: list[DiceCost]) -> str:

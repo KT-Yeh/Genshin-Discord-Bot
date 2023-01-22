@@ -1,16 +1,18 @@
 from __future__ import annotations
-from functools import wraps
-import discord
+
+import logging
 import os
 import platform
-import logging
 import re
 import time
-import genshin
 from datetime import datetime as dt
-from discord.ext import commands
-from typing import Any, Callable, List
+from functools import wraps
 from importlib.metadata import version
+from typing import Any, Callable, List
+
+import discord
+import genshin
+from discord.ext import commands
 
 #   六位色碼的正則表達式
 COLOR_CODE = re.compile(r"^[#]?[a-f0-9]{6}$")

@@ -1,12 +1,14 @@
-import discord
 import random
-from discord import app_commands
-from discord.ext import commands
-from discord.app_commands import Choice
 from typing import List
+
+import discord
+from discord import app_commands
+from discord.app_commands import Choice
+from discord.ext import commands
+
+from utility import EmbedTemplate
 from yuanshen import genius_invokation
 from yuanshen.genius_invokation import parser as tcg_parser
-from utility import EmbedTemplate
 
 
 class Search(commands.Cog):
