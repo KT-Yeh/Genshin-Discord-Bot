@@ -116,6 +116,19 @@ pipenv install
 pipenv run python .\main.py
 ```
 
+##### 方法2 專案更新方式
+1. 當初你用下載的就下載[最新版]((https://github.com/KT-Yeh/Genshin-Discord-Bot/archive/refs/heads/master.zip))然後覆蓋整個專案資料夾，若是用 git 的，則：
+```
+git pull
+```
+
+2. 為避免 pipenv 亂搞，建議移除整個虛擬環境然後重裝，不會影響到現有設定：
+```
+pipenv --rm
+pipenv install
+pipenv run python .\main.py
+```
+
 ---
 
 註1：當運行後看到 `【系統】on_ready: You have logged in as XXXXX` 表示參數設置正確並成功啟動，此時機器人會自動同步所有指令到你的測試伺服器，稱為「本地同步」。
