@@ -184,7 +184,7 @@ class Notices:
     class View(discord.ui.View):
         def __init__(self):
             self.last_response_time: Optional[datetime.datetime] = None
-            super().__init__(timeout=config.discord_view_short_timeout)
+            super().__init__(timeout=config.discord_view_long_timeout)
 
         async def interaction_check(self, interaction: discord.Interaction) -> bool:
             # 避免短時間內太多人按導致聊天版面混亂
@@ -211,14 +211,10 @@ class Notices:
         else:
             event = [notice for notice in notices if notice.type == 1]
             game = [notice for notice in notices if notice.type == 2]
-
             view = Notices.View()
             view.add_item(Notices.Dropdown(game, "遊戲公告："))
             view.add_item(Notices.Dropdown(event, "活動公告："))
-
             await interaction.edit_original_response(view=view)
-            await view.wait()
-            await interaction.edit_original_response(view=None)
 
 
 class GenshinInfo(commands.Cog, name="原神資訊"):
