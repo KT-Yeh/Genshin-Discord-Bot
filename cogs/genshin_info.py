@@ -301,6 +301,7 @@ class GenshinInfo(commands.Cog, name="原神資訊"):
     # -------------------------------------------------------------
     # 遊戲公告與活動公告
     @app_commands.command(name="notices原神公告", description="顯示原神的遊戲公告與活動公告")
+    @SlashCommandLogger
     async def slash_notices(self, interaction: discord.Interaction):
         await Notices.notices(interaction)
 
