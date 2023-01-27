@@ -2,11 +2,12 @@ import random
 from typing import List
 
 import discord
+import sentry_sdk
 from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands
 
-from utility import EmbedTemplate
+from utility import EmbedTemplate, custom_log
 from yuanshen import genius_invokation
 from yuanshen.genius_invokation import parser as tcg_parser
 
@@ -18,11 +19,15 @@ class Search(commands.Cog):
 
     @app_commands.command(name="tcg卡牌搜尋", description="搜尋七聖召喚卡牌")
     @app_commands.rename(card_name="名稱")
+    @custom_log.SlashCommandLogger
     async def slash_tcg_cards(self, interaction: discord.Interaction, card_name: str):
-        if _character := self.tcg_cards.character_name_card.get(card_name):
-            embed = tcg_parser.parse_character_card(_character)
-        elif _action := self.tcg_cards.action_name_card.get(card_name):
-            embed = tcg_parser.parse_action_card(_action)
+        card = self.tcg_cards.find_card(card_name)
+        if isinstance(card, genius_invokation.CharacterCard):
+            embed = tcg_parser.parse_character_card(card)
+        elif isinstance(card, genius_invokation.ActionCard):
+            embed = tcg_parser.parse_action_card(card)
+        elif isinstance(card, genius_invokation.Summon):
+            embed = tcg_parser.parse_summon(card)
         else:
             embed = EmbedTemplate.error(f"找不到卡牌：{card_name}")
 
@@ -33,8 +38,7 @@ class Search(commands.Cog):
         self, interaction: discord.Interaction, current: str
     ) -> List[Choice[str]]:
         choices: List[Choice[str]] = []
-        cards = self.tcg_cards.characters + self.tcg_cards.actions
-        for card in cards:
+        for card in self.tcg_cards.all_cards:
             if current.lower() in card.name.lower():
                 choices.append(Choice(name=card.name, value=card.name))
         # 使用者沒輸入的情況下，隨機找 20 張不重複的牌
@@ -47,6 +51,10 @@ class Search(commands.Cog):
 
 
 async def setup(client: commands.Bot):
-    tcg_cards = await genius_invokation.fetch_cards()
-    if tcg_cards:
+    try:
+        tcg_cards = await genius_invokation.fetch_cards()
+    except Exception as e:
+        custom_log.LOG.Error(str(e))
+        sentry_sdk.capture_exception(e)
+    else:
         await client.add_cog(Search(client, tcg_cards))

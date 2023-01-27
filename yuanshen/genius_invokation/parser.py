@@ -1,8 +1,8 @@
 import discord
 
-from utility import emoji
+from utility import EmbedTemplate, emoji
 
-from .models import ActionCard, CharacterCard, DiceCost
+from .models import ActionCard, CharacterCard, DiceCost, Summon
 
 
 def parse_costs(costs: list[DiceCost]) -> str:
@@ -21,32 +21,37 @@ def parse_costs(costs: list[DiceCost]) -> str:
 
 def parse_character_card(card: CharacterCard) -> discord.Embed:
     """解析角色牌內容，傳回 discord.Embed"""
-    embed = discord.Embed(
-        title=card.name,
-        description=f"屬性：{card.element}\n武器：{card.weapon}\n生命：{card.hp}\n",
-        color=0x5992C4,
-    )
-    embed.set_image(url=card.icon_url)
-    if len(card.belong_to) > 0:
-        embed.set_footer(text=f"陣營：{'、'.join(card.belong_to)}")
-
+    embed = EmbedTemplate.normal(card.story_text, title=card.name)
+    embed.set_image(url=card.image_url)
     for talent in card.talents:
         _value = "花費：" + parse_costs(talent.costs) + "\n"
         _value += talent.effect
-        embed.add_field(name=f"{talent.name} ({talent.type})", value=_value, inline=False)
-
+        embed.add_field(
+            name=f"{talent.type}: {talent.name}",
+            value=_value,
+            inline=False,
+        )
+    if len(card.tags) > 0:
+        embed.set_footer(text=f"標籤：{'、'.join([tag for tag in card.tags])}")
     return embed
 
 
 def parse_action_card(card: ActionCard) -> discord.Embed:
     """解析行動牌內容，傳回 discord.Embed"""
-    embed = discord.Embed(
-        title=f"{card.name} ({card.type})",
-        description=f"花費：{parse_costs(card.costs)}\n" + card.effect,
-        color=0x5992C4,
-    )
-    if len(card.tags) > 0:
-        embed.set_footer(text=f"標籤：{'、'.join([tag.text for tag in card.tags])}")
-    embed.set_image(url=card.icon_url)
+    description = ""
+    if card.story_text is not None:
+        description += f"{card.story_text}\n\n"
+    description += f"花費：{parse_costs(card.costs)}\n{card.effect}"
+    embed = EmbedTemplate.normal(description, title=f"{card.name} ({card.type})")
+    embed.set_image(url=card.image_url)
 
+    if len(card.tags) > 0:
+        embed.set_footer(text=f"標籤：{'、'.join([tag for tag in card.tags])}")
+    return embed
+
+
+def parse_summon(card: Summon) -> discord.Embed:
+    """解析召喚物內容，傳回 discord.Embed"""
+    embed = EmbedTemplate.normal(card.effect, title=f"{card.name} ({card.type})")
+    embed.set_image(url=card.image_url)
     return embed
