@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field, validator
 
+from ..api import API
 from .enums import CostElement
-from .genshin_db import API
 
 
 class DiceCost(BaseModel):

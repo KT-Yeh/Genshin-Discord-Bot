@@ -12,14 +12,14 @@ class API:
         str
     ] = "https://res.cloudinary.com/genshin/image/upload/sprites/{image}.png"
 
-    class GENSHIN_DB_LANG(enum.Enum):
+    class GenshinDBLang(enum.Enum):
         """genshin-db api 支援的語言: https://genshin-db-api.vercel.app/api/languages"""
 
         CHT = "ChineseTraditional"
         CHS = "ChineseSimplified"
         ENG = "English"
 
-    class GENSHIN_DB_FOLDER(enum.Enum):
+    class GenshinDBFolder(enum.Enum):
         """genshin-db api 能夠搜尋的資料夾: https://github.com/theBowja/genshin-db/wiki/Folders"""
 
         TCG_ACTION_CARDS = "tcgactioncards"
@@ -29,7 +29,7 @@ class API:
     @classmethod
     async def request_genshin_db(
         cls,
-        folder: Union[GENSHIN_DB_FOLDER, str],
+        folder: Union[GenshinDBFolder, str],
         query: str,
         *,
         dumpResult: bool = False,
@@ -38,14 +38,14 @@ class API:
         matchAliases: bool = False,
         matchCategories: bool = False,
         verboseCategories: bool = False,
-        queryLanguages: str = GENSHIN_DB_LANG.CHT.value,
-        resultLanguage: str = GENSHIN_DB_LANG.CHT.value,
+        queryLanguages: str = GenshinDBLang.CHT.value,
+        resultLanguage: str = GenshinDBLang.CHT.value,
     ) -> Any:
         """向 genshin-db api 請求資料，回傳 json 格式資料
 
         Parameters
         ------
-        folder: `GENSHIN_DB_FOLDER` | `str`
+        folder: `GenshinDBFolder` | `str`
             參考 https://github.com/theBowja/genshin-db/wiki/Folders
         query: `str`
             範例參考 https://github.com/theBowja/genshin-db/blob/main/examples/examples.md

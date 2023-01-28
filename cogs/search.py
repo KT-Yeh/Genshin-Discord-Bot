@@ -8,8 +8,8 @@ from discord.app_commands import Choice
 from discord.ext import commands
 
 from utility import EmbedTemplate, custom_log
-from yuanshen import genius_invokation
-from yuanshen.genius_invokation import parser as tcg_parser
+from yuanshen.genshin_db import genius_invokation
+from yuanshen.genshin_db.genius_invokation import parser as tcg_parser
 
 
 class Search(commands.Cog):
