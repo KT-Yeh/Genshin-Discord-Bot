@@ -209,11 +209,26 @@ class Notices:
         except Exception as e:
             await interaction.edit_original_response(embed=EmbedTemplate.error(e))
         else:
-            event = [notice for notice in notices if notice.type == 1]
-            game = [notice for notice in notices if notice.type == 2]
+            # 將公告分成活動公告、遊戲公告、祈願公告三類
+            game: list[genshin.models.Announcement] = []
+            event: list[genshin.models.Announcement] = []
+            wish: list[genshin.models.Announcement] = []
+            for notice in notices:
+                if notice.type == 1:
+                    if "祈願" in notice.subtitle:
+                        wish.append(notice)
+                    else:
+                        event.append(notice)
+                elif notice.type == 2:
+                    game.append(notice)
+
             view = Notices.View()
-            view.add_item(Notices.Dropdown(game, "遊戲公告："))
-            view.add_item(Notices.Dropdown(event, "活動公告："))
+            if len(game) > 0:
+                view.add_item(Notices.Dropdown(game, "遊戲公告："))
+            if len(event) > 0:
+                view.add_item(Notices.Dropdown(event, "活動公告："))
+            if len(wish) > 0:
+                view.add_item(Notices.Dropdown(wish, "祈願卡池："))
             await interaction.edit_original_response(view=view)
 
 
