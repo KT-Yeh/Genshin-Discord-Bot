@@ -158,7 +158,8 @@ pipenv run python .\main.py
     "discord_view_short_timeout": 60,       # Discord 短時間互動介面（例：確認、選擇按鈕）的逾時時間（單位：秒）
     "database_file_path": "data/bot/bot.db",# 資料庫儲存的資料夾位置與檔名
     "sentry_sdk_dsn": "https://XXX@XXX",    # Sentry DSN 位址設定，參考底下說明
-    "notification_channel_id": 123456       # 每日簽到完成後統計訊息欲發送到的 Discord 頻道 ID
+    "notification_channel_id": 123456,      # 每日簽到完成後統計訊息欲發送到的 Discord 頻道 ID
+    "prometheus_server_port": 9091          # Prometheus 服務的 port，參考底下說明
 }
 ```
 
@@ -212,7 +213,64 @@ pipenv run python .\main.py
 
 </details>
 
+## Prometheus / Grafana 監控儀錶板說明
+<details><summary>點此查看完整內容</summary>
+
+#### 儀表板展示圖
+
+![](https://i.imgur.com/O1ub7vU.png)
+
+
+總共需要三步驟，分別是
+1. Grafana 官網辦帳號取得 API Key
+2. 下載運行 Prometheus 軟體
+3. 在 Grafana 匯入儀表板 (Dashboard)
+
+#### 1. Grafana 帳號辦理
+1. 到 [Grafana 官網](https://grafana.com/) 註冊帳號，途中會讓你選 Cloud 地區，直接預設就可以
+
+2. 辦完後回到 [官網](https://grafana.com/)，右上角選 My Account，如下圖可以看到 GRAFANA CLOUD 裡面有 Grafana 與 Prometheus，在 Prometheus 上選擇 Send Metrics
+![](https://i.imgur.com/YLaV2fB.png)
+
+3. 滑到頁面中間，在 Password / API Key 這裡選擇 Generate now，然後下面的 Sending metrics 黑底部分很重要，先留在這個頁面
+![](https://i.imgur.com/RlY8ovi.png)
+
+#### 2. Prometheus 下載
+1. 到 [Prometheus 官網](https://prometheus.io/download/)，下載 prometheus 2.37 LTS 版本 (prometheus-2.37.X.windows-amd64.zip) 到你運行機器人的電腦
+
+2. 解壓縮後進入資料夾，你會看到 `prometheus.exe` 與 `prometheus.yml` 檔案
+
+3. 到原神小幫手 (本專案) 的 `data` 資料夾 ([或是點這裡](https://github.com/KT-Yeh/Genshin-Discord-Bot/blob/master/data/prometheus.yml))，裡面也有 `prometheus.yml` 檔案，將原神小幫手的複製到 Prometheus 資料夾內，覆蓋掉 `prometheus.yml`
+
+4. 文字編輯器打開 Prometheus 資料夾內的 `prometheus.yml` 檔案，回到剛才 Grafana 網頁，你會看到網頁上的 `remote_write` 欄位與 `prometheus.yml` 檔案最底下相對應，將網頁上 `remote_write` 的設定內容一一填入到 `prometheus.yml` 內的對應欄位，然後存檔
+```
+remote_write:
+- url: https://....(此行填入 Remote Write Endpoint)
+  basic_auth:
+    username: 123456(此行填入 Username / Instance ID)
+    password: XXXXXX(此行填入 Password / API Key)
+```
+
+5. 運行 `prometheus.exe`，之後跟機器人一樣都要保持運行此程式
+
+6. 編輯機器人的 `config.json` 檔案，增加 `"prometheus_server_port": 9091`，存檔然後重啟機器人，此時 Prometheus 就會收集機器人資料並傳到 Grafana 上面
+
+#### Grafana 匯入儀表板
+有資料後，我們還需要讓資料顯示在儀表板上
+
+1. 與 1-2 步驟一樣，回到 [官網](https://grafana.com/)，右上角選 My Account，這次我們在 Grafana 上按 Launch 啟動
+
+2. 左邊選 Dashboards，然後右邊點選 New → Import，之後按 Upload JSON file 按鈕
+![](https://i.imgur.com/6TFw9EM.png)
+
+3. 到原神小幫手 (本專案) 的 `data` 資料夾，上傳 `grafana_dashboard.json` 到 Grafana 上面，或是 [點這裡直接全部複製](https://github.com/KT-Yeh/Genshin-Discord-Bot/blob/master/data/grafana_dashboard.json) 貼上到 Grafana
+
+4. 成功匯入儀表板後，即可在儀表板上看到機器人的各項資料，到此完成結束
+
+</details>
+
 ## 致謝
 - 原神 API 使用自: https://github.com/thesadru/genshin.py
 - Discord API 使用自: https://github.com/Rapptz/discord.py
 - Enka Network API 使用自: https://github.com/EnkaNetwork/API-docs
+- d.py-ext-prometheus: https://github.com/Apollo-Roboto/discord.py-ext-prometheus
