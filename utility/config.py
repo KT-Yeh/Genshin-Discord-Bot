@@ -40,6 +40,8 @@ class Config(BaseModel):
         每日簽到完成後統計訊息欲發送到的 Discord 頻道 ID
     game_maintenance_time: `Optional[Tuple[datetime, datetime]]`
         遊戲的維護時間(起始, 結束)，在此期間內自動排程不會執行
+    prometheus_server_port: `Optional[int]`
+        Prometheus server 監聽的 Port，若為 None 表示不啟動 server
     """
 
     application_id: int
@@ -57,6 +59,7 @@ class Config(BaseModel):
     sentry_sdk_dsn: typing.Optional[str] = None
     notification_channel_id: typing.Optional[int] = None
     game_maintenance_time: typing.Optional[typing.Tuple[datetime, datetime]] = None
+    prometheus_server_port: typing.Optional[int] = None
 
 
 config = Config.parse_file(Path("config.json"), encoding="utf8")

@@ -11,6 +11,7 @@ sentry-sdk = "*"
 jishaku = "*"
 aiosqlite = "*"
 beautifulsoup4 = "*"
+prometheus-client = "*"
 
 [dev-packages]
 "enkanetwork.py" = "*"

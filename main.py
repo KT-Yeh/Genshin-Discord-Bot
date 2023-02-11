@@ -2,6 +2,7 @@ from pathlib import Path
 
 import discord
 import genshin
+import prometheus_client
 import sentry_sdk
 from discord.ext import commands
 
@@ -45,6 +46,11 @@ class GenshinDiscordBot(commands.AutoShardedBot):
             test_guild = discord.Object(id=config.test_server_id)
             self.tree.copy_global_to(guild=test_guild)
             await self.tree.sync(guild=test_guild)
+
+        # 啟動 Prometheus Server
+        if config.prometheus_server_port is not None:
+            prometheus_client.start_http_server(config.prometheus_server_port)
+            LOG.System(f"prometheus server: started on port {config.prometheus_server_port}")
 
     async def on_ready(self):
         LOG.System(f"on_ready: You have logged in as {self.user}")

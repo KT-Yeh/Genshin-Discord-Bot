@@ -4,3 +4,5 @@ Pillow
 sentry-sdk
 jishaku
 aiosqlite
+beautifulsoup4
+prometheus-client
