@@ -2,6 +2,8 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
+from .base import GenshinDbBase, GenshinDbListBase
+
 
 class Parameters(BaseModel):
     """天賦倍率數值"""
@@ -70,8 +72,9 @@ class Images(BaseModel):
     passive3: Optional[str] = None
 
 
-class Talent(BaseModel):
+class Talent(GenshinDbBase):
     name: str
+    """角色名字"""
     combat1: Combat
     """普通攻擊 A"""
     combat2: Combat
@@ -90,5 +93,5 @@ class Talent(BaseModel):
     version: str
 
 
-class Talents(BaseModel):
+class Talents(GenshinDbListBase[Talent]):
     __root__: List[Talent]

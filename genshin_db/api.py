@@ -26,6 +26,16 @@ class API:
         TCG_CHARACTER_CARDS = "tcgcharactercards"
         TCG_SUMMONS = "tcgsummons"
 
+        CHARACTERS = "characters"
+        CONSTELLATIONS = "constellations"
+        TALENTS = "talents"
+
+        ACHIEVEMENTS = "achievements"
+        ARTIFACTS = "artifacts"
+        FOODS = "foods"
+        MATERIALS = "materials"
+        WEAPONS = "weapons"
+
     @classmethod
     async def request_genshin_db(
         cls,
@@ -79,5 +89,16 @@ class API:
 
     @classmethod
     def get_image_url(cls, image_name: str) -> str:
-        """針對 UI_xxxxx 的遊戲圖片檔案，取得線上資源連結"""
+        """針對 UI_xxxxx 的遊戲圖片檔案，取得線上資源連結
+
+        Parameters
+        ------
+        image_name: `str`
+            以 `UI_xxxx` 為格式的圖片名稱
+
+        Returns
+        ------
+        `str`:
+            此圖片的線上 URL 連結
+        """
         return cls.IMAGE_URL.format(image=image_name)

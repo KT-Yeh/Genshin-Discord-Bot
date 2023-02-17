@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field, validator
 
 from ..api import API
+from .base import GenshinDbBase, GenshinDbListBase
 from .enums import CostElement
 
 
@@ -31,7 +32,7 @@ class Talent(BaseModel):
     costs: list[DiceCost] = Field(alias="playcost")
 
 
-class CharacterCard(BaseModel):
+class CharacterCard(GenshinDbBase):
     """角色牌"""
 
     id: int
@@ -58,7 +59,11 @@ class CharacterCard(BaseModel):
         return API.get_image_url(self.images.image)
 
 
-class ActionCard(BaseModel):
+class CharacterCards(GenshinDbListBase[CharacterCard]):
+    __root__: list[CharacterCard]
+
+
+class ActionCard(GenshinDbBase):
     """行動牌"""
 
     id: int
@@ -85,7 +90,11 @@ class ActionCard(BaseModel):
         return API.get_image_url(self.images.image)
 
 
-class Summon(BaseModel):
+class ActionCards(GenshinDbListBase[ActionCard]):
+    __root__: list[ActionCard]
+
+
+class Summon(GenshinDbBase):
     """召喚物"""
 
     id: int
@@ -102,32 +111,30 @@ class Summon(BaseModel):
         return API.get_image_url(self.images.image)
 
 
-class TCGCards(BaseModel):
+class Summons(GenshinDbListBase[Summon]):
+    __root__: list[Summon]
+
+
+class TCGCards:
     """七聖召喚卡牌資料封裝"""
 
-    actions: list[ActionCard]
-    characters: list[CharacterCard]
-    summons: list[Summon]
-
-    _name_card_dict: dict[str, ActionCard | CharacterCard | Summon] = {}
-
-    class Config:
-        underscore_attrs_are_private = True  # 將名字 _ 開頭的視為私有屬性，不做驗證
+    actions: ActionCards
+    characters: CharacterCards
+    summons: Summons
 
     def __init__(self, action_cards, character_cards, summons) -> None:
-        data = {"actions": action_cards, "characters": character_cards, "summons": summons}
-        super().__init__(**data)
+        self.actions = ActionCards.parse_obj(action_cards)
+        self.characters = CharacterCards.parse_obj(character_cards)
+        self.summons = Summons.parse_obj(summons)
 
     @property
-    def all_cards(self) -> list[ActionCard | CharacterCard | Summon]:
+    def list(self) -> list[ActionCard | CharacterCard | Summon]:
         """所有種類的卡牌列表"""
-        return self.actions + self.characters + self.summons
+        return self.actions.list + self.characters.list + self.summons.list
 
-    def find_card(self, name: str) -> ActionCard | CharacterCard | Summon | None:
-        """依照名稱尋找特定卡牌"""
-        # 利用 dict 尋找特定卡牌，在第一次時先建立字典
-        if self._name_card_dict == {}:
-            for card in self.all_cards:
-                self._name_card_dict[card.name] = card
-
-        return self._name_card_dict.get(name)
+    def find(self, item_name: str) -> ActionCard | CharacterCard | Summon | None:
+        return (
+            self.actions.find(item_name)
+            or self.characters.find(item_name)
+            or self.summons.find(item_name)
+        )

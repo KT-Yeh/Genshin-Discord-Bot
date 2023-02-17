@@ -2,7 +2,8 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field, validator
 
-from ..enums import Element
+from .base import GenshinDbBase, GenshinDbListBase
+from .enums import Element
 
 
 class CharacterVoice(BaseModel):
@@ -39,7 +40,7 @@ class Images(BaseModel):
     gachaslice: Optional[str] = Field(None, alias="namegachaslice")
 
 
-class Character(BaseModel):
+class Character(GenshinDbBase):
     name: str
     title: Optional[str] = None
     """卡池稱號"""
@@ -70,6 +71,12 @@ class Character(BaseModel):
     def empty_string_to_none(cls, v):
         return None if v == "" else v
 
+    @validator("name", pre=True)
+    def modify_traveller_name(cls, v: str) -> str:
+        if v == "空" or v == "熒":
+            return f"旅行者 ({v})"
+        return v
 
-class Characters(BaseModel):
+
+class Characters(GenshinDbListBase[Character]):
     __root__: List[Character]

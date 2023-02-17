@@ -1,8 +1,8 @@
-from __future__ import annotations
-
 from typing import List, Optional
 
 from pydantic import BaseModel, Field
+
+from .base import GenshinDbBase, GenshinDbListBase
 
 
 class ConstellationDetail(BaseModel):
@@ -22,9 +22,9 @@ class Images(BaseModel):
     constellation2: Optional[str] = None
 
 
-class Constellation(BaseModel):
+class Constellation(GenshinDbBase):
     name: str
-    """角色名稱"""
+    """角色名字"""
     c1: ConstellationDetail
     c2: ConstellationDetail
     c3: ConstellationDetail
@@ -35,5 +35,5 @@ class Constellation(BaseModel):
     version: str
 
 
-class Constellations(BaseModel):
+class Constellations(GenshinDbListBase[Constellation]):
     __root__: List[Constellation]
