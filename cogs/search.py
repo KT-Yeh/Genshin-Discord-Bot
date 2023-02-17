@@ -1,5 +1,5 @@
 import random
-from typing import List
+from typing import Iterable, List, Literal
 
 import discord
 import sentry_sdk
@@ -7,54 +7,154 @@ from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands
 
-from utility import EmbedTemplate, custom_log
-from yuanshen.genshin_db import genius_invokation
-from yuanshen.genshin_db.genius_invokation import parser as tcg_parser
+import genshin_db
+from utility import EmbedTemplate, config, custom_log
+
+StrCategory = Literal["角色", "武器", "聖遺物", "物品/食物", "成就", "七聖召喚"]
+
+
+class SearchResultsDropdown(discord.ui.Select):
+    """以下拉選單方式選擇多個搜尋結果"""
+
+    def __init__(self, titles: list[str], embeds: list[discord.Embed]):
+        self.embeds = embeds
+        options = [
+            discord.SelectOption(label=title, value=str(i)) for i, title in enumerate(titles)
+        ]
+        super().__init__(options=options)
+
+    async def callback(self, interaction: discord.Interaction):
+        index = int(self.values[0])
+        await interaction.response.edit_message(embed=self.embeds[index])
 
 
 class Search(commands.Cog):
-    def __init__(self, bot: commands.Bot, tcg_cards: genius_invokation.TCGCards):
+    def __init__(self, bot: commands.Bot, genshin_db_data: genshin_db.GenshinDbAllData):
         self.bot = bot
-        self.tcg_cards = tcg_cards
+        self.db = genshin_db_data
 
-    @app_commands.command(name="tcg卡牌搜尋", description="搜尋七聖召喚卡牌")
-    @app_commands.rename(card_name="名稱")
+    @app_commands.command(name="search搜尋資料庫", description="搜尋原神資料庫，包含了角色、武器、各項物品、成就、七聖召喚")
+    @app_commands.rename(category="類別", item_name="名稱")
+    @app_commands.describe(category="選擇要搜尋的類別")
+    @app_commands.choices(
+        category=[
+            Choice(name="角色", value="角色"),
+            Choice(name="武器", value="武器"),
+            Choice(name="聖遺物", value="聖遺物"),
+            Choice(name="物品/食物", value="物品/食物"),
+            Choice(name="成就", value="成就"),
+            Choice(name="七聖召喚", value="七聖召喚"),
+        ]
+    )
     @custom_log.SlashCommandLogger
-    async def slash_tcg_cards(self, interaction: discord.Interaction, card_name: str):
-        card = self.tcg_cards.find_card(card_name)
-        if isinstance(card, genius_invokation.CharacterCard):
-            embed = tcg_parser.parse_character_card(card)
-        elif isinstance(card, genius_invokation.ActionCard):
-            embed = tcg_parser.parse_action_card(card)
-        elif isinstance(card, genius_invokation.Summon):
-            embed = tcg_parser.parse_summon(card)
-        else:
-            embed = EmbedTemplate.error(f"找不到卡牌：{card_name}")
+    async def slash_search(
+        self,
+        interaction: discord.Interaction,
+        category: StrCategory,
+        item_name: str,
+    ):
+        """搜尋 genshin-db 資料庫斜線指令"""
+        titles: list[str] = []
+        embeds: list[discord.Embed] = []
+        match category:
+            case "角色":
+                character = self.db.characters.find(item_name)
+                titles.append("基本資料")
+                embeds.append(genshin_db.parse(character))
 
-        await interaction.response.send_message(embed=embed)
+                # 旅行者多元素特殊處理
+                if "旅行者" in item_name:
+                    for element in ["風", "岩", "雷", "草"]:
+                        talent = self.db.talents.find(f"旅行者 ({element}元素)")
+                        titles.append(f"天賦：{element}")
+                        embeds.append(genshin_db.parse(talent))
+                    for element in ["風", "岩", "雷", "草"]:
+                        constell = self.db.constellations.find(f"旅行者 ({element}元素)")
+                        embeds.append(genshin_db.parse(constell))
+                else:
+                    talent = self.db.talents.find(item_name)
+                    titles.append("天賦")
+                    embeds.append(genshin_db.parse(talent))
+                    constell = self.db.constellations.find(item_name)
+                    titles.append("命座")
+                    embeds.append(genshin_db.parse(constell))
 
-    @slash_tcg_cards.autocomplete("card_name")
-    async def autocomplete_tcg_card_name_callback(
+                view = discord.ui.View(timeout=config.discord_view_long_timeout)
+                view.add_item(SearchResultsDropdown(titles, embeds))
+                await interaction.response.send_message(embed=embeds[0], view=view)
+            case "聖遺物":
+                artifact = self.db.artifacts.find(item_name)
+                if artifact is None:
+                    return
+                titles = ["總覽"]
+                embeds = [genshin_db.parse(artifact)]
+                _titles = ["花", "羽", "沙", "杯", "頭"]
+                _parts = [
+                    artifact.flower,
+                    artifact.plume,
+                    artifact.sands,
+                    artifact.goblet,
+                    artifact.circlet,
+                ]
+                for i, _part in enumerate(_parts):
+                    if _part is not None:
+                        titles.append(_titles[i])
+                        embeds.append(genshin_db.parse(_part))
+            case _:
+                item = self.db.find(item_name)
+                embeds.append(genshin_db.parse(item))
+
+        match len(embeds):
+            case 0:
+                _embed = EmbedTemplate.error("發生錯誤，找不到此項目")
+                await interaction.response.send_message(embed=_embed)
+            case 1:
+                await interaction.response.send_message(embed=embeds[0])
+            case n if n > 1:
+                view = discord.ui.View(timeout=config.discord_view_long_timeout)
+                view.add_item(SearchResultsDropdown(titles, embeds))
+                await interaction.response.send_message(embed=embeds[0], view=view)
+
+    @slash_search.autocomplete("item_name")
+    async def autocomplete_search_item_name(
         self, interaction: discord.Interaction, current: str
     ) -> List[Choice[str]]:
+        """自動完成 slash_search 指令的 item_name 參數"""
+
+        # The key names come from the raw Discord data,
+        # which means that if a parameter was renamed then the
+        # renamed key is used instead of the function parameter name.
+        category: StrCategory | None = interaction.namespace.類別
+        if category is None:
+            return []
+
+        item_list: Iterable[genshin_db.GenshinDbBase] = {
+            "角色": self.db.characters.list,
+            "武器": self.db.weapons.list,
+            "聖遺物": self.db.artifacts.list,
+            "物品/食物": self.db.materials.list + self.db.foods.list,
+            "成就": self.db.achievements.list,
+            "七聖召喚": self.db.tcg_cards.list,
+        }.get(category, [])
+
         choices: List[Choice[str]] = []
-        for card in self.tcg_cards.all_cards:
-            if current.lower() in card.name.lower():
-                choices.append(Choice(name=card.name, value=card.name))
-        # 使用者沒輸入的情況下，隨機找 20 張不重複的牌
+        for item in item_list:
+            if current.lower() in item.name.lower():
+                choices.append(Choice(name=item.name, value=item.name))
+        # 使用者沒輸入的情況下，隨機找 25 個
         if current == "":
-            choices = random.sample(choices, k=20)
-        # 取前 20 張牌並依照名稱排序
-        choices = choices[:20]
+            choices = random.sample(choices, k=25)
+
+        choices = choices[:25]
         choices.sort(key=lambda choice: choice.name)
         return choices
 
 
 async def setup(client: commands.Bot):
     try:
-        tcg_cards = await genius_invokation.fetch_cards()
+        gdb_data = await genshin_db.fetch_all()
     except Exception as e:
         custom_log.LOG.Error(str(e))
         sentry_sdk.capture_exception(e)
     else:
-        await client.add_cog(Search(client, tcg_cards))
+        await client.add_cog(Search(client, gdb_data))
