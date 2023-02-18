@@ -70,6 +70,7 @@ class Search(commands.Cog):
                         embeds.append(genshin_db.parse(talent))
                     for element in ["風", "岩", "雷", "草"]:
                         constell = self.db.constellations.find(f"旅行者 ({element}元素)")
+                        titles.append(f"命座：{element}")
                         embeds.append(genshin_db.parse(constell))
                 else:
                     talent = self.db.talents.find(item_name)
@@ -78,10 +79,6 @@ class Search(commands.Cog):
                     constell = self.db.constellations.find(item_name)
                     titles.append("命座")
                     embeds.append(genshin_db.parse(constell))
-
-                view = discord.ui.View(timeout=config.discord_view_long_timeout)
-                view.add_item(SearchResultsDropdown(titles, embeds))
-                await interaction.response.send_message(embed=embeds[0], view=view)
             case "聖遺物":
                 artifact = self.db.artifacts.find(item_name)
                 if artifact is None:
