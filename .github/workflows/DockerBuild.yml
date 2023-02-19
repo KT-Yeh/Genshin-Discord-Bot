@@ -6,8 +6,10 @@ on:
     paths:
       - "cogs/**"
       - "data/**"
+      - "enka_network/**"
+      - "genshin_db/**"
+      - "genshin_py/**"
       - "utility/**"
-      - "yuanshen/**"
       - ".dockerignore"
       - "Dockerfile"
       - "main.py"
