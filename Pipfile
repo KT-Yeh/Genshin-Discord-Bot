@@ -13,9 +13,9 @@ aiosqlite = "*"
 beautifulsoup4 = "*"
 prometheus-client = "*"
 psutil = "*"
+"enkanetwork.py" = "*"
 
 [dev-packages]
-"enkanetwork.py" = "*"
 black = "*"
 flake8 = "*"
 mypy = "*"

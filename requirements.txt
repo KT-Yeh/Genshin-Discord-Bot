@@ -6,3 +6,5 @@ jishaku
 aiosqlite
 beautifulsoup4
 prometheus-client
+psutil
+enkanetwork.py
