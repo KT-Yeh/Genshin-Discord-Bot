@@ -10,9 +10,9 @@ from discord.app_commands import Choice
 from discord.ext import commands, tasks
 
 from data.database import ScheduleDaily, ScheduleResin, db
+from genshin_py import automation, genshin_app
 from utility import EmbedTemplate, config, get_app_command_mention
 from utility.custom_log import LOG, SlashCommandLogger
-from yuanshen import automation, genshin_app
 
 
 class Schedule(commands.Cog, name="自動化"):

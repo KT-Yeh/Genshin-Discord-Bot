@@ -2,7 +2,7 @@ from typing import Union
 
 import discord
 
-from yuanshen.errors import GenshinAPIException
+from genshin_py.errors import GenshinAPIException
 
 
 class EmbedTemplate:

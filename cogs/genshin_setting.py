@@ -8,9 +8,8 @@ from discord.app_commands import Choice
 from discord.ext import commands
 
 from data.database import db
-from utility import (EmbedTemplate, config, custom_log,
-                     get_app_command_mention, get_server_name)
-from yuanshen import genshin_app
+from genshin_py import genshin_app
+from utility import EmbedTemplate, config, custom_log, get_app_command_mention, get_server_name
 
 
 class Setting(commands.Cog, name="設定"):

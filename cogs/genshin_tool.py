@@ -8,8 +8,8 @@ from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands
 
+from genshin_py import errors, genshin_app
 from utility import EmbedTemplate, custom_log
-from yuanshen import errors, genshin_app
 
 
 class RedeemCode:

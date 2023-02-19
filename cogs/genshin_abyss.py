@@ -8,8 +8,8 @@ from discord.app_commands import Choice
 from discord.ext import commands
 
 from data.database import SpiralAbyssData, db
+from genshin_py import draw, genshin_app, parser
 from utility import EmbedTemplate, config, custom_log
-from yuanshen import draw, genshin_app, parser
 
 
 class SpiralAbyss:
