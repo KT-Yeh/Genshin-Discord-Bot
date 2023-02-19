@@ -35,6 +35,23 @@ Discord 支援伺服器：https://discord.gg/myugWxgRjd
 <img src="https://i.imgur.com/PA5HIDO.gif" width="500"/>
 
 
+## 專案資料夾結構
+```
+Genshin-Discord-Bot
+├── cogs         = 存放 discord.py cog 資料夾，這裡有所有的機器人指令
+├── data         = 存放設定檔、資料相關的資料夾
+|   ├── bot          = 存放機器人 SQLite 資料庫
+|   ├── database     = 與操作資料庫相關的程式碼
+|   ├── font         = 存放畫圖所用到的字體
+|   └── image        = 存放畫圖所用到的素材、背景圖
+├── enka_network = 與 Enka Network API 相關的程式碼
+├── genshin_db   = 與 genshin-db API 相關的程式碼 
+|   └── models       = 存放 genshin-db 資料的 pydantic 模型
+├── genshin_py   = 與 genshin.py 相關的程式碼
+└── utility      = 一些本專案用到的設定、公用函數、Log、表情、Prometheus 指標...等
+```
+
+
 ## 自己安裝 & 架設機器人
 
 <details><summary>點此查看完整內容</summary>
@@ -273,4 +290,5 @@ remote_write:
 - 原神 API 使用自: https://github.com/thesadru/genshin.py
 - Discord API 使用自: https://github.com/Rapptz/discord.py
 - Enka Network API 使用自: https://github.com/EnkaNetwork/API-docs
+- Genshin-DB API 使用自: https://github.com/theBowja/genshin-db
 - d.py-ext-prometheus: https://github.com/Apollo-Roboto/discord.py-ext-prometheus
