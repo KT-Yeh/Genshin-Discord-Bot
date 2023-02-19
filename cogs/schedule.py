@@ -73,31 +73,31 @@ class Schedule(commands.Cog, name="自動化"):
     class CheckingNotesThresholdModal(discord.ui.Modal, title="設定即時便箋提醒"):
         """設定檢查即時便箋各項閾值的表單"""
 
-        resin = discord.ui.TextInput(
+        resin: discord.ui.TextInput[discord.ui.Modal] = discord.ui.TextInput(
             label="原粹樹脂：設定樹脂額滿之前幾小時發送提醒 (不填表示不提醒)",
             placeholder="請輸入一個介於 0 ~ 5 的整數",
             required=False,
             max_length=1,
         )
-        realm_currency = discord.ui.TextInput(
+        realm_currency: discord.ui.TextInput[discord.ui.Modal] = discord.ui.TextInput(
             label="洞天寶錢：設定寶錢額滿之前幾小時發送提醒 (不填表示不提醒)",
             placeholder="請輸入一個介於 0 ~ 8 的整數",
             required=False,
             max_length=1,
         )
-        transformer = discord.ui.TextInput(
+        transformer: discord.ui.TextInput[discord.ui.Modal] = discord.ui.TextInput(
             label="質變儀：設定質變儀完成之前幾小時發送提醒 (不填表示不提醒)",
             placeholder="請輸入一個介於 0 ~ 5 的整數",
             required=False,
             max_length=1,
         )
-        expedition = discord.ui.TextInput(
+        expedition: discord.ui.TextInput[discord.ui.Modal] = discord.ui.TextInput(
             label="探索派遣：設定全部派遣完成之前幾小時發送提醒 (不填表示不提醒)",
             placeholder="請輸入一個介於 0 ~ 5 的整數",
             required=False,
             max_length=1,
         )
-        commission = discord.ui.TextInput(
+        commission: discord.ui.TextInput[discord.ui.Modal] = discord.ui.TextInput(
             label="每日委託：設定每天幾點提醒今天的委託任務還未完成 (不填表示不提醒)",
             placeholder="請輸入一個介於 0000~2359 的數，例如 0200、2135",
             required=False,

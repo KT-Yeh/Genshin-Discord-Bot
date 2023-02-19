@@ -18,7 +18,7 @@ class Setting(commands.Cog, name="設定"):
 
     # 提交Cookie的表單
     class CookieModal(discord.ui.Modal, title="提交Cookie"):
-        cookie = discord.ui.TextInput(
+        cookie: discord.ui.TextInput[discord.ui.Modal] = discord.ui.TextInput(
             label="Cookie",
             placeholder='請貼上從網頁上取得的Cookie，取得方式請使用指令 "/cookie設定 顯示說明如何取得Cookie"',
             style=discord.TextStyle.long,
