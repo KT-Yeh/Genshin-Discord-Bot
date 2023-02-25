@@ -35,7 +35,7 @@
         "type": "prometheus",
         "uid": "grafanacloud-prom"
       },
-      "description": "Since last reboot",
+      "description": "過去 24 小時各指令使用數量",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -58,7 +58,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 12,
+        "h": 19,
         "w": 8,
         "x": 0,
         "y": 0
@@ -66,7 +66,7 @@
       "id": 57,
       "options": {
         "displayMode": "basic",
-        "minVizHeight": 10,
+        "minVizHeight": 12,
         "minVizWidth": 0,
         "orientation": "horizontal",
         "reduceOptions": {
@@ -79,7 +79,7 @@
         "showUnfilled": true,
         "text": {}
       },
-      "pluginVersion": "9.3.6",
+      "pluginVersion": "9.4.1-30f3f63",
       "targets": [
         {
           "datasource": {
@@ -87,7 +87,7 @@
             "uid": "grafanacloud-prom"
           },
           "editorMode": "builder",
-          "expr": "sum by(command) (discordbot_on_command_events_total{job=\"$job\"})",
+          "expr": "sum by(command) (increase(discordbot_on_command_events_total{job=\"$job\"}[24h]))",
           "hide": false,
           "legendFormat": "{{command}}",
           "range": true,
@@ -100,7 +100,7 @@
           },
           "editorMode": "builder",
           "exemplar": false,
-          "expr": "sum by(command) (discordbot_on_interaction_events_total{job=\"$job\", command!=\"None\"})",
+          "expr": "sum by(command) (increase(discordbot_on_interaction_events_total{job=\"$job\", command!=\"None\"}[24h]))",
           "format": "time_series",
           "instant": false,
           "legendFormat": "{{command}}",
@@ -113,14 +113,14 @@
             "uid": "grafanacloud-prom"
           },
           "editorMode": "builder",
-          "expr": "sum by(interaction) (discordbot_on_interaction_events_total{job=\"$job\", command=\"None\"})",
+          "expr": "sum by(interaction) (increase(discordbot_on_interaction_events_total{job=\"$job\", command=\"None\"}[24h]))",
           "hide": false,
           "legendFormat": "{{interaction}}",
           "range": true,
           "refId": "C"
         }
       ],
-      "title": "Command Count",
+      "title": "Command Count in 24 Hr",
       "type": "bargauge"
     },
     {
@@ -136,7 +136,10 @@
           },
           "custom": {
             "align": "auto",
-            "displayMode": "color-background",
+            "cellOptions": {
+              "mode": "gradient",
+              "type": "color-background"
+            },
             "filterable": false,
             "inspect": false,
             "minWidth": 50
@@ -217,7 +220,7 @@
         ]
       },
       "gridPos": {
-        "h": 6,
+        "h": 4,
         "w": 8,
         "x": 8,
         "y": 0
@@ -225,6 +228,7 @@
       "id": 42,
       "options": {
         "footer": {
+          "countRows": false,
           "enablePagination": false,
           "fields": [
             "Value #A (lastNotNull)",
@@ -246,7 +250,7 @@
           }
         ]
       },
-      "pluginVersion": "9.3.6",
+      "pluginVersion": "9.4.1-30f3f63",
       "targets": [
         {
           "datasource": {
@@ -571,10 +575,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 6,
+        "h": 5,
         "w": 8,
         "x": 8,
-        "y": 6
+        "y": 4
       },
       "id": 47,
       "options": {
@@ -630,13 +634,14 @@
               "tooltip": false,
               "viz": false
             },
-            "lineInterpolation": "linear",
+            "lineInterpolation": "smooth",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
-              "type": "linear"
+              "log": 2,
+              "type": "symlog"
             },
-            "showPoints": "auto",
+            "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -669,12 +674,13 @@
         "y": 6
       },
       "id": 31,
+      "interval": "60",
       "options": {
         "legend": {
           "calcs": [],
           "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": false
+          "placement": "right",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "multi",
@@ -707,128 +713,6 @@
         }
       ],
       "title": "Discord Latency",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "grafanacloud-prom"
-      },
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic",
-            "seriesBy": "last"
-          },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "axisSoftMax": 8,
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "smooth",
-            "lineStyle": {
-              "fill": "solid"
-            },
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 10
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 7,
-        "w": 8,
-        "x": 0,
-        "y": 12
-      },
-      "id": 14,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "grafanacloud-prom"
-          },
-          "editorMode": "builder",
-          "expr": "round(sum by(job, command) (rate(discordbot_on_command_events_total{job=~\"$job\"}[1m])) * 45, 1)",
-          "legendFormat": "{{command}}",
-          "range": true,
-          "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "grafanacloud-prom"
-          },
-          "editorMode": "builder",
-          "expr": "round(sum by(job, interaction) (rate(discordbot_on_interaction_events_total{job=~\"$job\", command=~\"None\"}[1m])) * 45, 1)",
-          "hide": false,
-          "legendFormat": "{{interaction}}",
-          "range": true,
-          "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "grafanacloud-prom"
-          },
-          "editorMode": "builder",
-          "expr": "round(sum by(job, command) (rate(discordbot_on_interaction_events_total{job=~\"$job\", command!=\"None\"}[1m])) * 45, 1)",
-          "hide": false,
-          "legendFormat": "{{command}}",
-          "range": true,
-          "refId": "C"
-        }
-      ],
-      "title": "Command Activity",
       "type": "timeseries"
     },
     {
@@ -890,10 +774,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 6,
+        "h": 5,
         "w": 8,
         "x": 8,
-        "y": 12
+        "y": 9
       },
       "id": 48,
       "options": {
@@ -987,6 +871,7 @@
         "y": 12
       },
       "id": 22,
+      "interval": "10",
       "options": {
         "legend": {
           "calcs": [],
@@ -1012,7 +897,7 @@
           "refId": "A"
         }
       ],
-      "title": "CPU Usage",
+      "title": "CPU Usage (System)",
       "type": "timeseries"
     },
     {
@@ -1074,10 +959,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 6,
+        "h": 5,
         "w": 8,
         "x": 8,
-        "y": 18
+        "y": 14
       },
       "id": 46,
       "options": {
@@ -1149,6 +1034,7 @@
             }
           },
           "mappings": [],
+          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -1173,6 +1059,7 @@
         "y": 18
       },
       "id": 59,
+      "maxDataPoints": 300,
       "options": {
         "legend": {
           "calcs": [],
@@ -1198,7 +1085,130 @@
           "refId": "A"
         }
       ],
-      "title": "Memory Usage",
+      "title": "Memory Usage (Process)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "grafanacloud-prom"
+      },
+      "description": "每 10 分鐘各指令使用數折線圖",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic",
+            "seriesBy": "last"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "axisSoftMax": 5,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 8
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 16,
+        "x": 0,
+        "y": 19
+      },
+      "id": 14,
+      "interval": "600",
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "grafanacloud-prom"
+          },
+          "editorMode": "builder",
+          "expr": "sum by(job, command) (changes(discordbot_on_command_events_total{job=~\"$job\"}[$__interval])) > 0",
+          "legendFormat": "{{command}}",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "grafanacloud-prom"
+          },
+          "editorMode": "builder",
+          "expr": "sum by(job, interaction) (changes(discordbot_on_interaction_events_total{job=~\"$job\", command=~\"None\"}[$__interval])) > 0",
+          "hide": false,
+          "legendFormat": "{{interaction}}",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "grafanacloud-prom"
+          },
+          "editorMode": "builder",
+          "expr": "sum by(job, command) (changes(discordbot_on_interaction_events_total{job=~\"$job\", command!=\"None\"}[$__interval])) > 0",
+          "hide": false,
+          "legendFormat": "{{command}}",
+          "range": true,
+          "refId": "C"
+        }
+      ],
+      "title": "Command Activity",
       "type": "timeseries"
     },
     {
@@ -1261,8 +1271,8 @@
       "gridPos": {
         "h": 5,
         "w": 8,
-        "x": 0,
-        "y": 19
+        "x": 16,
+        "y": 24
       },
       "id": 24,
       "options": {
@@ -1294,8 +1304,9 @@
       "type": "timeseries"
     }
   ],
-  "refresh": "5s",
-  "schemaVersion": 37,
+  "refresh": "5m",
+  "revision": 1,
+  "schemaVersion": 38,
   "style": "dark",
   "tags": [],
   "templating": {
@@ -1332,13 +1343,13 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "原神小幫手",
-  "uid": "YuanShengDCBot",
-  "version": 13,
+  "uid": "GenshinDCBot",
+  "version": 20,
   "weekStart": ""
 }
