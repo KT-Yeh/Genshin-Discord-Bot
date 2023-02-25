@@ -22,9 +22,10 @@ class PrometheusCog(commands.Cog):
         else:
             Metrics.LATENCY.labels(None).set(self.bot.latency)
 
-        process = psutil.Process()
-        Metrics.CPU_USAGE.set(process.cpu_percent(interval=1))
-        Metrics.MEMORY_USAGE.set(process.memory_percent())
+        if isinstance(cpu_percent := psutil.cpu_percent(), float):
+            Metrics.CPU_USAGE.set(cpu_percent)
+        if isinstance(memory_percent := psutil.Process().memory_percent(), float):
+            Metrics.MEMORY_USAGE.set(memory_percent)
 
     def set_guild_gauges(self):
         """更新伺服器、頻道、使用者總數量"""

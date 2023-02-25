@@ -39,8 +39,8 @@ class Metrics:
     )
     """文字指令被呼叫的次數"""
 
-    CPU_USAGE: Final[Gauge] = Gauge(PREFIX + "cpu_usage_percent", "機器人程序的 CPU 使用率")
-    """機器人程序的 CPU 使用率 (0 ~ 100%)"""
+    CPU_USAGE: Final[Gauge] = Gauge(PREFIX + "cpu_usage_percent", "系統的 CPU 使用率")
+    """系統的 CPU 使用率 (0 ~ 100%)"""
 
     MEMORY_USAGE: Final[Gauge] = Gauge(PREFIX + "memory_usage_percent", "機器人程序的記憶體使用率")
     """機器人程序的記憶體使用率 (0 ~ 100%)"""
