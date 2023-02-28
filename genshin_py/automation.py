@@ -6,6 +6,7 @@ from typing import Callable
 
 import discord
 import genshin
+import sentry_sdk
 from discord.ext import commands
 
 from data.database import db
@@ -51,9 +52,15 @@ async def claim_daily_reward(bot: commands.Bot) -> float:
                 await channel.send(f"[自動簽到] {_user.display_name}：{result}")  # type: ignore
             else:
                 await channel.send(f"[自動簽到] <@{user.id}> {result}")  # type: ignore
-        except Exception as e:  # 發送訊息失敗，移除此使用者
+        except (
+            discord.Forbidden,
+            discord.NotFound,
+            discord.InvalidData,
+        ) as e:  # 發送訊息失敗，移除此使用者
             LOG.Except(f"自動簽到發送訊息失敗，移除此使用者 {LOG.User(user.id)}：{e}")
             await db.schedule_daily.remove(user.id)
+        except Exception as e:
+            sentry_sdk.capture_exception(e)
         await asyncio.sleep(config.schedule_loop_delay)
     LOG.System(f"每日自動簽到結束，總共 {total} 人簽到，其中 {honkai_count} 人也簽到崩壞3")
     # 計算平均簽到時間
@@ -232,9 +239,15 @@ async def check_realtime_notes(bot: commands.Bot):
                 )
                 _user = await bot.fetch_user(user.id)
                 msg_sent = await channel.send(f"{_user.mention}，{msg}", embed=embed)  # type: ignore
-            except Exception as e:  # 發送訊息失敗，移除此使用者
+            except (
+                discord.Forbidden,
+                discord.NotFound,
+                discord.InvalidData,
+            ) as e:  # 發送訊息失敗，移除此使用者
                 LOG.Except(f"自動檢查樹脂發送訊息失敗，移除此使用者 {LOG.User(user.id)}：{e}")
                 await db.schedule_resin.remove(user.id)
+            except Exception as e:
+                sentry_sdk.capture_exception(e)
             else:  # 成功發送訊息
                 # 若使用者不在發送訊息的頻道則移除
                 if _user.mentioned_in(msg_sent) is False:
