@@ -9,7 +9,7 @@ from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands, tasks
 
-from genshin_py import automation
+from genshin_py.automation import Automation, AutomationType
 from utility import SlashCommandLogger, config
 
 
@@ -107,7 +107,7 @@ class Admin(commands.Cog):
 
         elif option == "claimdailyreward":  # 立即執行領取每日獎勵
             await interaction.response.send_message("開始執行每日自動簽到")
-            asyncio.create_task(automation.claim_daily_reward(self.bot))
+            asyncio.create_task(Automation.execute(AutomationType.DAILY_REWARD, self.bot))
 
     # 設定config配置檔案的參數值
     @app_commands.command(name="config", description="更改config配置內容")

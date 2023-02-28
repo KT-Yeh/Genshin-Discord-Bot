@@ -10,7 +10,8 @@ from discord.app_commands import Choice
 from discord.ext import commands, tasks
 
 from data.database import ScheduleDaily, ScheduleResin, db
-from genshin_py import automation, genshin_app
+from genshin_py import genshin_app
+from genshin_py.automation import Automation, AutomationType
 from utility import EmbedTemplate, config, get_app_command_mention
 from utility.custom_log import LOG, SlashCommandLogger
 
@@ -356,11 +357,11 @@ class Schedule(commands.Cog, name="自動化"):
         ):
             # 每日 {config.schedule_daily_reward_time} 點開始自動簽到
             if now.hour == config.schedule_daily_reward_time and now.minute < self.loop_interval:
-                asyncio.create_task(automation.claim_daily_reward(self.bot))
+                asyncio.create_task(Automation.execute(AutomationType.DAILY_REWARD, self.bot))
 
             # 每 {config.schedule_check_resin_interval} 分鐘檢查一次樹脂
             if now.minute % config.schedule_check_resin_interval < self.loop_interval:
-                asyncio.create_task(automation.check_realtime_notes(self.bot))
+                asyncio.create_task(Automation.execute(AutomationType.REALTIME_NOTES, self.bot))
 
         # 每日凌晨一點備份資料庫、刪除過期使用者資料
         if now.hour == 1 and now.minute < self.loop_interval:
