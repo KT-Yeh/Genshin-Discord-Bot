@@ -7,6 +7,7 @@ COPY . .
 RUN set -xe; \
     apt-get update; \
     apt-get -y install git build-essential; \
+    pip3 install --upgrade pip; \
     pip3 install pipenv; \
     pipenv install --system --deploy
 
