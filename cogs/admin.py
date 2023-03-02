@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 import discord
+import enkanetwork
 from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands, tasks
@@ -19,7 +20,7 @@ class Admin(commands.Cog):
         self.presence_string: list[str] = ["原神"]
         self.change_presence.start()
 
-    # 同步 Slash commands 到全域或是當前伺服器
+    # /sync指令：同步 Slash commands 到全域或是當前伺服器
     @app_commands.command(name="sync", description="同步Slash commands到全域或是當前伺服器")
     @app_commands.rename(area="範圍")
     @app_commands.choices(area=[Choice(name="當前伺服器", value=0), Choice(name="全域伺服器", value=1)])
@@ -35,81 +36,75 @@ class Admin(commands.Cog):
         msg = f'已同步以下指令到{"全部" if area == 1 else "當前"}伺服器：{"、".join(cmd.name for cmd in result)}'
         await interaction.edit_original_response(content=msg)
 
-    # 顯示機器人相關狀態
+    # /status指令：顯示機器人相關狀態
     @app_commands.command(name="status", description="顯示小幫手狀態")
     @app_commands.choices(
         option=[
-            Choice(name="延遲", value=0),
-            Choice(name="已連接伺服器數量", value=1),
-            Choice(name="已連接伺服器名稱", value=2),
+            Choice(name="機器人連線延遲", value="BOT_LATENCY"),
+            Choice(name="已連接伺服器數量", value="SERVER_COUNT"),
+            Choice(name="已連接伺服器名稱", value="SERVER_NAMES"),
         ]
     )
     @SlashCommandLogger
-    async def slash_status(self, interaction: discord.Interaction, option: int):
-        if option == 0:
-            await interaction.response.send_message(f"延遲：{round(self.bot.latency*1000)} 毫秒")
-        elif option == 1:
-            await interaction.response.send_message(f"已連接 {len(self.bot.guilds)} 個伺服器")
-        elif option == 2:
-            await interaction.response.defer()
-            names = [guild.name for guild in self.bot.guilds]
-            for i in range(0, len(self.bot.guilds), 100):
-                msg = "、".join(names[i : i + 100])
-                embed = discord.Embed(title=f"已連接伺服器名稱({i + 1})", description=msg)
-                await interaction.followup.send(embed=embed)
+    async def slash_status(self, interaction: discord.Interaction, option: str):
+        match option:
+            case "BOT_LATENCY":
+                await interaction.response.send_message(f"延遲：{round(self.bot.latency*1000)} 毫秒")
+            case "SERVER_COUNT":
+                await interaction.response.send_message(f"已連接 {len(self.bot.guilds)} 個伺服器")
+            case "SERVER_NAMES":
+                await interaction.response.defer()
+                names = [guild.name for guild in self.bot.guilds]
+                for i in range(0, len(self.bot.guilds), 100):
+                    msg = "、".join(names[i : i + 100])
+                    embed = discord.Embed(title=f"已連接伺服器名稱({i + 1})", description=msg)
+                    await interaction.followup.send(embed=embed)
 
-    # 使用系統命令
+    # /system指令：操作cog、更改機器人狀態...
     @app_commands.command(name="system", description="使用系統命令(操作cog、更改機器人狀態)")
     @app_commands.rename(option="選項", param="參數")
     @app_commands.choices(
         option=[
-            Choice(name="load", value="load"),
-            Choice(name="unload", value="unload"),
-            Choice(name="reload", value="reload"),
-            Choice(name="presence", value="presence"),
-            Choice(name="claimdailyreward", value="claimdailyreward"),
+            Choice(name="載入 cog", value="LOAD_COG"),
+            Choice(name="卸載 cog", value="UNLOAD_COG"),
+            Choice(name="重新載入 cog", value="RELOAD_COG"),
+            Choice(name="自訂機器人狀態", value="CHANGE_PRESENCE"),
+            Choice(name="立即執行領取每日獎勵", value="CLAIM_DAILY_REWARD"),
+            Choice(name="更新 Enka 新版本資料", value="UPDATE_ENKA_ASSETS"),
         ]
     )
     @SlashCommandLogger
     async def slash_system(
         self, interaction: discord.Interaction, option: str, param: typing.Optional[str] = None
     ):
-        async def operateCogs(
-            func: typing.Callable[[str], typing.Awaitable[None]],
-            param: typing.Optional[str] = None,
-            *,
-            pass_self: bool = False,
-        ):
-            if param is None:  # 操作全部cog
-                for filepath in Path("./cogs").glob("**/*.py"):
-                    cog_name = Path(filepath).stem
-                    if pass_self and cog_name == "admin":
-                        continue
-                    await func(f"cogs.{cog_name}")
-            else:  # 操作單一cog
-                await func(f"cogs.{param}")
+        await interaction.response.defer()
+        match option:
+            case "LOAD_COG":
+                await self._operate_cogs(self.bot.load_extension, param, pass_self=True)
+                await interaction.edit_original_response(content=f"{param or '全部'}指令集載入完成")
+            case "UNLOAD_COG":
+                await self._operate_cogs(self.bot.unload_extension, param, pass_self=True)
+                await interaction.edit_original_response(content=f"{param or '全部'}指令集卸載完成")
+            case "RELOAD_COG":
+                await self._operate_cogs(self.bot.reload_extension, param)
+                await interaction.edit_original_response(content=f"{param or '全部'}指令集重新載入完成")
+            case "CHANGE_PRESENCE":  # 更改機器人狀態
+                if param is not None:
+                    self.presence_string = param.split(",")
+                    await interaction.edit_original_response(
+                        content=f"Presence list已變更為：{self.presence_string}"
+                    )
+            case "CLAIM_DAILY_REWARD":  # 立即執行領取每日獎勵
+                await interaction.edit_original_response(content="開始執行每日自動簽到")
+                asyncio.create_task(Automation.execute(AutomationType.DAILY_REWARD, self.bot))
+            case "UPDATE_ENKA_ASSETS":  # 更新 Enka 新版本素材資料
+                client = enkanetwork.EnkaNetworkAPI()
+                async with client:
+                    await client.update_assets()
+                enkanetwork.Assets(lang=enkanetwork.Language.CHT)
+                await interaction.edit_original_response(content="Enka 資料更新完成")
 
-        if option == "load":  # Load cogs
-            await operateCogs(self.bot.load_extension, param, pass_self=True)
-            await interaction.response.send_message(f"{param or '全部'}指令集載入完成")
-
-        elif option == "unload":  # Unload cogs
-            await operateCogs(self.bot.unload_extension, param, pass_self=True)
-            await interaction.response.send_message(f"{param or '全部'}指令集卸載完成")
-
-        elif option == "reload":  # Reload cogs
-            await operateCogs(self.bot.reload_extension, param)
-            await interaction.response.send_message(f"{param or '全部'}指令集重新載入完成")
-
-        elif option == "presence" and param is not None:  # Change presence string
-            self.presence_string = param.split(",")
-            await interaction.response.send_message(f"Presence list已變更為：{self.presence_string}")
-
-        elif option == "claimdailyreward":  # 立即執行領取每日獎勵
-            await interaction.response.send_message("開始執行每日自動簽到")
-            asyncio.create_task(Automation.execute(AutomationType.DAILY_REWARD, self.bot))
-
-    # 設定config配置檔案的參數值
+    # /config指令：設定config配置檔案的參數值
     @app_commands.command(name="config", description="更改config配置內容")
     @app_commands.rename(option="選項", value="值")
     @app_commands.choices(
@@ -135,6 +130,7 @@ class Admin(commands.Cog):
             setattr(config, option, float(value))
         await interaction.response.send_message(f"已將{option}的值設為: {value}")
 
+    # /maintenance指令：設定遊戲維護時間
     @app_commands.command(name="maintenance", description="設定遊戲維護時間，輸入0表示將維護時間設定為關閉")
     @app_commands.rename(month="月", day="日", hour="點", duration="維護幾小時")
     @SlashCommandLogger
@@ -156,7 +152,10 @@ class Admin(commands.Cog):
             )
             end_time = start_time + timedelta(hours=duration)
             config.game_maintenance_time = (start_time, end_time)
-            await interaction.response.send_message(f"已將維護時間設定為：{start_time} ~ {end_time}")
+            await interaction.response.send_message(
+                f"已將維護時間設定為：{start_time} ~ {end_time}\n"
+                + "若每日自動簽到時間在此範圍內，請使用 /config 指令更改每日自動簽到時間"
+            )
 
     # 每一定時間更改機器人狀態
     @tasks.loop(minutes=1)
@@ -171,6 +170,23 @@ class Admin(commands.Cog):
     @change_presence.before_loop
     async def before_change_presence(self):
         await self.bot.wait_until_ready()
+
+    async def _operate_cogs(
+        self,
+        func: typing.Callable[[str], typing.Awaitable[None]],
+        param: typing.Optional[str] = None,
+        *,
+        pass_self: bool = False,
+    ):
+        """操作 cog，func 為操作函式，param 為操作的 cog 名稱，pass_self 為是否跳過 admin cog"""
+        if param is None:  # 操作全部cog
+            for filepath in Path("./cogs").glob("**/*.py"):
+                cog_name = Path(filepath).stem
+                if pass_self and cog_name == "admin":
+                    continue
+                await func(f"cogs.{cog_name}")
+        else:  # 操作單一cog
+            await func(f"cogs.{param}")
 
 
 async def setup(client: commands.Bot):
