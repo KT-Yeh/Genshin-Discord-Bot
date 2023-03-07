@@ -1,0 +1,3 @@
+[submodule "enka_network/enka_card"]
+	path = enka_network/enka_card
+	url = https://github.com/KT-Yeh/enka-card.git
