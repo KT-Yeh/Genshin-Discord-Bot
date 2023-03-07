@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any, Callable, Optional, Union
 
 import discord
@@ -48,11 +49,13 @@ class ShowcaseCharactersDropdown(discord.ui.Select):
         if index >= 0:  # 角色資料
             embed = self.showcase.get_character_stat_embed(index)
             await interaction.response.edit_message(
-                embed=embed, view=ShowcaseView(self.showcase, index)
+                embed=embed, view=ShowcaseView(self.showcase, index), attachments=[]
             )
         elif index == -1:  # 玩家資料一覽
             embed = self.showcase.get_player_overview_embed()
-            await interaction.response.edit_message(embed=embed, view=ShowcaseView(self.showcase))
+            await interaction.response.edit_message(
+                embed=embed, view=ShowcaseView(self.showcase), attachments=[]
+            )
         elif index == -2:  # 刪除快取資料
             # 檢查互動者的 UID 是否符合展示櫃的 UID
             uid = _user.uid if (_user := await db.users.get(interaction.user.id)) else None
@@ -63,7 +66,7 @@ class ShowcaseCharactersDropdown(discord.ui.Select):
             else:
                 embed = self.showcase.get_player_overview_embed()
                 await db.showcase.remove(self.showcase.uid)
-                await interaction.response.edit_message(embed=embed, view=None)
+                await interaction.response.edit_message(embed=embed, view=None, attachments=[])
 
 
 class ShowcaseButton(discord.ui.Button):
@@ -77,7 +80,29 @@ class ShowcaseButton(discord.ui.Button):
 
     async def callback(self, interaction: discord.Interaction) -> Any:
         embed = self.callback_func(*self.callback_args, **self.callback_kwargs)
-        await interaction.response.edit_message(embed=embed)
+        await interaction.response.edit_message(embed=embed, attachments=[])
+
+
+class GenerateImageButton(discord.ui.Button):
+    """產生圖片按鈕"""
+
+    def __init__(self, showcase: Showcase, character_index: int):
+        super().__init__(style=discord.ButtonStyle.primary, label="產生圖片")
+        self.showcase = showcase
+        self.character_index = character_index
+
+    async def callback(self, interaction: discord.Interaction) -> Any:
+        embed = self.showcase.get_default_embed(self.character_index)
+        _, image = await asyncio.gather(
+            interaction.response.edit_message(embed=embed, attachments=[]),
+            self.showcase.get_image(self.character_index),
+        )
+        if image is not None:
+            embed.set_thumbnail(url=None)
+            embed.set_image(url="attachment://image.jpeg")
+            await interaction.edit_original_response(
+                embed=embed, attachments=[discord.File(image, "image.jpeg")]
+            )
 
 
 class ShowcaseView(discord.ui.View):
@@ -97,6 +122,8 @@ class ShowcaseView(discord.ui.View):
             self.add_item(
                 ShowcaseButton("聖遺物(完整)", showcase.get_artifact_stat_embed, character_index)
             )
+            self.add_item(GenerateImageButton(showcase, character_index))
+
         if showcase.data.player.characters_preview:  # type: ignore
             self.add_item(ShowcaseCharactersDropdown(showcase))
 

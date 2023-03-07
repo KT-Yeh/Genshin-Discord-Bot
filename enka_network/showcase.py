@@ -1,3 +1,4 @@
+import io
 from datetime import datetime
 from typing import Any
 
@@ -8,6 +9,7 @@ from data.database import db
 from utility import emoji
 
 from .api import EnkaAPI
+from .enka_card import generate_image
 from .request import fetch_enka_data
 
 enka_assets = enkanetwork.Assets(lang=enkanetwork.Language.CHT)
@@ -30,6 +32,8 @@ class Showcase:
         向 API 請求發生錯誤時，此錯誤的訊息內容
     url: `str`
         玩家在 enka network 網站上的 URL
+    image_buffers: `List[BytesIO | None]`
+        玩家的角色展示櫃圖片快取
     """
 
     def __init__(self, uid: int) -> None:
@@ -39,6 +43,7 @@ class Showcase:
         self.is_cached_data = False
         self.api_error_msg: str | None = None
         self.url: str = EnkaAPI.get_user_url(uid)
+        self.image_buffers: list[io.BytesIO | None] = [None] * 25
 
     async def load_data(self) -> None:
         """取得玩家的角色展示櫃資料"""
@@ -88,11 +93,9 @@ class Showcase:
 
     def get_character_stat_embed(self, index: int) -> discord.Embed:
         """取得角色面板的嵌入訊息"""
-        character_preview = self.data.player.characters_preview[index]  # type: ignore
-        embed = self._get_default_embed(character_preview)
+        embed = self.get_default_embed(index)
         embed.title = (embed.title + " 角色面板") if embed.title is not None else "角色面板"
         if self.data.characters is None:
-            embed.description = "遊戲內角色詳情設定為不公開"
             return embed
 
         character = self.data.characters[index]
@@ -180,12 +183,10 @@ class Showcase:
 
     def get_artifact_stat_embed(self, index: int, *, short_form: bool = False) -> discord.Embed:
         """取得角色聖遺物的嵌入訊息"""
-        character_preview = self.data.player.characters_preview[index]  # type: ignore
-        embed = self._get_default_embed(character_preview)
+        embed = self.get_default_embed(index)
         embed.title = (embed.title + " 聖遺物") if embed.title is not None else "聖遺物"
 
         if self.data.characters is None:
-            embed.description = "遊戲內角色詳情設定為不公開"
             return embed
 
         pos_name_map = {
@@ -282,7 +283,26 @@ class Showcase:
 
         return embed
 
-    def _get_default_embed(self, character: enkanetwork.showAvatar) -> discord.Embed:
+    async def get_image(self, index: int) -> io.BytesIO | None:
+        """取得角色展示櫃圖片"""
+        if self.data.characters is None:
+            return None
+
+        if (image_buffer := self.image_buffers[index]) is not None:
+            image = image_buffer
+            image.seek(0)
+        else:
+            image = await generate_image(
+                self.data,
+                self.data.characters[index],
+                enkanetwork.Language.CHT,
+                save_locally=False,
+            )
+            self.image_buffers[index] = image
+        return image
+
+    def get_default_embed(self, index: int) -> discord.Embed:
+        character = self.data.player.characters_preview[index]  # type: ignore
         color = {
             enkanetwork.ElementType.Pyro: 0xFB4120,
             enkanetwork.ElementType.Electro: 0xBF73E7,
@@ -307,6 +327,9 @@ class Showcase:
                 icon_url=player.avatar.icon.url if player.avatar and player.avatar.icon else None,
             )
             embed.set_footer(text=f"{player.nickname}．Lv. {player.level}．UID: {self.uid}")
+
+        if self.data.characters is None:
+            embed.description = "請在您遊戲中的角色展示櫃中打開「顯示角色詳情」來查看更詳細的角色資料"
 
         return embed
 
