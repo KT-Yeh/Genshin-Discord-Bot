@@ -22,6 +22,8 @@ jobs:
     steps:
       - name: Checking Repostiory
         uses: actions/checkout@v3
+        with:
+          submodules: true
       - name: Setup multiarch
         uses: docker/setup-qemu-action@v2
       - name: Setup Buildx
