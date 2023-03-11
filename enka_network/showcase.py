@@ -181,8 +181,8 @@ class Showcase:
         )
         return embed
 
-    def get_artifact_stat_embed(self, index: int, *, short_form: bool = False) -> discord.Embed:
-        """取得角色聖遺物的嵌入訊息"""
+    def get_artifact_stat_embed(self, index: int) -> discord.Embed:
+        """取得角色聖遺物詞條數的嵌入訊息"""
         embed = self.get_default_embed(index)
         embed.title = (embed.title + " 聖遺物") if embed.title is not None else "聖遺物"
 
@@ -207,7 +207,7 @@ class Showcase:
             # 主詞條屬性
             if (mainstats := equip.detail.mainstats) is None:
                 continue
-            embed_value = f"__**{self._get_statprop_sentence(mainstats)}**__\n"
+            embed_value = f"{self._get_statprop_sentence(mainstats)}\n"
             crit_value += (
                 mainstats.value * 2
                 if mainstats.prop_id == "FIGHT_PROP_CRITICAL"
@@ -220,8 +220,6 @@ class Showcase:
             for substat in equip.detail.substats:
                 # prop: str = substat["appendPropId"]  # 副詞條屬性名字，例：FIGHT_PROP_ATTACK_PERCENT
                 # value: Union[int, float] = substat["statValue"]  # 副詞條數值
-                if not short_form:
-                    embed_value += f"{self._get_statprop_sentence(substat)}\n"
                 substat_sum[substat.prop_id] = substat_sum.get(substat.prop_id, 0) + substat.value
 
             # 聖遺物部位
@@ -229,10 +227,14 @@ class Showcase:
 
             _artifact_emoji = emoji.artifact_type.get(pos_name, pos_name + "：")
             _artifact_set_name = equip.detail.artifact_name_set
-            embed.add_field(
-                name=f"{_artifact_emoji}{_artifact_set_name}",
-                value=embed_value,
-            )
+
+            # 只將沙、杯、冠的聖遺物顯示在嵌入訊息中
+            if pos_name not in ["花", "羽"]:
+                embed.add_field(
+                    name=f"{_artifact_emoji}{_artifact_set_name}",
+                    value=embed_value,
+                    inline=False,
+                )
 
         # 將小詞條換算成大詞條
         if "FIGHT_PROP_HP" in substat_sum.keys():  # 將小生命換算成生命%詞條

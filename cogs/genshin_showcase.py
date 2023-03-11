@@ -47,10 +47,8 @@ class ShowcaseCharactersDropdown(discord.ui.Select):
     async def callback(self, interaction: discord.Interaction) -> None:
         index = int(self.values[0])
         if index >= 0:  # 角色資料
-            embed = self.showcase.get_character_stat_embed(index)
-            await interaction.response.edit_message(
-                embed=embed, view=ShowcaseView(self.showcase, index), attachments=[]
-            )
+            await GenerateImageButton.handle_image_response(interaction, self.showcase, index)
+            await interaction.edit_original_response(view=ShowcaseView(self.showcase, index))
         elif index == -1:  # 玩家資料一覽
             embed = self.showcase.get_player_overview_embed()
             await interaction.response.edit_message(
@@ -87,15 +85,22 @@ class GenerateImageButton(discord.ui.Button):
     """產生圖片按鈕"""
 
     def __init__(self, showcase: Showcase, character_index: int):
-        super().__init__(style=discord.ButtonStyle.primary, label="產生圖片")
+        super().__init__(style=discord.ButtonStyle.primary, label="圖片")
         self.showcase = showcase
         self.character_index = character_index
 
     async def callback(self, interaction: discord.Interaction) -> Any:
-        embed = self.showcase.get_default_embed(self.character_index)
+        await self.handle_image_response(interaction, self.showcase, self.character_index)
+
+    @classmethod
+    async def handle_image_response(
+        cls, interaction: discord.Interaction, showcase: Showcase, character_index: int
+    ) -> None:
+        """產生角色圖片，處理 discord interaction 回覆 embed 給使用者"""
+        embed = showcase.get_default_embed(character_index)
         _, image = await asyncio.gather(
             interaction.response.edit_message(embed=embed, attachments=[]),
-            self.showcase.get_image(self.character_index),
+            showcase.get_image(character_index),
         )
         if image is not None:
             embed.set_thumbnail(url=None)
@@ -106,23 +111,14 @@ class GenerateImageButton(discord.ui.Button):
 
 
 class ShowcaseView(discord.ui.View):
-    """角色展示櫃View，顯示角色面板、聖遺物按鈕，以及角色下拉選單"""
+    """角色展示櫃View，顯示角色面板圖、聖遺物詞條按鈕，以及角色下拉選單"""
 
     def __init__(self, showcase: Showcase, character_index: Optional[int] = None):
         super().__init__(timeout=config.discord_view_long_timeout)
         if character_index is not None:
-            self.add_item(
-                ShowcaseButton("角色面板", showcase.get_character_stat_embed, character_index)
-            )
-            self.add_item(
-                ShowcaseButton(
-                    "聖遺物(精簡)", showcase.get_artifact_stat_embed, character_index, short_form=True
-                )
-            )
-            self.add_item(
-                ShowcaseButton("聖遺物(完整)", showcase.get_artifact_stat_embed, character_index)
-            )
             self.add_item(GenerateImageButton(showcase, character_index))
+            self.add_item(ShowcaseButton("面板", showcase.get_character_stat_embed, character_index))
+            self.add_item(ShowcaseButton("詞條", showcase.get_artifact_stat_embed, character_index))
 
         if showcase.data.player.characters_preview:  # type: ignore
             self.add_item(ShowcaseCharactersDropdown(showcase))
