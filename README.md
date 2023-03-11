@@ -45,6 +45,7 @@ Genshin-Discord-Bot
 |   ├── font         = 存放畫圖所用到的字體
 |   └── image        = 存放畫圖所用到的素材、背景圖
 ├── enka_network = 與 Enka Network API 相關的程式碼
+|   └── enka_card    = Submodule，與畫 Enka 圖片相關的程式碼
 ├── genshin_db   = 與 genshin-db API 相關的程式碼 
 |   └── models       = 存放 genshin-db 資料的 pydantic 模型
 ├── genshin_py   = 與 genshin.py 相關的程式碼
@@ -90,10 +91,9 @@ Genshin-Discord-Bot
 ![](https://i.imgur.com/tCMhEhv.png)
 
 ### 本地端
-1. [點此下載本專案](https://github.com/KT-Yeh/Genshin-Discord-Bot/archive/refs/heads/master.zip) 或是使用 git：
-```
-git clone https://github.com/KT-Yeh/Genshin-Discord-Bot.git
-```
+1. 下載本專案程式碼，下列方式二選一
+    1. 到 [Release 頁面](https://github.com/KT-Yeh/Genshin-Discord-Bot/releases) 下載最新版本的 zip 檔 (檔名：Genshin-Discord-Bot.zip)
+    2. 使用 git 下載： `git clone --recursive https://github.com/KT-Yeh/Genshin-Discord-Bot.git` （注意：要加上 `--recursive` 參數）
 
 2. 新增 `config.json` 檔案：
 在專案資料夾（Genshin-Discord-Bot）內，用文字編輯器開啟 `config.json.example` 檔案，把剛才取得的 Application ID、機器人 Token、伺服器 ID 分別貼在 `application_id`、`bot_token`、`test_server_id` 欄位，並將檔案名稱另存為 **`config.json`**
@@ -134,9 +134,10 @@ pipenv run python .\main.py
 ```
 
 ##### 方法2 專案更新方式
-1. 當初你用下載的就下載[最新版]((https://github.com/KT-Yeh/Genshin-Discord-Bot/archive/refs/heads/master.zip))然後覆蓋整個專案資料夾，若是用 git 的，則：
+1. 當初你用下載的就到 [Release 頁面](https://github.com/KT-Yeh/Genshin-Discord-Bot/releases) 下載最新版本然後覆蓋原本整個專案資料夾；若是用 git 的，則：
 ```
 git pull
+git submodule update
 ```
 
 2. 為避免 pipenv 亂搞，建議移除整個虛擬環境然後重裝，不會影響到現有設定：
@@ -235,7 +236,7 @@ pipenv run python .\main.py
 
 #### 儀表板展示圖
 
-![](https://i.imgur.com/O1ub7vU.png)
+![](https://i.imgur.com/SOctABS.png)
 
 
 總共需要三步驟，分別是
