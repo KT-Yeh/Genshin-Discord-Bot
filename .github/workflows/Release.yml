@@ -1,28 +1,38 @@
+name: Release
+
 on:
   push:
     tags:
       - "*"
 
-name: Release
+permissions:
+  contents: write
+  packages: write
 
 jobs:
-  build:
+  release_archive:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    if: github.repository == 'KT-Yeh/Genshin-Discord-Bot'
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
           submodules: true
+
       - name: Archive Release
         uses: thedoctor0/zip-release@0.7.1
         with:
           type: zip
           filename: 'Genshin-Discord-Bot_${{ github.ref_name }}.zip'
           exclusions: '*.git*'
+
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
           generate_release_notes: true
           files: 'Genshin-Discord-Bot_${{ github.ref_name }}.zip'
+
+  release_docker:
+    if: github.repository == 'KT-Yeh/Genshin-Discord-Bot'
+    uses: ./.github/workflows/reusable_docker.yml
