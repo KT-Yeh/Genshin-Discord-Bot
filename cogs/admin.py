@@ -1,7 +1,7 @@
 import asyncio
 import random
 import typing
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 from pathlib import Path
 
 import discord
@@ -19,6 +19,11 @@ class Admin(commands.Cog):
         self.bot: commands.Bot = bot
         self.presence_string: list[str] = ["原神"]
         self.change_presence.start()
+        self.refresh_genshin_db.start()
+    
+    async def cog_unload(self) -> None:
+        self.change_presence.cancel()
+        self.refresh_genshin_db.cancel()
 
     # /sync指令：同步 Slash commands 到全域或是當前伺服器
     @app_commands.command(name="sync", description="同步Slash commands到全域或是當前伺服器")
@@ -169,6 +174,15 @@ class Admin(commands.Cog):
 
     @change_presence.before_loop
     async def before_change_presence(self):
+        await self.bot.wait_until_ready()
+
+    # 每天定時重整 genshin_db API 資料
+    @tasks.loop(time=time(hour=20, minute=00))
+    async def refresh_genshin_db(self):
+        await self._operate_cogs(self.bot.reload_extension, "search")
+    
+    @refresh_genshin_db.before_loop
+    async def before_refresh_genshin_db(self):
         await self.bot.wait_until_ready()
 
     async def _operate_cogs(
