@@ -2,7 +2,6 @@ import json
 import logging
 import re
 from datetime import datetime
-from typing import Optional
 
 import genshin
 from sentry_sdk.integrations.logging import LoggingIntegration
@@ -10,8 +9,10 @@ from sentry_sdk.integrations.logging import LoggingIntegration
 sentry_logging = LoggingIntegration(level=logging.INFO, event_level=logging.ERROR)
 
 
-async def trim_cookie(cookie: str) -> Optional[str]:
-    """將從 Hoyolab 取得的 Cookie 內容中擷取 ltoken, ltuid, cookie_token 與 account_id，其中 cookie_token 與 account_id 為非必需
+async def trim_cookie(cookie: str) -> str | None:
+    """從 Hoyolab 取得的 Cookie 內容中擷取
+        - cookie_token, account_id, ltoken, ltuid
+        - cookie_token_v2, account_id_v2, ltoken_v2, ltuid_v2, ltmid_v2, account_mid_v2
 
     Parameters
     -----
@@ -20,8 +21,8 @@ async def trim_cookie(cookie: str) -> Optional[str]:
 
     Returns
     -----
-    `str`
-        包含 ltoken, ltuid, cookie_token 與 account_id 的字串
+    `str | None`
+        如果成功擷取出任何一個 token，回傳包含這些 token 的字串；否則回傳 None。
     """
     # 嘗試匹配各式 token
     cookie_token = (
@@ -30,6 +31,20 @@ async def trim_cookie(cookie: str) -> Optional[str]:
     account_id = match.group() if (match := re.search("account_id=[0-9]{5,}", cookie)) else None
     ltoken = match.group() if (match := re.search("ltoken=[0-9A-Za-z]{30,}", cookie)) else None
     ltuid = match.group() if (match := re.search("ltuid=[0-9]{5,}", cookie)) else None
+
+    # V2 Cookies
+    cookie_token_v2 = (
+        match.group() if (match := re.search("cookie_token_v2=[0-9A-Za-z]{10,}", cookie)) else None
+    )
+    account_id_v2 = (
+        match.group() if (match := re.search("account_id_v2=[0-9]{5,}", cookie)) else None
+    )
+    ltoken_v2 = match.group if (match := re.search("ltoken_v2=[0-9A-Za-z]{10,}", cookie)) else None
+    ltuid_v2 = match.group() if (match := re.search("ltuid_v2=[0-9]{5,}", cookie)) else None
+    ltmid_v2 = match.group() if (match := re.search("ltmid_v2=[0-9A-Za-z]{5,}", cookie)) else None
+    account_mid_v2 = (
+        match.group() if (match := re.search("account_mid_v2=[0-9A-Za-z]{5,}", cookie)) else None
+    )
 
     cookie_list: list[str] = []
     # 當有 cookie_token 時，嘗試取得 ltoken 並延長 cookie_token 的過期時間，然後回傳完整 cookie 資料
@@ -45,9 +60,19 @@ async def trim_cookie(cookie: str) -> Optional[str]:
         except Exception:  # 失敗則將現有 cookie_token 加到列表
             cookie_list += [cookie_token, account_id]
 
-    # 當有 ltoken 時，加到列表
-    if ltoken and ltuid:
-        cookie_list += [ltoken, ltuid]
+    # 有值的 token 加到列表
+    for token in [
+        ltoken,
+        ltuid,
+        cookie_token_v2,
+        account_id_v2,
+        ltoken_v2,
+        ltuid_v2,
+        ltmid_v2,
+        account_mid_v2,
+    ]:
+        if token is not None:
+            cookie_list.append(token)
 
     return None if len(cookie_list) == 0 else " ".join(cookie_list)
 
