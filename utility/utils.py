@@ -39,7 +39,9 @@ async def trim_cookie(cookie: str) -> str | None:
     account_id_v2 = (
         match.group() if (match := re.search("account_id_v2=[0-9]{5,}", cookie)) else None
     )
-    ltoken_v2 = match.group if (match := re.search("ltoken_v2=[0-9A-Za-z]{10,}", cookie)) else None
+    ltoken_v2 = (
+        match.group() if (match := re.search("ltoken_v2=[0-9A-Za-z]{10,}", cookie)) else None
+    )
     ltuid_v2 = match.group() if (match := re.search("ltuid_v2=[0-9]{5,}", cookie)) else None
     ltmid_v2 = match.group() if (match := re.search("ltmid_v2=[0-9A-Za-z]{5,}", cookie)) else None
     account_mid_v2 = (

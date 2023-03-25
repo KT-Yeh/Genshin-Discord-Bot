@@ -20,7 +20,7 @@ class Admin(commands.Cog):
         self.presence_string: list[str] = ["原神"]
         self.change_presence.start()
         self.refresh_genshin_db.start()
-    
+
     async def cog_unload(self) -> None:
         self.change_presence.cancel()
         self.refresh_genshin_db.cancel()
@@ -180,7 +180,7 @@ class Admin(commands.Cog):
     @tasks.loop(time=time(hour=20, minute=00))
     async def refresh_genshin_db(self):
         await self._operate_cogs(self.bot.reload_extension, "search")
-    
+
     @refresh_genshin_db.before_loop
     async def before_refresh_genshin_db(self):
         await self.bot.wait_until_ready()
