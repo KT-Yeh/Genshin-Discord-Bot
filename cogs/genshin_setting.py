@@ -52,9 +52,9 @@ class Setting(commands.Cog, name="設定"):
     async def slash_cookie(self, interaction: discord.Interaction, option: int):
         if option == 0:
             embed = EmbedTemplate.normal(
-                "**1.** 先複製本文最底下整段程式碼\n"
-                "**2.** PC或手機使用 **Chrome** 開啟 [HoYoVerse官網](https://genshin.hoyoverse.com/"
-                "zh-tw/gift)，並從右上角登入帳號 (若是已登入狀態，請先手動登出然後重新登入)\n"
+                "**1.** 先複製本文最底下整行程式碼\n"
+                "**2.** PC或手機使用 **Chrome** 開啟 [HoYoLAB官網](https://www.hoyolab.com)"
+                "，並從右上角登入帳號 (若是已登入狀態，請先手動登出然後重新登入)\n"
                 "**3.** 如下圖，在網址列輸入 `java`，然後貼上程式碼\n"
                 "**4.** 按 Enter，網頁會變成顯示你的 Cookie，全選然後複製\n"
                 f"**5.** 在這裡使用指令 {get_app_command_mention('cookie設定')} 提交已取得的Cookie\n"
