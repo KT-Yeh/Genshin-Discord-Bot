@@ -13,3 +13,6 @@ data/image/character/[0-9]*.png
 
 # VS Code
 .vscode
+
+# Jupyter
+*.ipynb
