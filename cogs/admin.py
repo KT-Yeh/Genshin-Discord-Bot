@@ -10,7 +10,7 @@ from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands, tasks
 
-from genshin_py.automation import Automation, AutomationType
+from genshin_py import auto_task
 from utility import SlashCommandLogger, config
 
 
@@ -101,7 +101,7 @@ class Admin(commands.Cog):
                     )
             case "CLAIM_DAILY_REWARD":  # 立即執行領取每日獎勵
                 await interaction.edit_original_response(content="開始執行每日自動簽到")
-                asyncio.create_task(Automation.execute(AutomationType.DAILY_REWARD, self.bot))
+                asyncio.create_task(auto_task.DailyReward.execute(self.bot))
             case "UPDATE_ENKA_ASSETS":  # 更新 Enka 新版本素材資料
                 client = enkanetwork.EnkaNetworkAPI()
                 async with client:
