@@ -60,6 +60,7 @@ class Config(BaseModel):
     notification_channel_id: typing.Optional[int] = None
     game_maintenance_time: typing.Optional[typing.Tuple[datetime, datetime]] = None
     prometheus_server_port: typing.Optional[int] = None
+    daily_reward_api_list: typing.List[str] = []
 
 
 config = Config.parse_file(Path("config.json"), encoding="utf8")
