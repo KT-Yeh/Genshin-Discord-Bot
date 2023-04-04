@@ -12,5 +12,6 @@
     "database_file_path": "data/bot/bot.db",
     "sentry_sdk_dsn": null,
     "notification_channel_id": null,
-    "prometheus_server_port": null
+    "prometheus_server_port": null,
+    daily_reward_api_list: []
 }
