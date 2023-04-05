@@ -209,6 +209,7 @@ class RealtimeNotes:
             await db.schedule_resin.update(user.id, next_check_time=check_time)
 
             return (msg, embed)
+        return None
 
     @classmethod
     async def _send_message(
