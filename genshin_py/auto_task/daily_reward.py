@@ -25,7 +25,9 @@ class DailyReward:
     _lock: ClassVar[asyncio.Lock] = asyncio.Lock()
     # 統計簽到人數
     _total: ClassVar[int] = 0
+    """簽到的總人數"""
     _honkai_count: ClassVar[int] = 0
+    """簽到崩壞3的人數"""
 
     @classmethod
     async def execute(cls, bot: commands.Bot):
@@ -48,24 +50,25 @@ class DailyReward:
             cls._honkai_count = 0
             daily_users = await db.schedule_daily.getAll()
 
-            # 將所有需要簽到的使用者放入佇列
+            # 將所有需要簽到的使用者放入佇列 (Producer)
             for user in daily_users:
-                await queue.put(user)
+                if user.last_checkin_date != date.today():
+                    await queue.put(user)
 
-            # 建立簽到任務
+            # 建立本地簽到任務 (Consumer)
             tasks = [asyncio.create_task(cls._claim_daily_reward(queue, "LOCAL", bot))]
             for host in config.daily_reward_api_list:
+                # 先測試 API 是否正常，如果 API 服務正常，則建立並加入簽到任務
                 async with aiohttp.ClientSession() as session:
                     async with session.get(host) as resp:
-                        # 如果 API 服務正常，則加入簽到任務
                         if resp.status == 200:
                             tasks.append(
                                 asyncio.create_task(cls._claim_daily_reward(queue, host, bot))
                             )
 
             start_time = datetime.now()  # 簽到開始時間
-            await queue.join()  # 等待所有簽到完成
-            for task in tasks:
+            await queue.join()  # 等待所有使用者簽到完成
+            for task in tasks:  # 關閉簽到任務
                 task.cancel()
 
             LOG.System(f"每日自動簽到結束，總共 {cls._total} 人簽到，其中 {cls._honkai_count} 人也簽到崩壞3")
@@ -96,10 +99,7 @@ class DailyReward:
         """
         while True:
             user = await queue.get()
-            # 檢查今天是否已經簽到過
-            if user.last_checkin_date == date.today():
-                queue.task_done()
-                continue
+
             # 依據不同的主機，執行不同的簽到方式
             if host == "LOCAL":  # 本地簽到
                 message = await genshin_app.claim_daily_reward(
