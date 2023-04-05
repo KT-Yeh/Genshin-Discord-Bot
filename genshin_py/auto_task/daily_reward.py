@@ -56,20 +56,10 @@ class DailyReward:
                     await queue.put(user)
 
             # 建立本地簽到任務 (Consumer)
-            tasks = [asyncio.create_task(cls._claim_daily_reward(queue, "LOCAL", bot))]
+            tasks = [asyncio.create_task(cls._claim_daily_reward_task(queue, "LOCAL", bot))]
             # 建立遠端簽到任務 (Consumer)
-            async with aiohttp.ClientSession() as session:
-                for host in config.daily_reward_api_list:
-                    # 先測試 API 是否正常，如果 API 服務正常，則建立並加入簽到任務
-                    try:
-                        async with session.get(host) as resp:
-                            if resp.status == 200:
-                                tasks.append(
-                                    asyncio.create_task(cls._claim_daily_reward(queue, host, bot))
-                                )
-                    except Exception as e:
-                        sentry_sdk.capture_exception(e)
-                        LOG.Error(f"自動排程 DailyReward 測試 API {host} 時發生錯誤：{e}")
+            for host in config.daily_reward_api_list:
+                tasks.append(asyncio.create_task(cls._claim_daily_reward_task(queue, host, bot)))
 
             start_time = datetime.now()  # 簽到開始時間
             await queue.join()  # 等待所有使用者簽到完成
@@ -88,7 +78,7 @@ class DailyReward:
             cls._lock.release()
 
     @classmethod
-    async def _claim_daily_reward(
+    async def _claim_daily_reward_task(
         cls, queue: asyncio.Queue[ScheduleDaily], host: str, bot: commands.Bot
     ):
         """從傳入的 asyncio.Queue 裡面取得使用者，然後進行每日簽到，並根據簽到結果發送訊息給使用者
@@ -105,55 +95,94 @@ class DailyReward:
         bot: `commands.Bot`
             Discord 機器人客戶端
         """
+        LOG.Info(f"自動排程簽到任務開始：{host}")
+        if host != "LOCAL":
+            # 先測試 API 是否正常
+            async with aiohttp.ClientSession() as session:
+                try:
+                    async with session.get(host) as resp:
+                        if resp.status != 200:
+                            raise Exception(f"Http 狀態碼 {resp.status}")
+                except Exception as e:
+                    sentry_sdk.capture_exception(e)
+                    LOG.Error(f"自動排程 DailyReward 測試 API {host} 時發生錯誤：{e}")
+                    return
+
         cls._total[host] = 0  # 初始化簽到人數
         cls._honkai_count[host] = 0  # 初始化簽到崩壞3的人數
         MAX_API_ERROR_COUNT: Final[int] = 5  # 遠端 API 發生錯誤的最大次數
         api_error_count = 0  # 遠端 API 發生錯誤的次數
+
         while True:
             user = await queue.get()
+            try:
+                message = await cls._claim_daily_reward(host, user)
+            except Exception as e:
+                sentry_sdk.capture_exception(e)
+                await queue.put(user)  # 簽到發生異常，將使用者放回佇列
+                # 如果發生錯誤超過 MAX_API_ERROR_COUNT 次，則停止簽到任務
+                api_error_count += 1
+                LOG.Error(f"遠端 API：{host} 發生錯誤 ({api_error_count}/{MAX_API_ERROR_COUNT})")
+                if api_error_count >= MAX_API_ERROR_COUNT:
+                    return
+            else:
+                # 簽到成功後，更新資料庫中的簽到日期、發送訊息給使用者、更新計數器
+                await db.schedule_daily.update(user.id, last_checkin_date=True)
+                if message is not None:
+                    await cls._send_message(bot, user, message)
+                    cls._total[host] += 1
+                    cls._honkai_count[host] += int(user.has_honkai)
+                    await asyncio.sleep(config.schedule_loop_delay)
+            finally:
+                queue.task_done()
 
-            # 依據不同的主機，執行不同的簽到方式
-            if host == "LOCAL":  # 本地簽到
-                message = await genshin_app.claim_daily_reward(
-                    user.id, honkai=user.has_honkai, schedule=True
-                )
-            else:  # 遠端 API 簽到
-                user_data = await db.users.get(user.id)
-                if user_data is None:
-                    queue.task_done()
-                    continue
-                payload = {
-                    "discord_id": user.id,
-                    "uid": user_data.uid or 0,
-                    "cookie": user_data.cookie,
-                    "has_honkai": "true" if user.has_honkai else "false",
-                }
-                async with aiohttp.ClientSession() as session:
-                    try:
-                        async with session.post(url=host + "/daily-reward", json=payload) as resp:
-                            if resp.status == 200:
-                                result: dict[str, str] = await resp.json()
-                                message = result.get("message", "遠端 API 簽到失敗")
-                            else:
-                                raise Exception(f"{host} 簽到失敗，HTTP 狀態碼：{resp.status}")
-                    except Exception as e:
-                        sentry_sdk.capture_exception(e)
-                        # 遠端 API 發生異常，將使用者放回佇列
-                        await queue.put(user)
-                        queue.task_done()
-                        # 如果遠端 API 發生錯誤超過 MAX_API_ERROR_COUNT 次，則停止簽到任務
-                        api_error_count += 1
-                        LOG.Error(f"遠端 API：{host} 發生錯誤 ({api_error_count}/{MAX_API_ERROR_COUNT})")
-                        if api_error_count >= MAX_API_ERROR_COUNT:
-                            return
-                        continue
-            # 簽到成功後，更新資料庫中的簽到日期、發送訊息給使用者、更新計數器
-            await db.schedule_daily.update(user.id, last_checkin_date=True)
-            await cls._send_message(bot, user, message)
-            cls._total[host] += 1
-            cls._honkai_count[host] += int(user.has_honkai)
-            await asyncio.sleep(config.schedule_loop_delay)
-            queue.task_done()
+    @classmethod
+    async def _claim_daily_reward(cls, host: str, user: ScheduleDaily) -> str | None:
+        """
+        為使用者進行每日簽到。
+
+        Parameters
+        ----------
+        host: `str`
+            簽到的主機
+            - 本地：固定為字串 "LOCAL"
+            - 遠端：簽到 API 網址
+        user: `ScheduleDaily`
+            需要簽到的使用者
+
+        Returns
+        -------
+        str | None
+            簽到結果訊息； None 表示跳過此使用者。
+
+        Raises
+        ------
+        Exception
+            如果簽到失敗，會拋出一個 Exception。
+        """
+        if host == "LOCAL":  # 本地簽到
+            message = await genshin_app.claim_daily_reward(
+                user.id, honkai=user.has_honkai, schedule=True
+            )
+            return message
+        else:  # 遠端 API 簽到
+            user_data = await db.users.get(user.id)
+            if user_data is None:
+                return None
+            payload = {
+                "discord_id": user.id,
+                "uid": user_data.uid or 0,
+                "cookie": user_data.cookie,
+                "has_honkai": "true" if user.has_honkai else "false",
+            }
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url=host + "/daily-reward", json=payload) as resp:
+                    if resp.status == 200:
+                        result: dict[str, str] = await resp.json()
+                        message = result.get("message", "遠端 API 簽到失敗")
+                        return message
+                    else:
+                        raise Exception(f"{host} 簽到失敗，HTTP 狀態碼：{resp.status}")
 
     @classmethod
     async def _send_message(cls, bot: commands.Bot, user: ScheduleDaily, result: str):
