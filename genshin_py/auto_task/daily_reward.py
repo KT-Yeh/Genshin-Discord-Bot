@@ -1,6 +1,6 @@
 import asyncio
 from datetime import date, datetime
-from typing import ClassVar
+from typing import ClassVar, Final
 
 import aiohttp
 import discord
@@ -24,10 +24,10 @@ class DailyReward:
 
     _lock: ClassVar[asyncio.Lock] = asyncio.Lock()
     # 統計簽到人數
-    _total: ClassVar[int] = 0
-    """簽到的總人數"""
-    _honkai_count: ClassVar[int] = 0
-    """簽到崩壞3的人數"""
+    _total: ClassVar[dict[str, int]] = {}
+    """簽到的總人數 dict[host, count]"""
+    _honkai_count: ClassVar[dict[str, int]] = {}
+    """簽到崩壞3的人數 dict[host, count]"""
 
     @classmethod
     async def execute(cls, bot: commands.Bot):
@@ -46,8 +46,8 @@ class DailyReward:
 
             # 初始化
             queue: asyncio.Queue[ScheduleDaily] = asyncio.Queue()
-            cls._total = 0
-            cls._honkai_count = 0
+            cls._total = {}
+            cls._honkai_count = {}
             daily_users = await db.schedule_daily.getAll()
 
             # 將所有需要簽到的使用者放入佇列 (Producer)
@@ -57,21 +57,29 @@ class DailyReward:
 
             # 建立本地簽到任務 (Consumer)
             tasks = [asyncio.create_task(cls._claim_daily_reward(queue, "LOCAL", bot))]
-            for host in config.daily_reward_api_list:
-                # 先測試 API 是否正常，如果 API 服務正常，則建立並加入簽到任務
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(host) as resp:
-                        if resp.status == 200:
-                            tasks.append(
-                                asyncio.create_task(cls._claim_daily_reward(queue, host, bot))
-                            )
+            # 建立遠端簽到任務 (Consumer)
+            async with aiohttp.ClientSession() as session:
+                for host in config.daily_reward_api_list:
+                    # 先測試 API 是否正常，如果 API 服務正常，則建立並加入簽到任務
+                    try:
+                        async with session.get(host) as resp:
+                            if resp.status == 200:
+                                tasks.append(
+                                    asyncio.create_task(cls._claim_daily_reward(queue, host, bot))
+                                )
+                    except Exception as e:
+                        sentry_sdk.capture_exception(e)
+                        LOG.Error(f"自動排程 DailyReward 測試 API {host} 時發生錯誤：{e}")
 
             start_time = datetime.now()  # 簽到開始時間
             await queue.join()  # 等待所有使用者簽到完成
             for task in tasks:  # 關閉簽到任務
                 task.cancel()
 
-            LOG.System(f"每日自動簽到結束，總共 {cls._total} 人簽到，其中 {cls._honkai_count} 人也簽到崩壞3")
+            _log_message = f"每日自動簽到結束：總共 {sum(cls._total.values())} 人簽到，其中 {sum(cls._honkai_count.values())} 人也簽到崩壞3\n"
+            for host in cls._total.keys():
+                _log_message += f"- {host}：{cls._total.get(host)}、{cls._honkai_count.get(host)}\n"
+            LOG.System(_log_message)
             await cls._update_statistics(bot, start_time)
         except Exception as e:
             sentry_sdk.capture_exception(e)
@@ -97,6 +105,10 @@ class DailyReward:
         bot: `commands.Bot`
             Discord 機器人客戶端
         """
+        cls._total[host] = 0  # 初始化簽到人數
+        cls._honkai_count[host] = 0  # 初始化簽到崩壞3的人數
+        MAX_API_ERROR_COUNT: Final[int] = 5  # 遠端 API 發生錯誤的最大次數
+        api_error_count = 0  # 遠端 API 發生錯誤的次數
         while True:
             user = await queue.get()
 
@@ -117,18 +129,29 @@ class DailyReward:
                     "has_honkai": "true" if user.has_honkai else "false",
                 }
                 async with aiohttp.ClientSession() as session:
-                    async with session.post(url=host + "/daily-reward", json=payload) as resp:
-                        if resp.status != 200:
-                            # 如果遠端 API 發生異常，則將使用者放回佇列並取消此 API 的簽到任務
-                            queue.task_done()
-                            await queue.put(user)
+                    try:
+                        async with session.post(url=host + "/daily-reward", json=payload) as resp:
+                            if resp.status == 200:
+                                result: dict[str, str] = await resp.json()
+                                message = result.get("message", "遠端 API 簽到失敗")
+                            else:
+                                raise Exception(f"{host} 簽到失敗，HTTP 狀態碼：{resp.status}")
+                    except Exception as e:
+                        sentry_sdk.capture_exception(e)
+                        # 遠端 API 發生異常，將使用者放回佇列
+                        await queue.put(user)
+                        queue.task_done()
+                        # 如果遠端 API 發生錯誤超過 MAX_API_ERROR_COUNT 次，則停止簽到任務
+                        api_error_count += 1
+                        LOG.Error(f"遠端 API：{host} 發生錯誤 ({api_error_count}/{MAX_API_ERROR_COUNT})")
+                        if api_error_count >= MAX_API_ERROR_COUNT:
                             return
-                        result: dict[str, str] = await resp.json()
-                        message = result.get("message", "遠端 API 簽到失敗")
+                        continue
+            # 簽到成功後，更新資料庫中的簽到日期、發送訊息給使用者、更新計數器
             await db.schedule_daily.update(user.id, last_checkin_date=True)
             await cls._send_message(bot, user, message)
-            cls._total += 1
-            cls._honkai_count += int(user.has_honkai)
+            cls._total[host] += 1
+            cls._honkai_count[host] += int(user.has_honkai)
             await asyncio.sleep(config.schedule_loop_delay)
             queue.task_done()
 
@@ -159,11 +182,11 @@ class DailyReward:
         計算自動簽到的統計數據，包括總簽到人數、簽到崩壞3的人數、平均簽到時間，
         並將結果儲存到 schedule cog，同時將結果發送到通知頻道。
         """
+        total = sum(cls._total.values())
+        honkai_count = sum(cls._honkai_count.values())
         # 計算平均簽到時間
         end_time = datetime.now()
-        avg_user_daily_time = (end_time - start_time).total_seconds() / (
-            cls._total if cls._total > 0 else 1
-        )
+        avg_user_daily_time = (end_time - start_time).total_seconds() / (total if total > 0 else 1)
 
         # 將平均簽到時間儲存到 schedule cog
         schedule_cog = bot.get_cog("自動化")
@@ -173,7 +196,7 @@ class DailyReward:
         # 發送統計結果到通知頻道
         if config.notification_channel_id:
             embed = EmbedTemplate.normal(
-                f"總共 {cls._total} 人簽到，其中 {cls._honkai_count} 人也簽到崩壞3\n"
+                f"總共 {total} 人簽到，其中 {honkai_count} 人也簽到崩壞3\n"
                 f"簽到時間：{start_time.strftime('%H:%M:%S')} ~ {end_time.strftime('%H:%M:%S')}\n"
                 f"平均時間：{avg_user_daily_time:.2f} 秒/人",
                 title="每日自動簽到結果",
