@@ -18,7 +18,8 @@ from utility.custom_log import LOG, SlashCommandLogger
 class Schedule(commands.Cog, name="自動化"):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.avg_user_daily_time = 3.0  # 初始化平均一位使用者的簽到時間(單位：秒)
+        self.avg_user_daily_time = 2.8 / (1 + len(config.daily_reward_api_list)) + 0.2
+        """平均一位使用者的簽到時間(單位：秒)，預設值是根據有多少 API 服務能夠同時簽到做計算"""
         self.schedule.start()
 
     async def cog_unload(self) -> None:
@@ -225,6 +226,7 @@ class Schedule(commands.Cog, name="自動化"):
         function: Literal["HELP", "TEST", "DAILY", "NOTES"],
         switch: Literal["ON", "OFF"],
     ):
+        msg: str | None  # 欲傳給使用者的訊息
         if function == "HELP":  # 排程功能使用說明
             msg = (
                 "· 排程會在特定時間執行功能，執行結果會在設定指令的頻道推送\n"
