@@ -4,8 +4,12 @@ services:
   genshin-discord-bot:
     image: ghcr.io/kt-yeh/genshin-discord-bot:latest
     container_name: GenshinDiscordBot
+    environment:
+      - TZ=Asia/Taipei
     volumes:
       - ./config.json:/app/config.json
       - ./data/bot:/app/data/bot
-      # - ./emoji.json:/app/data/emoji.json # 可選 設置你自己的 Emoji
+      - ./cogs_external:/app/cogs_external
+      # - ./data/emoji.json:/app/data/emoji.json # 可選，設置你自己的 Emoji
+      # - ./data/app_commands.json:/app/data/app_commands.json # 可選，設置你自己的 Slash Command ID
     restart: always

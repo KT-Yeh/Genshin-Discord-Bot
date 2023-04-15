@@ -39,6 +39,7 @@ Discord 支援伺服器：https://discord.gg/myugWxgRjd
 ```
 Genshin-Discord-Bot
 ├── cogs         = 存放 discord.py cog 資料夾，這裡有所有的機器人指令
+├── cogs_external= 存放自訂的 discord.py cog 資料夾，你可以將自己指令的檔案放在這裡
 ├── data         = 存放設定檔、資料相關的資料夾
 |   ├── bot          = 存放機器人 SQLite 資料庫
 |   ├── database     = 與操作資料庫相關的程式碼
@@ -49,6 +50,7 @@ Genshin-Discord-Bot
 ├── genshin_db   = 與 genshin-db API 相關的程式碼 
 |   └── models       = 存放 genshin-db 資料的 pydantic 模型
 ├── genshin_py   = 與 genshin.py 相關的程式碼
+|   └── auto_task    = 與自動排程任務 (例如：簽到) 相關的程式碼
 └── utility      = 一些本專案用到的設定、公用函數、Log、表情、Prometheus 指標...等
 ```
 

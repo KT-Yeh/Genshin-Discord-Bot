@@ -110,7 +110,7 @@ class DailyReward:
 
         cls._total[host] = 0  # 初始化簽到人數
         cls._honkai_count[host] = 0  # 初始化簽到崩壞3的人數
-        MAX_API_ERROR_COUNT: Final[int] = 5  # 遠端 API 發生錯誤的最大次數
+        MAX_API_ERROR_COUNT: Final[int] = 20  # 遠端 API 發生錯誤的最大次數
         api_error_count = 0  # 遠端 API 發生錯誤的次數
 
         while True:
@@ -118,12 +118,12 @@ class DailyReward:
             try:
                 message = await cls._claim_daily_reward(host, user)
             except Exception as e:
-                sentry_sdk.capture_exception(e)
                 await queue.put(user)  # 簽到發生異常，將使用者放回佇列
-                # 如果發生錯誤超過 MAX_API_ERROR_COUNT 次，則停止簽到任務
                 api_error_count += 1
                 LOG.Error(f"遠端 API：{host} 發生錯誤 ({api_error_count}/{MAX_API_ERROR_COUNT})")
+                # 如果發生錯誤超過 MAX_API_ERROR_COUNT 次，則停止簽到任務
                 if api_error_count >= MAX_API_ERROR_COUNT:
+                    sentry_sdk.capture_exception(e)
                     return
             else:
                 # 簽到成功後，更新資料庫中的簽到日期、發送訊息給使用者、更新計數器

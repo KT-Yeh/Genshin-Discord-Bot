@@ -5,6 +5,9 @@ __pycache__
 # Config
 config.json
 
+# External/private cogs
+cogs_external/
+
 # Data
 *.db
 *.json
