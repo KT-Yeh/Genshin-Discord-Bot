@@ -7,5 +7,6 @@ services:
     volumes:
       - ./config.json:/app/config.json
       - ./data/bot:/app/data/bot
+      - ./cogs_external:/app/cogs_external
       # - ./emoji.json:/app/data/emoji.json # 可選 設置你自己的 Emoji
     restart: always

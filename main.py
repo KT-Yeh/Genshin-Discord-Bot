@@ -37,9 +37,10 @@ class GenshinDiscordBot(commands.AutoShardedBot):
         # 從cogs資料夾載入所有cog
         for filepath in Path("./cogs").glob("**/*.py"):
             cog_name = Path(filepath).stem
-            if cog_name.startswith("_"):
-                continue
             await self.load_extension(f"cogs.{cog_name}")
+        for filepath in Path("./cogs_external").glob("**/*.py"):
+            cog_name = Path(filepath).stem
+            await self.load_extension(f"cogs_external.{cog_name}")
 
         # 同步Slash commands到測試伺服器，全域伺服器用 /sync 指令
         if config.test_server_id is not None:
