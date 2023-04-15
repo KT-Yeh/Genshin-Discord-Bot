@@ -31,7 +31,7 @@ class User:
     def __init__(
         self,
         id: int,
-        cookie: str,
+        cookie: str = "",
         *,
         uid: Optional[int] = None,
         last_used_time: Optional[Union[datetime, str]] = None,
@@ -119,7 +119,12 @@ class UsersTable:
         await self.db.commit()
 
     async def exist(
-        self, user: Optional[User], *, check_uid=True, update_using_time=True
+        self,
+        user: Optional[User],
+        *,
+        check_cookie=True,
+        check_uid=True,
+        update_using_time=True,
     ) -> Tuple[bool, Optional[str]]:
         """檢查使用者特定的資料是否已保存在資料庫內
 
@@ -127,6 +132,8 @@ class UsersTable:
         ------
         user: `database.User | None`
             資料庫使用者 Table 的資料類別
+        check_cookie: `bool`
+            是否檢查Cookie
         check_uid: `bool`
             是否檢查UID
         update_using_time: `bool`
@@ -140,8 +147,10 @@ class UsersTable:
         """
         if user is None:
             return False, f'找不到使用者，請先設定Cookie(使用 {get_app_command_mention("cookie設定")} 顯示說明)'
-        elif check_uid and user.uid is None:
-            return False, f'找不到角色UID，請先設定UID(使用 {get_app_command_mention("uid設定")} 來設定UID)'
+        if check_cookie and len(user.cookie) == 0:
+            return False, f'找不到Cookie，請先設定Cookie(使用 {get_app_command_mention("cookie設定")} 顯示說明)'
+        if check_uid and user.uid is None:
+            return False, f'找不到角色UID，請先使用 {get_app_command_mention("uid設定")} 來設定UID)'
         if update_using_time:
             await self.update(user.id, last_used_time=True)
         return True, None

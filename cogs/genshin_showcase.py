@@ -9,7 +9,7 @@ from discord.ext import commands
 
 from data.database import db
 from enka_network import Showcase, enka_assets
-from utility import EmbedTemplate, config, emoji
+from utility import EmbedTemplate, config, emoji, get_app_command_mention
 from utility.custom_log import LOG, ContextCommandLogger, SlashCommandLogger
 
 
@@ -56,10 +56,15 @@ class ShowcaseCharactersDropdown(discord.ui.Select):
             )
         elif index == -2:  # 刪除快取資料
             # 檢查互動者的 UID 是否符合展示櫃的 UID
-            uid = _user.uid if (_user := await db.users.get(interaction.user.id)) else None
-            if uid != self.showcase.uid:
+            user = await db.users.get(interaction.user.id)
+            if user is None or user.uid != self.showcase.uid:
                 await interaction.response.send_message(
                     embed=EmbedTemplate.error("非此UID本人，無法刪除資料"), ephemeral=True
+                )
+            elif len(user.cookie) == 0:
+                await interaction.response.send_message(
+                    embed=EmbedTemplate.error("未設定Cookie，無法驗證此UID本人，無法刪除資料"),
+                    ephemeral=True,
                 )
             else:
                 embed = self.showcase.get_player_overview_embed()
@@ -137,7 +142,10 @@ async def showcase(
     uid = uid or (_user.uid if (_user := await db.users.get(user.id)) else None)
     if uid is None:
         await interaction.edit_original_response(
-            embed=EmbedTemplate.error("小幫手內找不到使用者資料，請直接在指令uid參數中輸入欲查詢的UID")
+            embed=EmbedTemplate.error(
+                f"請先使用 {get_app_command_mention('uid設定')}，或是直接在指令uid參數中輸入欲查詢的UID",
+                title="找不到角色UID",
+            )
         )
     elif len(str(uid)) != 9 or str(uid)[0] not in ["1", "2", "5", "6", "7", "8", "9"]:
         await interaction.edit_original_response(embed=EmbedTemplate.error("輸入的UID格式錯誤"))

@@ -7,7 +7,7 @@ from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands
 
-from data.database import db
+from data.database import User, db
 from genshin_py import genshin_app
 from utility import EmbedTemplate, config, custom_log, get_app_command_mention, get_server_name
 
@@ -82,6 +82,28 @@ class Setting(commands.Cog, name="設定"):
             embed = EmbedTemplate.normal(msg, title="小幫手Cookie使用與保存告知")
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
+    # 提交UID的表單
+    class UIDModal(discord.ui.Modal, title="提交UID"):
+        uid: discord.ui.TextInput[discord.ui.Modal] = discord.ui.TextInput(
+            label="UID",
+            placeholder="請輸入你原神遊戲內的UID(9位數字)",
+            required=True,
+            min_length=9,
+            max_length=9,
+        )
+
+        async def on_submit(self, interaction: discord.Interaction):
+            try:
+                await db.users.add(User(id=interaction.user.id, uid=int(self.uid.value)))
+            except Exception as e:
+                await interaction.response.send_message(
+                    embed=EmbedTemplate.error(e), ephemeral=True
+                )
+            else:
+                await interaction.response.send_message(
+                    embed=EmbedTemplate.normal("UID設定成功"), ephemeral=True
+                )
+
     # 選擇欲保存UID的下拉選單
     class UidDropdown(discord.ui.Select):
         def __init__(self, accounts: typing.Sequence[genshin.models.GenshinAccount]):
@@ -103,23 +125,29 @@ class Setting(commands.Cog, name="設定"):
                 embed=EmbedTemplate.normal(f"角色UID: {uid} 已設定完成"), view=None
             )
 
-    # 設定原神UID，當帳號內有多名角色時，保存指定的UID
-    @app_commands.command(name="uid設定", description="帳號內多角色時需保存指定的UID，只有單一角色不需要使用本指令")
+    # 設定原神UID
+    @app_commands.command(name="uid設定", description="保存指定的原神UID")
     @custom_log.SlashCommandLogger
     async def slash_uid(self, interaction: discord.Interaction):
-        try:
-            defer, accounts = await asyncio.gather(
-                interaction.response.defer(ephemeral=True),
-                genshin_app.get_game_accounts(interaction.user.id),
-            )
-            if len(accounts) == 0:
-                raise Exception("此帳號內沒有任何原神角色")
-        except Exception as e:
-            await interaction.edit_original_response(embed=EmbedTemplate.error(e))
+        user = await db.users.get(interaction.user.id)
+        if user is None or len(user.cookie) == 0:
+            # 當沒有存過 Cookie 時，顯示 UID 設定表單
+            await interaction.response.send_modal(self.UIDModal())
         else:
-            view = discord.ui.View(timeout=config.discord_view_short_timeout)
-            view.add_item(self.UidDropdown(accounts))
-            await interaction.edit_original_response(view=view)
+            # 當有存過 Cookie 時，取得帳號資料，並顯示帳號內 UID 選單
+            try:
+                defer, accounts = await asyncio.gather(
+                    interaction.response.defer(ephemeral=True),
+                    genshin_app.get_game_accounts(interaction.user.id),
+                )
+                if len(accounts) == 0:
+                    raise Exception("此帳號內沒有任何原神角色")
+            except Exception as e:
+                await interaction.edit_original_response(embed=EmbedTemplate.error(e))
+            else:
+                view = discord.ui.View(timeout=config.discord_view_short_timeout)
+                view.add_item(self.UidDropdown(accounts))
+                await interaction.edit_original_response(view=view)
 
     # 清除資料確認按紐
     class ConfirmButton(discord.ui.View):
