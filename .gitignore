@@ -4,6 +4,7 @@ __pycache__
 
 # Config
 config.json
+data/*.yml
 
 # External/private cogs
 cogs_external/

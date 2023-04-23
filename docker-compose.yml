@@ -13,3 +13,19 @@ services:
       # - ./data/emoji.json:/app/data/emoji.json # 可選，設置你自己的 Emoji
       # - ./data/app_commands.json:/app/data/app_commands.json # 可選，設置你自己的 Slash Command ID
     restart: always
+  
+  # 若要使用 Prometheus 監控
+  # 1. config.json 檔案設定 "prometheus_server_port": 9091
+  # 2. 將 data/prometheus.yml.example 檔案改名為 data/prometheus.yml
+  # 3. 修改 data/prometheus.yml 檔案內容
+  #   - 設定 targets: ['genshin-discord-bot:9091']
+  #   - 設定 remote_write
+  # 4. 取消本檔案下方整段註解
+  # prometheus:
+  #   image: prom/prometheus:v2.37.6
+  #   container_name: Prometheus
+  #   environment:
+  #     - TZ=Asia/Taipei
+  #   volumes:
+  #     - ./data/prometheus.yml:/etc/prometheus/prometheus.yml
+  #   restart: always
