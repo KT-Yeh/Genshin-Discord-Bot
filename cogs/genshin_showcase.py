@@ -187,6 +187,12 @@ class GenshinShowcase(commands.Cog, name="原神展示櫃"):
 
 
 async def setup(client: commands.Bot):
+    # 更新 Enka 素材資料
+    enka = enkanetwork.EnkaNetworkAPI()
+    async with enka:
+        await enka.update_assets()
+    enkanetwork.Assets(lang=enkanetwork.Language.CHT)
+
     await client.add_cog(GenshinShowcase(client))
 
     # ---------------------------------------------------------------
