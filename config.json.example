@@ -13,5 +13,5 @@
     "sentry_sdk_dsn": null,
     "notification_channel_id": null,
     "prometheus_server_port": null,
-    daily_reward_api_list: []
+    "daily_reward_api_list": []
 }
