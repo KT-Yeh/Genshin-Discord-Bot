@@ -256,11 +256,13 @@ pipenv run python .\main.py
 ![](https://i.imgur.com/RlY8ovi.png)
 
 #### 2. Prometheus 下載
+※　Docker 使用者請直接參考 `docker-compose.yml` 檔案裡面說明
+
 1. 到 [Prometheus 官網](https://prometheus.io/download/)，下載 prometheus 2.37 LTS 版本 (prometheus-2.37.X.windows-amd64.zip) 到你運行機器人的電腦
 
 2. 解壓縮後進入資料夾，你會看到 `prometheus.exe` 與 `prometheus.yml` 檔案
 
-3. 到原神小幫手 (本專案) 的 `data` 資料夾 ([或是點這裡](https://github.com/KT-Yeh/Genshin-Discord-Bot/blob/master/data/prometheus.yml))，裡面也有 `prometheus.yml` 檔案，將原神小幫手的複製到 Prometheus 資料夾內，覆蓋掉 `prometheus.yml`
+3. 到原神小幫手 (本專案) 的 `data` 資料夾 ([或是點這裡](https://github.com/KT-Yeh/Genshin-Discord-Bot/blob/master/data/prometheus.yml.example))，裡面也有 `prometheus.yml` 檔案，將原神小幫手的複製到 Prometheus 資料夾內，覆蓋掉 `prometheus.yml`
 
 4. 文字編輯器打開 Prometheus 資料夾內的 `prometheus.yml` 檔案，回到剛才 Grafana 網頁，你會看到網頁上的 `remote_write` 欄位與 `prometheus.yml` 檔案最底下相對應，將網頁上 `remote_write` 的設定內容一一填入到 `prometheus.yml` 內的對應欄位，然後存檔
 ```
