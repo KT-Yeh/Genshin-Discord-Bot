@@ -36,8 +36,9 @@ jobs:
           images: |
             ${{ env.GHCR_NAME }}
           tags: |
-            type=edge,branch=master
             type=semver,pattern={{version}}
+            type=edge,branch=master
+            type=ref,event=branch
 
       - name: Build & Push
         uses: docker/build-push-action@v4
