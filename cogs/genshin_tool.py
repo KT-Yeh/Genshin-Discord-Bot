@@ -78,15 +78,31 @@ class GenshinTool(commands.Cog, name="原神工具"):
     # 為使用者在Hoyolab簽到
     @app_commands.command(name="daily每日簽到", description="領取Hoyolab每日簽到獎勵")
     @app_commands.rename(game="遊戲", user="使用者")
-    @app_commands.choices(game=[Choice(name="原神", value=0), Choice(name="原神 + 崩壞3", value=1)])
+    @app_commands.choices(
+        game=[
+            Choice(name="原神", value=1),
+            Choice(name="原神 + 崩壞3", value=3),
+            Choice(name="原神 + 星穹鐵道", value=5),
+            Choice(name="原神 + 崩壞3 + 星穹鐵道", value=7),
+        ]
+    )
     @custom_log.SlashCommandLogger
     async def slash_daily(
         self, interaction: discord.Interaction, game: int = 0, user: Optional[discord.User] = None
     ):
+        # 原神：1、崩壞3：2、星穹鐵道：4
+        has_starrail = game >= 4
+        game -= 4 * int(has_starrail)
+
+        has_honkai3rd = game >= 2
+        game -= 2 * int(has_honkai3rd)
+
         _user = user or interaction.user
         defer, result = await asyncio.gather(
             interaction.response.defer(),
-            genshin_app.claim_daily_reward(_user.id, honkai=bool(game)),
+            genshin_app.claim_daily_reward(
+                _user.id, has_honkai3rd=has_honkai3rd, has_starrail=has_starrail
+            ),
         )
         await interaction.edit_original_response(embed=EmbedTemplate.normal(result))
 

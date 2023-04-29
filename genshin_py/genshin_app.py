@@ -116,15 +116,23 @@ async def redeem_code(user_id: int, code: str) -> str:
     return "兌換碼使用成功！"
 
 
-async def claim_daily_reward(user_id: int, *, honkai: bool = False, schedule=False) -> str:
+async def claim_daily_reward(
+    user_id: int,
+    *,
+    has_honkai3rd: bool = False,
+    has_starrail: bool = False,
+    schedule=False,
+) -> str:
     """為使用者在Hoyolab簽到
 
     Parameters
     ------
     user_id: `int`
         使用者Discord ID
-    honkai: `bool`
+    honkai3rd: `bool`
         是否也簽到崩壞3
+    has_starrail: `bool`
+        是否也簽到星穹鐵道
     schedule: `bool`
         是否為排程自動簽到
 
@@ -138,7 +146,11 @@ async def claim_daily_reward(user_id: int, *, honkai: bool = False, schedule=Fal
     except Exception as e:
         return str(e)
 
-    game_name = {genshin.Game.GENSHIN: "原神", genshin.Game.HONKAI: "崩壞3"}
+    game_name = {
+        genshin.Game.GENSHIN: "原神",
+        genshin.Game.HONKAI: "崩壞3",
+        genshin.Game.STARRAIL: "星穹鐵道",
+    }
 
     async def claim_reward(game: genshin.Game, retry: int = 5) -> str:
         try:
@@ -146,14 +158,10 @@ async def claim_daily_reward(user_id: int, *, honkai: bool = False, schedule=Fal
         except genshin.errors.AlreadyClaimed:
             return f"{game_name[game]}今日獎勵已經領過了！"
         except genshin.errors.InvalidCookies:
-            return "Cookie已失效，請從Hoyolab重新取得新Cookie"
+            return "Cookie已失效，請從Hoyolab重新取得新Cookie。"
         except Exception as e:
-            if (
-                isinstance(e, genshin.errors.GenshinException)
-                and e.retcode == -10002
-                and game == genshin.Game.HONKAI
-            ):
-                return "崩壞3簽到失敗，未查詢到角色資訊，請確認艦長是否已綁定新HoYoverse通行證"
+            if isinstance(e, genshin.errors.GenshinException) and e.retcode == -10002:
+                return f"{game_name[game]}簽到失敗，目前登入的帳號未查詢到角色資料。"
 
             LOG.FuncExceptionLog(user_id, "claimDailyReward", e)
             if retry > 0:
@@ -162,13 +170,15 @@ async def claim_daily_reward(user_id: int, *, honkai: bool = False, schedule=Fal
 
             LOG.Error(f"{LOG.User(user_id)} {game_name[game]}簽到失敗")
             sentry_sdk.capture_exception(e)
-            return f"{game_name[game]}簽到失敗：{e}"
+            return f"{game_name[game]}簽到失敗：{e}。"
         else:
             return f"{game_name[game]}今日簽到成功，獲得 {reward.amount}x {reward.name}！"
 
     result = await claim_reward(genshin.Game.GENSHIN)
-    if honkai:
-        result = result + " " + await claim_reward(genshin.Game.HONKAI)
+    if has_honkai3rd:
+        result += " " + await claim_reward(genshin.Game.HONKAI)
+    if has_starrail:
+        result += " " + await claim_reward(genshin.Game.STARRAIL)
 
     # Hoyolab社群簽到
     try:
