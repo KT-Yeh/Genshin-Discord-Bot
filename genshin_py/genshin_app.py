@@ -179,7 +179,7 @@ async def claim_daily_reward(
         else:
             return f"{game_name[game]}今日簽到成功，獲得 {reward.amount}x {reward.name}！"
 
-    if any([has_genshin, has_honkai3rd, has_starrail]) == False:
+    if any([has_genshin, has_honkai3rd, has_starrail]) is False:
         return "未選擇任何遊戲簽到"
     result = ""
     if has_genshin:
