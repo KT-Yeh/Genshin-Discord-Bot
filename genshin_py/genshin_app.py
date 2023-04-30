@@ -39,31 +39,29 @@ async def set_cookie(user_id: int, cookie: str) -> str:
         client.region = genshin.Region.CHINESE
         accounts = await client.get_game_accounts()
 
-    # 篩選出帳號內原神角色
-    accounts = [account for account in accounts if account.game == genshin.types.Game.GENSHIN]
-    if len(accounts) == 0:
-        LOG.Info(f"{LOG.User(user_id)} 帳號內沒有任何角色")
-        result = "帳號內沒有任何原神角色，取消設定Cookie"
-    else:
-        await db.users.add(User(id=user_id, cookie=trimed_cookie))
-        LOG.Info(f"{LOG.User(user_id)} Cookie設置成功")
+    await db.users.add(User(id=user_id, cookie=trimed_cookie))
+    LOG.Info(f"{LOG.User(user_id)} Cookie設置成功")
 
-        if len(accounts) == 1 and len(str(accounts[0].uid)) == 9:
-            await db.users.update(user_id, uid=accounts[0].uid)
-            result = f"Cookie已設定完成，角色UID: {accounts[0].uid} 已保存！"
-        else:
-            result = f'Cookie已保存，你的Hoyolab帳號內共有{len(accounts)}名角色\n請使用 {get_app_command_mention("uid設定")} 指定要保存的原神角色'
+    if len(accounts) == 1:
+        await db.users.update(user_id, uid=accounts[0].uid)
+        result = f"Cookie已設定完成，角色UID: {accounts[0].uid} 已保存！"
+    else:
+        result = f'Cookie已保存，你的Hoyolab帳號內共有{len(accounts)}名角色\n請使用 {get_app_command_mention("uid設定")} 指定要保存的角色'
     return result
 
 
 @generalErrorHandler
-async def get_game_accounts(user_id: int) -> Sequence[genshin.models.GenshinAccount]:
-    """取得同一個Hoyolab帳號下，各伺服器的原神帳號
+async def get_game_accounts(
+    user_id: int, game: genshin.Game
+) -> Sequence[genshin.models.GenshinAccount]:
+    """取得同一個Hoyolab帳號下，指定遊戲的所有伺服器帳號
 
     Parameters
     ------
     user_id: `int`
-        使用者Discord ID
+        使用者 Discord ID
+    game: `genshin.Game`
+        指定遊戲
 
     Returns
     ------
@@ -72,7 +70,7 @@ async def get_game_accounts(user_id: int) -> Sequence[genshin.models.GenshinAcco
     """
     client = await get_genshin_client(user_id, check_uid=False)
     accounts = await client.get_game_accounts()
-    return [account for account in accounts if account.game == genshin.types.Game.GENSHIN]
+    return [account for account in accounts if account.game == game]
 
 
 @generalErrorHandler
