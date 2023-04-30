@@ -35,7 +35,11 @@ class RedeemCode:
         codes = codes[:5] if len(codes) > 5 else codes  # 避免使用者輸入過多內容
         msg = ""
         invalid_cookie_msg = ""  # genshin api 的 InvalidCookies 原始訊息
-        genshin_client = await genshin_app.get_genshin_client(user.id, check_uid=False)
+        try:
+            genshin_client = await genshin_app.get_genshin_client(user.id, check_uid=False)
+        except Exception as e:
+            await interaction.edit_original_response(embed=EmbedTemplate.error(e))
+            return
 
         for i, code in enumerate(codes):
             # 使用兌換碼的間隔為5秒
