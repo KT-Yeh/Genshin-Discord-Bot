@@ -168,9 +168,10 @@ class DailyReward:
         if host == "LOCAL":  # 本地簽到
             message = await genshin_app.claim_daily_reward(
                 user.id,
+                has_genshin=user.has_genshin,
                 has_honkai3rd=user.has_honkai,
                 has_starrail=user.has_starrail,
-                schedule=True,
+                is_scheduled=True,
             )
             return message
         else:  # 遠端 API 簽到
@@ -181,6 +182,7 @@ class DailyReward:
                 "discord_id": user.id,
                 "uid": user_data.uid or 0,
                 "cookie": user_data.cookie,
+                "has_genshin": "true" if user.has_genshin else "false",
                 "has_honkai": "true" if user.has_honkai else "false",
                 "has_starrail": "true" if user.has_starrail else "false",
             }

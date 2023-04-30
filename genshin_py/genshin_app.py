@@ -121,9 +121,10 @@ async def redeem_code(
 async def claim_daily_reward(
     user_id: int,
     *,
+    has_genshin: bool = False,
     has_honkai3rd: bool = False,
     has_starrail: bool = False,
-    schedule=False,
+    is_scheduled: bool = False,
 ) -> str:
     """為使用者在Hoyolab簽到
 
@@ -131,11 +132,13 @@ async def claim_daily_reward(
     ------
     user_id: `int`
         使用者Discord ID
+    has_genshin: `bool`
+        是否簽到原神
     honkai3rd: `bool`
-        是否也簽到崩壞3
+        是否簽到崩壞3
     has_starrail: `bool`
-        是否也簽到星穹鐵道
-    schedule: `bool`
+        是否簽到星穹鐵道
+    is_scheduled: `bool`
         是否為排程自動簽到
 
     Returns
@@ -144,7 +147,7 @@ async def claim_daily_reward(
         回覆給使用者的訊息
     """
     try:
-        client = await get_genshin_client(user_id, update_using_time=(not schedule))
+        client = await get_genshin_client(user_id, update_using_time=(not is_scheduled))
     except Exception as e:
         return str(e)
 
@@ -176,11 +179,15 @@ async def claim_daily_reward(
         else:
             return f"{game_name[game]}今日簽到成功，獲得 {reward.amount}x {reward.name}！"
 
-    result = await claim_reward(genshin.Game.GENSHIN)
+    if any([has_genshin, has_honkai3rd, has_starrail]) == False:
+        return "未選擇任何遊戲簽到"
+    result = ""
+    if has_genshin:
+        result += await claim_reward(genshin.Game.GENSHIN)
     if has_honkai3rd:
-        result += " " + await claim_reward(genshin.Game.HONKAI)
+        result += await claim_reward(genshin.Game.HONKAI)
     if has_starrail:
-        result += " " + await claim_reward(genshin.Game.STARRAIL)
+        result += await claim_reward(genshin.Game.STARRAIL)
 
     # Hoyolab社群簽到
     try:
