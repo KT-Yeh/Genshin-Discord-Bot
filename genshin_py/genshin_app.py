@@ -96,23 +96,27 @@ async def get_realtime_notes(user_id: int, *, schedule=False) -> genshin.models.
 
 
 @generalErrorHandler
-async def redeem_code(user_id: int, code: str) -> str:
+async def redeem_code(
+    user_id: int, client: genshin.Client, code: str, game: genshin.Game = genshin.Game.GENSHIN
+) -> str:
     """為使用者使用指定的兌換碼
 
     Parameters
     ------
-    user_id:`int`
-        使用者Discord ID
+    user_id: `int`
+        使用者 Discord ID
+    client: `genshin.Client`
+        genshin.py 的 client
     code: `str`
-        Hoyolab兌換碼
-
+        Hoyolab 兌換碼
+    game: `genshin.Game`
+        要兌換的遊戲
     Returns
     ------
     `str`
         回覆給使用者的訊息
     """
-    client = await get_genshin_client(user_id)
-    await client.redeem_code(code, client.uid)
+    await client.redeem_code(code, client.uids.get(game), game=game)
     return "兌換碼使用成功！"
 
 

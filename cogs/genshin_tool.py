@@ -1,6 +1,6 @@
 import asyncio
 import re
-from typing import Optional, Union
+from typing import Literal, Optional, Union
 
 import discord
 import genshin
@@ -17,19 +17,26 @@ class RedeemCode:
 
     @staticmethod
     async def redeem(
-        interaction: discord.Interaction, user: Union[discord.User, discord.Member], code: str
+        interaction: discord.Interaction,
+        user: Union[discord.User, discord.Member],
+        code: str,
+        game: genshin.Game,
     ):
         # 若兌換碼包含兌換網址，則移除該網址
         code = re.sub(r"(https://){0,1}genshin.hoyoverse.com(/.*){0,1}/gift\?code=", "", code)
+        code = re.sub(r"(https://){0,1}hsr.hoyoverse.com(/.*){0,1}/gift\?code=", "", code)
         # 匹配多組兌換碼並存成list
-        codes = re.findall(r"[A-Za-z0-9]{3,30}", code)
+        codes = re.findall(r"[A-Za-z0-9]{5,30}", code)
         if len(codes) == 0:
             await interaction.response.send_message(embed=EmbedTemplate.error("沒有偵測到兌換碼，請重新輸入"))
             return
         await interaction.response.defer()
+
         codes = codes[:5] if len(codes) > 5 else codes  # 避免使用者輸入過多內容
         msg = ""
         invalid_cookie_msg = ""  # genshin api 的 InvalidCookies 原始訊息
+        genshin_client = await genshin_app.get_genshin_client(user.id, check_uid=False)
+
         for i, code in enumerate(codes):
             # 使用兌換碼的間隔為5秒
             if i > 0:
@@ -40,7 +47,7 @@ class RedeemCode:
                 )
                 await asyncio.sleep(5)
             try:
-                result = "✅" + await genshin_app.redeem_code(user.id, code)
+                result = "✅" + await genshin_app.redeem_code(user.id, genshin_client, code, game)
             except errors.GenshinAPIException as e:
                 result = "❌"
                 if isinstance(e.origin, genshin.errors.InvalidCookies):
@@ -50,7 +57,9 @@ class RedeemCode:
                     result += e.message
             except Exception as e:
                 result = "❌" + str(e)
-            msg += f"[{code}](https://genshin.hoyoverse.com/gift?code={code})：{result}\n"
+            # 訊息加上官網兌換連結
+            game_host = {genshin.Game.GENSHIN: "genshin", genshin.Game.STARRAIL: "hsr"}
+            msg += f"[{code}](https://{game_host.get(game)}.hoyoverse.com/gift?code={code})：{result}\n"
 
         embed = discord.Embed(color=0x8FCE00, description=msg)
         embed.set_footer(text="點擊上述兌換碼可代入兌換碼至官網兌換")
@@ -67,13 +76,24 @@ class GenshinTool(commands.Cog, name="原神工具"):
 
     # 為使用者使用指定的兌換碼
     @app_commands.command(name="redeem兌換", description="使用Hoyolab兌換碼")
-    @app_commands.rename(code="兌換碼", user="使用者")
+    @app_commands.rename(code="兌換碼", game="遊戲", user="使用者")
     @app_commands.describe(code="請輸入要使用的兌換碼，支援多組兌換碼同時輸入")
+    @app_commands.choices(
+        game=[
+            Choice(name="原神", value="GENSHIN"),
+            Choice(name="星穹鐵道", value="STARRAIL"),
+        ]
+    )
     @custom_log.SlashCommandLogger
     async def slash_redeem(
-        self, interaction: discord.Interaction, code: str, user: Optional[discord.User] = None
+        self,
+        interaction: discord.Interaction,
+        code: str,
+        game: Literal["GENSHIN", "STARRAIL"] = "GENSHIN",
+        user: Optional[discord.User] = None,
     ):
-        await RedeemCode.redeem(interaction, user or interaction.user, code)
+        game_map = {"GENSHIN": genshin.Game.GENSHIN, "STARRAIL": genshin.Game.STARRAIL}
+        await RedeemCode.redeem(interaction, user or interaction.user, code, game_map[game])
 
     # 為使用者在Hoyolab簽到
     @app_commands.command(name="daily每日簽到", description="領取Hoyolab每日簽到獎勵")
@@ -110,7 +130,12 @@ class GenshinTool(commands.Cog, name="原神工具"):
 async def setup(client: commands.Bot):
     await client.add_cog(GenshinTool(client))
 
-    @client.tree.context_menu(name="使用兌換碼")
+    @client.tree.context_menu(name="使用兌換碼(原神)")
     @custom_log.ContextCommandLogger
-    async def context_redeem(interaction: discord.Interaction, msg: discord.Message):
-        await RedeemCode.redeem(interaction, interaction.user, msg.content)
+    async def context_redeem_genshin(interaction: discord.Interaction, msg: discord.Message):
+        await RedeemCode.redeem(interaction, interaction.user, msg.content, genshin.Game.GENSHIN)
+
+    @client.tree.context_menu(name="使用兌換碼(鐵道)")
+    @custom_log.ContextCommandLogger
+    async def context_redeem_starrail(interaction: discord.Interaction, msg: discord.Message):
+        await RedeemCode.redeem(interaction, interaction.user, msg.content, genshin.Game.STARRAIL)
