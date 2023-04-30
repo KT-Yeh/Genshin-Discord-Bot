@@ -25,50 +25,56 @@ class Schedule(commands.Cog, name="自動化"):
     async def cog_unload(self) -> None:
         self.schedule.cancel()
 
-    class ChooseGameButton(discord.ui.View):
-        """選擇自動簽到遊戲的按鈕"""
+    class DailyRewardOptionsView(discord.ui.View):
+        """自動簽到每日的選項，包含遊戲與是否 tag 使用者"""
 
         def __init__(self, author: Union[discord.User, discord.Member]):
             super().__init__(timeout=config.discord_view_short_timeout)
-            self.value: Optional[str] = None
+            self.value: str = "原神"
+            self.has_honkai3rd: bool = False
+            self.has_starrail: bool = False
+            self.is_mention: bool | None = None
             self.author = author
 
         async def interaction_check(self, interaction: discord.Interaction) -> bool:
             return interaction.user.id == self.author.id
 
-        @discord.ui.button(label="原神", style=discord.ButtonStyle.blurple)
-        async def option1(self, interaction: discord.Interaction, button: discord.ui.Button):
+        @discord.ui.select(
+            cls=discord.ui.Select,
+            options=[
+                discord.SelectOption(label="原神", value="原神", default=True),
+                discord.SelectOption(label="原神 + 崩壞3", value="原神 + 崩壞3"),
+                discord.SelectOption(label="原神 + 星穹鐵道", value="原神 + 星穹鐵道"),
+                discord.SelectOption(label="原神 + 崩壞3 + 星穹鐵道", value="原神 + 崩壞3 + 星穹鐵道"),
+            ],
+            min_values=1,
+            max_values=1,
+            placeholder="請選擇要簽到的遊戲：",
+        )
+        async def select_callback(
+            self, interaction: discord.Interaction, select: discord.ui.Select
+        ):
             await interaction.response.defer()
-            self.value = "原神"
+            self.value = select.values[0]
+            if "崩壞3" in self.value:
+                self.has_honkai3rd = True
+            if "星穹鐵道" in self.value:
+                self.has_starrail = True
+
+        @discord.ui.button(label="要tag", style=discord.ButtonStyle.blurple)
+        async def button1_callback(
+            self, interaction: discord.Interaction, button: discord.ui.Button
+        ):
+            await interaction.response.defer()
+            self.is_mention = True
             self.stop()
 
-        @discord.ui.button(label="原神+崩3", style=discord.ButtonStyle.blurple)
-        async def option2(self, interaction: discord.Interaction, button: discord.ui.Button):
+        @discord.ui.button(label="不用tag", style=discord.ButtonStyle.blurple)
+        async def button2_callback(
+            self, interaction: discord.Interaction, button: discord.ui.Button
+        ):
             await interaction.response.defer()
-            self.value = "原神+崩3"
-            self.stop()
-
-    class DailyMentionButton(discord.ui.View):
-        """每日簽到是否要tag使用者"""
-
-        def __init__(self, author: Union[discord.User, discord.Member]):
-            super().__init__(timeout=config.discord_view_short_timeout)
-            self.value = True
-            self.author = author
-
-        async def interaction_check(self, interaction: discord.Interaction) -> bool:
-            return interaction.user.id == self.author.id
-
-        @discord.ui.button(label="好！", style=discord.ButtonStyle.blurple)
-        async def option1(self, interaction: discord.Interaction, button: discord.ui.Button):
-            await interaction.response.defer()
-            self.value = True
-            self.stop()
-
-        @discord.ui.button(label="不用", style=discord.ButtonStyle.blurple)
-        async def option2(self, interaction: discord.Interaction, button: discord.ui.Button):
-            await interaction.response.defer()
-            self.value = False
+            self.is_mention = False
             self.stop()
 
     class CheckingNotesThresholdModal(discord.ui.Modal, title="設定即時便箋提醒"):
@@ -266,35 +272,33 @@ class Schedule(commands.Cog, name="自動化"):
 
         if function == "DAILY":  # 每日自動簽到
             if switch == "ON":  # 開啟簽到功能
-                choose_game_btn = self.ChooseGameButton(interaction.user)
-                await interaction.response.send_message("請選擇要自動簽到的遊戲：", view=choose_game_btn)
-                await choose_game_btn.wait()
-                if choose_game_btn.value is None:
+                # 使用下拉選單讓使用者選擇要簽到的遊戲
+                options_view = self.DailyRewardOptionsView(interaction.user)
+                await interaction.response.send_message(
+                    f"請依序選擇：\n1. 要簽到的遊戲\n2. 簽到時希望小幫手 tag 你 ({interaction.user.mention}) 嗎？",
+                    view=options_view,
+                )
+                await options_view.wait()
+                if options_view.is_mention is None:
                     await interaction.edit_original_response(
                         embed=EmbedTemplate.normal("已取消"), content=None, view=None
                     )
                     return
-
-                daily_mention_btn = self.DailyMentionButton(interaction.user)
-                await interaction.edit_original_response(
-                    content=f"每日自動簽到時希望小幫手tag你({interaction.user.mention})嗎？",
-                    view=daily_mention_btn,
-                )
-                await daily_mention_btn.wait()
 
                 # 新增使用者
                 await db.schedule_daily.add(
                     ScheduleDaily(
                         id=interaction.user.id,
                         channel_id=interaction.channel_id or 0,
-                        is_mention=daily_mention_btn.value,
-                        has_honkai=(True if choose_game_btn.value == "原神+崩3" else False),
+                        is_mention=options_view.is_mention,
+                        has_honkai=options_view.has_honkai3rd,
+                        has_starrail=options_view.has_starrail,
                     )
                 )
                 await interaction.edit_original_response(
                     embed=EmbedTemplate.normal(
-                        f"{choose_game_btn.value}每日自動簽到已開啟，"
-                        f'簽到時小幫手{"會" if daily_mention_btn.value else "不會"}tag你\n'
+                        f"{options_view.value} 每日自動簽到已開啟，"
+                        f'簽到時小幫手{"會" if options_view.is_mention else "不會"} tag 你\n'
                         f"今日已幫你簽到，明日預計簽到的時間為 {await self.predict_daily_checkin_time()} 左右"
                     ),
                     content=None,
@@ -302,7 +306,9 @@ class Schedule(commands.Cog, name="自動化"):
                 )
                 # 設定完成後幫使用者當日簽到
                 await genshin_app.claim_daily_reward(
-                    interaction.user.id, honkai=(choose_game_btn.value == "原神+崩3")
+                    interaction.user.id,
+                    has_honkai3rd=options_view.has_honkai3rd,
+                    has_starrail=options_view.has_starrail,
                 )
                 await db.schedule_daily.update(interaction.user.id, last_checkin_date=True)
             elif switch == "OFF":  # 關閉簽到功能

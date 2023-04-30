@@ -28,6 +28,8 @@ class DailyReward:
     """簽到的總人數 dict[host, count]"""
     _honkai_count: ClassVar[dict[str, int]] = {}
     """簽到崩壞3的人數 dict[host, count]"""
+    _starrail_count: ClassVar[dict[str, int]] = {}
+    """簽到星穹鐵道的人數 dict[host, count]"""
 
     @classmethod
     async def execute(cls, bot: commands.Bot):
@@ -48,6 +50,7 @@ class DailyReward:
             queue: asyncio.Queue[ScheduleDaily] = asyncio.Queue()
             cls._total = {}
             cls._honkai_count = {}
+            cls._starrail_count = {}
             daily_users = await db.schedule_daily.getAll()
 
             # 將所有需要簽到的使用者放入佇列 (Producer)
@@ -68,7 +71,7 @@ class DailyReward:
 
             _log_message = f"每日自動簽到結束：總共 {sum(cls._total.values())} 人簽到，其中 {sum(cls._honkai_count.values())} 人也簽到崩壞3\n"
             for host in cls._total.keys():
-                _log_message += f"- {host}：{cls._total.get(host)}、{cls._honkai_count.get(host)}\n"
+                _log_message += f"- {host}：{cls._total.get(host)}、{cls._honkai_count.get(host)}、{cls._starrail_count.get(host)}\n"
             LOG.System(_log_message)
             await cls._update_statistics(bot, start_time)
         except Exception as e:
@@ -110,6 +113,7 @@ class DailyReward:
 
         cls._total[host] = 0  # 初始化簽到人數
         cls._honkai_count[host] = 0  # 初始化簽到崩壞3的人數
+        cls._starrail_count[host] = 0  # 初始化簽到星穹鐵道的人數
         MAX_API_ERROR_COUNT: Final[int] = 20  # 遠端 API 發生錯誤的最大次數
         api_error_count = 0  # 遠端 API 發生錯誤的次數
 
@@ -132,6 +136,7 @@ class DailyReward:
                     await cls._send_message(bot, user, message)
                     cls._total[host] += 1
                     cls._honkai_count[host] += int(user.has_honkai)
+                    cls._starrail_count[host] += int(user.has_starrail)
                     await asyncio.sleep(config.schedule_loop_delay)
             finally:
                 queue.task_done()
@@ -162,7 +167,10 @@ class DailyReward:
         """
         if host == "LOCAL":  # 本地簽到
             message = await genshin_app.claim_daily_reward(
-                user.id, honkai=user.has_honkai, schedule=True
+                user.id,
+                has_honkai3rd=user.has_honkai,
+                has_starrail=user.has_starrail,
+                schedule=True,
             )
             return message
         else:  # 遠端 API 簽到
@@ -174,6 +182,7 @@ class DailyReward:
                 "uid": user_data.uid or 0,
                 "cookie": user_data.cookie,
                 "has_honkai": "true" if user.has_honkai else "false",
+                "has_starrail": "true" if user.has_starrail else "false",
             }
             async with aiohttp.ClientSession() as session:
                 async with session.post(url=host + "/daily-reward", json=payload) as resp:
@@ -208,11 +217,12 @@ class DailyReward:
     @classmethod
     async def _update_statistics(cls, bot: commands.Bot, start_time: datetime):
         """
-        計算自動簽到的統計數據，包括總簽到人數、簽到崩壞3的人數、平均簽到時間，
+        計算自動簽到的統計數據，包括總簽到人數、簽到崩壞3、星穹鐵道的人數、平均簽到時間，
         並將結果儲存到 schedule cog，同時將結果發送到通知頻道。
         """
         total = sum(cls._total.values())
         honkai_count = sum(cls._honkai_count.values())
+        starrail_count = sum(cls._starrail_count.values())
         # 計算平均簽到時間
         end_time = datetime.now()
         avg_user_daily_time = (end_time - start_time).total_seconds() / (total if total > 0 else 1)
@@ -225,7 +235,7 @@ class DailyReward:
         # 發送統計結果到通知頻道
         if config.notification_channel_id:
             embed = EmbedTemplate.normal(
-                f"總共 {total} 人簽到，其中 {honkai_count} 人也簽到崩壞3\n"
+                f"總共 {total} 人簽到，其中 {honkai_count} 人簽到崩壞3、{starrail_count} 人簽到星穹鐵道\n"
                 f"簽到時間：{start_time.strftime('%H:%M:%S')} ~ {end_time.strftime('%H:%M:%S')}\n"
                 f"平均時間：{avg_user_daily_time:.2f} 秒/人",
                 title="每日自動簽到結果",
