@@ -19,9 +19,12 @@ class ScheduleDaily:
         發送通知訊息的 Discord 頻道的 ID
     is_mention: `bool`
         發送訊息時是否要 tag 使用者
+    has_genshin: `bool`
+        是否要簽到原神
     has_honkai: `bool`
         是否要簽到崩壞3
     has_starrail: `bool`
+        是否要簽到星穹鐵道
     last_checkin_date: `Optional[date]`
         用來記錄上次簽到的日期，在特殊情況下避免重複簽到
     """
@@ -29,6 +32,7 @@ class ScheduleDaily:
     id: int
     channel_id: int
     is_mention: bool = False
+    has_genshin: bool = False
     has_honkai: bool = False
     has_starrail: bool = False
     last_checkin_date: Optional[date] = None
@@ -39,6 +43,7 @@ class ScheduleDaily:
             id=row["id"],
             channel_id=row["channel_id"],
             is_mention=bool(row["is_mention"]),
+            has_genshin=bool(row["has_genshin"]),
             has_honkai=bool(row["has_honkai"]),
             has_starrail=bool(row["has_starrail"]),
             last_checkin_date=(
@@ -62,6 +67,7 @@ class ScheduleDailyTable:
                 id int NOT NULL PRIMARY KEY,
                 channel_id int NOT NULL,
                 is_mention int NOT NULL,
+                has_genshin int NOT NULL,
                 has_honkai int NOT NULL,
                 has_starrail int NOT NULL,
                 last_checkin_date text
@@ -69,6 +75,11 @@ class ScheduleDailyTable:
         )
         cursor = await self.db.execute("PRAGMA table_info(schedule_daily)")
         columns = [column[1] for column in await cursor.fetchall()]
+
+        if "has_genshin" not in columns:
+            await self.db.execute(
+                "ALTER TABLE schedule_daily ADD COLUMN has_genshin int NOT NULL DEFAULT '1'"
+            )
         if "has_starrail" not in columns:
             await self.db.execute(
                 "ALTER TABLE schedule_daily ADD COLUMN has_starrail int NOT NULL DEFAULT '0'"
@@ -80,10 +91,11 @@ class ScheduleDailyTable:
         if (await self.get(user.id)) is not None:  # 當使用者已存在時
             await self.db.execute(
                 "UPDATE schedule_daily SET "
-                "channel_id=?, is_mention=?, has_honkai=?, has_starrail=? WHERE id=?",
+                "channel_id=?, is_mention=?, has_genshin=?, has_honkai=?, has_starrail=? WHERE id=?",
                 [
                     user.channel_id,
                     int(user.is_mention),
+                    int(user.has_genshin),
                     int(user.has_honkai),
                     int(user.has_starrail),
                     user.id,
@@ -92,12 +104,13 @@ class ScheduleDailyTable:
         else:
             await self.db.execute(
                 "INSERT OR REPLACE INTO schedule_daily"
-                "(id, channel_id, is_mention, has_honkai, has_starrail, last_checkin_date) "
-                "VALUES(?, ?, ?, ?, ?, ?)",
+                "(id, channel_id, is_mention, has_genshin, has_honkai, has_starrail, last_checkin_date) "
+                "VALUES(?, ?, ?, ?, ?, ?, ?)",
                 [
                     user.id,
                     user.channel_id,
                     int(user.is_mention),
+                    int(user.has_genshin),
                     int(user.has_honkai),
                     int(user.has_starrail),
                     user.last_checkin_date,

@@ -35,7 +35,11 @@ class RedeemCode:
         codes = codes[:5] if len(codes) > 5 else codes  # 避免使用者輸入過多內容
         msg = ""
         invalid_cookie_msg = ""  # genshin api 的 InvalidCookies 原始訊息
-        genshin_client = await genshin_app.get_genshin_client(user.id, check_uid=False)
+        try:
+            genshin_client = await genshin_app.get_genshin_client(user.id, check_uid=False)
+        except Exception as e:
+            await interaction.edit_original_response(embed=EmbedTemplate.error(e))
+            return
 
         for i, code in enumerate(codes):
             # 使用兌換碼的間隔為5秒
@@ -100,29 +104,28 @@ class GenshinTool(commands.Cog, name="原神工具"):
     @app_commands.rename(game="遊戲", user="使用者")
     @app_commands.choices(
         game=[
-            Choice(name="原神", value=1),
-            Choice(name="原神 + 崩壞3", value=3),
-            Choice(name="原神 + 星穹鐵道", value=5),
-            Choice(name="原神 + 崩壞3 + 星穹鐵道", value=7),
+            Choice(name="原神", value="原神"),
+            Choice(name="崩壞3", value="崩壞3"),
+            Choice(name="星穹鐵道", value="星穹鐵道"),
         ]
     )
     @custom_log.SlashCommandLogger
     async def slash_daily(
-        self, interaction: discord.Interaction, game: int = 0, user: Optional[discord.User] = None
+        self,
+        interaction: discord.Interaction,
+        game: Literal["原神", "崩壞3", "星穹鐵道"],
+        user: Optional[discord.User] = None,
     ):
-        # 原神：1、崩壞3：2、星穹鐵道：4
-        has_starrail = game >= 4
-        game -= 4 * int(has_starrail)
-
-        has_honkai3rd = game >= 2
-        game -= 2 * int(has_honkai3rd)
+        game_option = {
+            "has_genshin": True if game == "原神" else False,
+            "has_honkai3rd": True if game == "崩壞3" else False,
+            "has_starrail": True if game == "星穹鐵道" else False,
+        }
 
         _user = user or interaction.user
         defer, result = await asyncio.gather(
             interaction.response.defer(),
-            genshin_app.claim_daily_reward(
-                _user.id, has_honkai3rd=has_honkai3rd, has_starrail=has_starrail
-            ),
+            genshin_app.claim_daily_reward(_user.id, **game_option),
         )
         await interaction.edit_original_response(embed=EmbedTemplate.normal(result))
 

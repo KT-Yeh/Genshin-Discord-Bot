@@ -82,8 +82,9 @@ class Setting(commands.Cog, name="設定"):
             embed = EmbedTemplate.normal(msg, title="小幫手Cookie使用與保存告知")
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    # 提交UID的表單
     class UIDModal(discord.ui.Modal, title="提交UID"):
+        """提交原神 UID 的表單"""
+
         uid: discord.ui.TextInput[discord.ui.Modal] = discord.ui.TextInput(
             label="UID",
             placeholder="請輸入你原神遊戲內的UID(9位數字)",
@@ -104,8 +105,9 @@ class Setting(commands.Cog, name="設定"):
                     embed=EmbedTemplate.normal("UID設定成功"), ephemeral=True
                 )
 
-    # 選擇欲保存UID的下拉選單
     class UidDropdown(discord.ui.Select):
+        """選擇欲保存的 UID 的下拉選單"""
+
         def __init__(self, accounts: typing.Sequence[genshin.models.GenshinAccount]):
             options = [
                 discord.SelectOption(
@@ -127,21 +129,31 @@ class Setting(commands.Cog, name="設定"):
 
     # 設定原神UID
     @app_commands.command(name="uid設定", description="保存指定的原神UID")
+    @app_commands.rename(game="遊戲")
+    @app_commands.choices(
+        game=[
+            Choice(name="原神", value="原神"),
+            Choice(name="星穹鐵道", value="星穹鐵道"),
+        ]
+    )
     @custom_log.SlashCommandLogger
-    async def slash_uid(self, interaction: discord.Interaction):
+    async def slash_uid(
+        self, interaction: discord.Interaction, game: typing.Literal["原神", "星穹鐵道"]
+    ):
         user = await db.users.get(interaction.user.id)
         if user is None or len(user.cookie) == 0:
-            # 當沒有存過 Cookie 時，顯示 UID 設定表單
+            # 當只用展示櫃，沒有存過 Cookie 時，顯示 UID 設定表單
             await interaction.response.send_modal(self.UIDModal())
         else:
             # 當有存過 Cookie 時，取得帳號資料，並顯示帳號內 UID 選單
+            game_map = {"原神": genshin.Game.GENSHIN, "星穹鐵道": genshin.Game.STARRAIL}
             try:
                 defer, accounts = await asyncio.gather(
                     interaction.response.defer(ephemeral=True),
-                    genshin_app.get_game_accounts(interaction.user.id),
+                    genshin_app.get_game_accounts(interaction.user.id, game_map[game]),
                 )
                 if len(accounts) == 0:
-                    raise Exception("此帳號內沒有任何原神角色")
+                    raise Exception(f"此帳號內沒有任何{game}角色")
             except Exception as e:
                 await interaction.edit_original_response(embed=EmbedTemplate.error(e))
             else:

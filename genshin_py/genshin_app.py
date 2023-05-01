@@ -7,7 +7,8 @@ import sentry_sdk
 from data.database import SpiralAbyssData, User, db
 from utility import LOG, get_app_command_mention, trim_cookie
 
-from .errors import UserDataNotFound, generalErrorHandler
+from .errors import UserDataNotFound
+from .errors_decorator import generalErrorHandler
 
 
 @generalErrorHandler
@@ -39,31 +40,29 @@ async def set_cookie(user_id: int, cookie: str) -> str:
         client.region = genshin.Region.CHINESE
         accounts = await client.get_game_accounts()
 
-    # 篩選出帳號內原神角色
-    accounts = [account for account in accounts if account.game == genshin.types.Game.GENSHIN]
-    if len(accounts) == 0:
-        LOG.Info(f"{LOG.User(user_id)} 帳號內沒有任何角色")
-        result = "帳號內沒有任何原神角色，取消設定Cookie"
-    else:
-        await db.users.add(User(id=user_id, cookie=trimed_cookie))
-        LOG.Info(f"{LOG.User(user_id)} Cookie設置成功")
+    await db.users.add(User(id=user_id, cookie=trimed_cookie))
+    LOG.Info(f"{LOG.User(user_id)} Cookie設置成功")
 
-        if len(accounts) == 1 and len(str(accounts[0].uid)) == 9:
-            await db.users.update(user_id, uid=accounts[0].uid)
-            result = f"Cookie已設定完成，角色UID: {accounts[0].uid} 已保存！"
-        else:
-            result = f'Cookie已保存，你的Hoyolab帳號內共有{len(accounts)}名角色\n請使用 {get_app_command_mention("uid設定")} 指定要保存的原神角色'
+    if len(accounts) == 1:
+        await db.users.update(user_id, uid=accounts[0].uid)
+        result = f"Cookie已設定完成，角色UID: {accounts[0].uid} 已保存！"
+    else:
+        result = f'Cookie已保存，你的Hoyolab帳號內共有{len(accounts)}名角色\n請使用 {get_app_command_mention("uid設定")} 指定要保存的角色'
     return result
 
 
 @generalErrorHandler
-async def get_game_accounts(user_id: int) -> Sequence[genshin.models.GenshinAccount]:
-    """取得同一個Hoyolab帳號下，各伺服器的原神帳號
+async def get_game_accounts(
+    user_id: int, game: genshin.Game
+) -> Sequence[genshin.models.GenshinAccount]:
+    """取得同一個Hoyolab帳號下，指定遊戲的所有伺服器帳號
 
     Parameters
     ------
     user_id: `int`
-        使用者Discord ID
+        使用者 Discord ID
+    game: `genshin.Game`
+        指定遊戲
 
     Returns
     ------
@@ -72,7 +71,7 @@ async def get_game_accounts(user_id: int) -> Sequence[genshin.models.GenshinAcco
     """
     client = await get_genshin_client(user_id, check_uid=False)
     accounts = await client.get_game_accounts()
-    return [account for account in accounts if account.game == genshin.types.Game.GENSHIN]
+    return [account for account in accounts if account.game == game]
 
 
 @generalErrorHandler
@@ -116,16 +115,24 @@ async def redeem_code(
     `str`
         回覆給使用者的訊息
     """
-    await client.redeem_code(code, client.uids.get(game), game=game)
+    try:
+        await client.redeem_code(code, client.uids.get(game), game=game)
+    except genshin.errors.GenshinException as e:
+        if "兌換碼" in e.original:  # genshin.py 只有對英文的 redemption 做處理
+            raise genshin.errors.RedemptionException(
+                {"retcode": e.retcode, "message": e.original}, e.msg
+            ) from e
+        raise
     return "兌換碼使用成功！"
 
 
 async def claim_daily_reward(
     user_id: int,
     *,
+    has_genshin: bool = False,
     has_honkai3rd: bool = False,
     has_starrail: bool = False,
-    schedule=False,
+    is_scheduled: bool = False,
 ) -> str:
     """為使用者在Hoyolab簽到
 
@@ -133,11 +140,13 @@ async def claim_daily_reward(
     ------
     user_id: `int`
         使用者Discord ID
+    has_genshin: `bool`
+        是否簽到原神
     honkai3rd: `bool`
-        是否也簽到崩壞3
+        是否簽到崩壞3
     has_starrail: `bool`
-        是否也簽到星穹鐵道
-    schedule: `bool`
+        是否簽到星穹鐵道
+    is_scheduled: `bool`
         是否為排程自動簽到
 
     Returns
@@ -146,7 +155,7 @@ async def claim_daily_reward(
         回覆給使用者的訊息
     """
     try:
-        client = await get_genshin_client(user_id, update_using_time=(not schedule))
+        client = await get_genshin_client(user_id, update_using_time=(not is_scheduled))
     except Exception as e:
         return str(e)
 
@@ -178,11 +187,15 @@ async def claim_daily_reward(
         else:
             return f"{game_name[game]}今日簽到成功，獲得 {reward.amount}x {reward.name}！"
 
-    result = await claim_reward(genshin.Game.GENSHIN)
+    if any([has_genshin, has_honkai3rd, has_starrail]) is False:
+        return "未選擇任何遊戲簽到"
+    result = ""
+    if has_genshin:
+        result += await claim_reward(genshin.Game.GENSHIN)
     if has_honkai3rd:
-        result += " " + await claim_reward(genshin.Game.HONKAI)
+        result += await claim_reward(genshin.Game.HONKAI)
     if has_starrail:
-        result += " " + await claim_reward(genshin.Game.STARRAIL)
+        result += await claim_reward(genshin.Game.STARRAIL)
 
     # Hoyolab社群簽到
     try:

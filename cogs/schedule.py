@@ -30,7 +30,8 @@ class Schedule(commands.Cog, name="自動化"):
 
         def __init__(self, author: Union[discord.User, discord.Member]):
             super().__init__(timeout=config.discord_view_short_timeout)
-            self.value: str = "原神"
+            self.value: str | None = None
+            self.has_genshin: bool = False
             self.has_honkai3rd: bool = False
             self.has_starrail: bool = False
             self.is_mention: bool | None = None
@@ -42,20 +43,21 @@ class Schedule(commands.Cog, name="自動化"):
         @discord.ui.select(
             cls=discord.ui.Select,
             options=[
-                discord.SelectOption(label="原神", value="原神", default=True),
-                discord.SelectOption(label="原神 + 崩壞3", value="原神 + 崩壞3"),
-                discord.SelectOption(label="原神 + 星穹鐵道", value="原神 + 星穹鐵道"),
-                discord.SelectOption(label="原神 + 崩壞3 + 星穹鐵道", value="原神 + 崩壞3 + 星穹鐵道"),
+                discord.SelectOption(label="原神", value="原神"),
+                discord.SelectOption(label="崩壞3", value="崩壞3"),
+                discord.SelectOption(label="星穹鐵道", value="星穹鐵道"),
             ],
             min_values=1,
-            max_values=1,
-            placeholder="請選擇要簽到的遊戲：",
+            max_values=3,
+            placeholder="請選擇要簽到的遊戲 (可多選)：",
         )
         async def select_callback(
             self, interaction: discord.Interaction, select: discord.ui.Select
         ):
             await interaction.response.defer()
-            self.value = select.values[0]
+            self.value = " + ".join(select.values)
+            if "原神" in self.value:
+                self.has_genshin = True
             if "崩壞3" in self.value:
                 self.has_honkai3rd = True
             if "星穹鐵道" in self.value:
@@ -223,7 +225,7 @@ class Schedule(commands.Cog, name="自動化"):
             Choice(name="★ 每日自動簽到", value="DAILY"),
             Choice(name="★ 即時便箋提醒", value="NOTES"),
         ],
-        switch=[Choice(name="開啟功能", value="ON"), Choice(name="關閉功能", value="OFF")],
+        switch=[Choice(name="開啟或更新設定", value="ON"), Choice(name="關閉功能", value="OFF")],
     )
     @SlashCommandLogger
     async def slash_schedule(
@@ -275,11 +277,12 @@ class Schedule(commands.Cog, name="自動化"):
                 # 使用下拉選單讓使用者選擇要簽到的遊戲
                 options_view = self.DailyRewardOptionsView(interaction.user)
                 await interaction.response.send_message(
-                    f"請依序選擇：\n1. 要簽到的遊戲\n2. 簽到時希望小幫手 tag 你 ({interaction.user.mention}) 嗎？",
+                    "請依序選擇：\n1. 要簽到的遊戲 (請選擇 1~3 項)\n"
+                    f"2. 簽到時希望小幫手 tag 你 ({interaction.user.mention}) 嗎？",
                     view=options_view,
                 )
                 await options_view.wait()
-                if options_view.is_mention is None:
+                if options_view.value is None or options_view.is_mention is None:
                     await interaction.edit_original_response(
                         embed=EmbedTemplate.normal("已取消"), content=None, view=None
                     )
@@ -291,6 +294,7 @@ class Schedule(commands.Cog, name="自動化"):
                         id=interaction.user.id,
                         channel_id=interaction.channel_id or 0,
                         is_mention=options_view.is_mention,
+                        has_genshin=options_view.has_genshin,
                         has_honkai=options_view.has_honkai3rd,
                         has_starrail=options_view.has_starrail,
                     )
@@ -307,6 +311,7 @@ class Schedule(commands.Cog, name="自動化"):
                 # 設定完成後幫使用者當日簽到
                 await genshin_app.claim_daily_reward(
                     interaction.user.id,
+                    has_genshin=options_view.has_genshin,
                     has_honkai3rd=options_view.has_honkai3rd,
                     has_starrail=options_view.has_starrail,
                 )
