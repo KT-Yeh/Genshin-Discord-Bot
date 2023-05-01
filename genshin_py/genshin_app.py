@@ -114,7 +114,14 @@ async def redeem_code(
     `str`
         回覆給使用者的訊息
     """
-    await client.redeem_code(code, client.uids.get(game), game=game)
+    try:
+        await client.redeem_code(code, client.uids.get(game), game=game)
+    except genshin.errors.GenshinException as e:
+        if "兌換碼" in e.original:  # genshin.py 只有對英文的 redemption 做處理
+            raise genshin.errors.RedemptionException(
+                {"retcode": e.retcode, "message": e.original}, e.msg
+            ) from e
+        raise
     return "兌換碼使用成功！"
 
 
