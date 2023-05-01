@@ -7,7 +7,8 @@ import sentry_sdk
 from data.database import SpiralAbyssData, User, db
 from utility import LOG, get_app_command_mention, trim_cookie
 
-from .errors import UserDataNotFound, generalErrorHandler
+from .errors import UserDataNotFound
+from .errors_decorator import generalErrorHandler
 
 
 @generalErrorHandler
