@@ -5,6 +5,7 @@ import aiohttp
 import genshin
 import sentry_sdk
 
+from data.database import db
 from utility import LOG
 
 from .errors import GenshinAPIException, UserDataNotFound
@@ -39,6 +40,7 @@ def generalErrorHandler(func: Callable):
             raise GenshinAPIException(e, "此功能權限未開啟，請先從Hoyolab網頁或App上的個人戰績->設定，將此功能啟用")
         except genshin.errors.InvalidCookies as e:
             LOG.FuncExceptionLog(user_id, func.__name__, e)
+            await db.users.update(user_id, invalid_cookie=True)
             raise GenshinAPIException(e, "Cookie已失效，請從Hoyolab重新取得新Cookie")
         except genshin.errors.RedemptionException as e:
             LOG.FuncExceptionLog(user_id, func.__name__, e)

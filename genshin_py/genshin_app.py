@@ -75,22 +75,20 @@ async def get_game_accounts(
 
 
 @generalErrorHandler
-async def get_realtime_notes(user_id: int, *, schedule=False) -> genshin.models.Notes:
+async def get_realtime_notes(user_id: int) -> genshin.models.Notes:
     """取得使用者的即時便箋
 
     Parameters
     ------
     user_id: `int`
         使用者Discord ID
-    schedule: `bool`
-        是否為排程檢查樹脂
 
     Returns
     ------
     `Notes`
         查詢結果
     """
-    client = await get_genshin_client(user_id, update_using_time=(not schedule))
+    client = await get_genshin_client(user_id)
     return await client.get_genshin_notes(client.uid)
 
 
@@ -132,7 +130,6 @@ async def claim_daily_reward(
     has_genshin: bool = False,
     has_honkai3rd: bool = False,
     has_starrail: bool = False,
-    is_scheduled: bool = False,
 ) -> str:
     """為使用者在Hoyolab簽到
 
@@ -146,8 +143,6 @@ async def claim_daily_reward(
         是否簽到崩壞3
     has_starrail: `bool`
         是否簽到星穹鐵道
-    is_scheduled: `bool`
-        是否為排程自動簽到
 
     Returns
     ------
@@ -155,7 +150,7 @@ async def claim_daily_reward(
         回覆給使用者的訊息
     """
     try:
-        client = await get_genshin_client(user_id, update_using_time=(not is_scheduled))
+        client = await get_genshin_client(user_id)
     except Exception as e:
         return str(e)
 
@@ -312,9 +307,7 @@ async def get_game_notices() -> Sequence[genshin.models.Announcement]:
     return notices
 
 
-async def get_genshin_client(
-    user_id: int, *, check_uid=True, update_using_time: bool = True
-) -> genshin.Client:
+async def get_genshin_client(user_id: int, *, check_uid=True) -> genshin.Client:
     """設定並取得原神API的Client
 
     Parameters
@@ -323,8 +316,6 @@ async def get_genshin_client(
         使用者Discord ID
     check_uid: `bool`
         是否檢查UID
-    update_using_time: `bool`
-        是否更新使用者最後使用時間
 
     Returns
     ------
@@ -332,9 +323,7 @@ async def get_genshin_client(
         原神API的Client
     """
     user = await db.users.get(user_id)
-    check, msg = await db.users.exist(
-        user, check_uid=check_uid, update_using_time=update_using_time
-    )
+    check, msg = await db.users.exist(user, check_uid=check_uid)
     if check is False or user is None:
         raise UserDataNotFound(msg)
 

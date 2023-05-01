@@ -86,7 +86,7 @@ class RealtimeNotes:
         msg = ""
         embed = None
         try:
-            notes = await genshin_app.get_realtime_notes(user.id, schedule=True)
+            notes = await genshin_app.get_realtime_notes(user.id)
         except Exception as e:
             # 當錯誤為 InternalDatabaseError 時，忽略並設定1小時後檢查
             if isinstance(e, errors.GenshinAPIException) and isinstance(
