@@ -43,11 +43,20 @@ async def set_cookie(user_id: int, cookie: str) -> str:
     await db.users.add(User(id=user_id, cookie=trimed_cookie))
     LOG.Info(f"{LOG.User(user_id)} Cookie設置成功")
 
-    if len(accounts) == 1:
-        await db.users.update(user_id, uid=accounts[0].uid)
-        result = f"Cookie已設定完成，角色UID: {accounts[0].uid} 已保存！"
-    else:
-        result = f'Cookie已保存，你的Hoyolab帳號內共有{len(accounts)}名角色\n請使用 {get_app_command_mention("uid設定")} 指定要保存的角色'
+    gs_accounts = [account for account in accounts if account.game == genshin.types.Game.GENSHIN]
+    sr_accounts = [account for account in accounts if account.game == genshin.types.Game.STARRAIL]
+
+    if len(gs_accounts) == 1:
+        await db.users.update(user_id, uid=gs_accounts[0].uid)
+    if len(sr_accounts) == 1:
+        await db.users.update(user_id, uid_starrail=sr_accounts[0].uid)
+    result = "Cookie已設定完成！"
+
+    _msg = f"請使用 {get_app_command_mention('uid設定')} 指定要保存的角色。"
+    if len(gs_accounts) > 1:
+        result += f"\n你的帳號內共有{len(gs_accounts)}名原神角色，{_msg}"
+    if len(sr_accounts) > 1:
+        result += f"\n你的帳號內共有{len(sr_accounts)}名星穹鐵道角色，{_msg}"
     return result
 
 
@@ -150,7 +159,7 @@ async def claim_daily_reward(
         回覆給使用者的訊息
     """
     try:
-        client = await get_genshin_client(user_id)
+        client = await get_genshin_client(user_id, check_uid=False)
     except Exception as e:
         return str(e)
 
@@ -307,31 +316,44 @@ async def get_game_notices() -> Sequence[genshin.models.Announcement]:
     return notices
 
 
-async def get_genshin_client(user_id: int, *, check_uid=True) -> genshin.Client:
-    """設定並取得原神API的Client
+async def get_genshin_client(
+    user_id: int,
+    *,
+    game: genshin.Game = genshin.Game.GENSHIN,
+    check_uid=True,
+) -> genshin.Client:
+    """設定並取得原神 API 的 Client
 
     Parameters
     ------
     user_id: `int`
-        使用者Discord ID
+        使用者 Discord ID
+    game: `genshin.Game`
+        要取得的遊戲 Client
     check_uid: `bool`
-        是否檢查UID
+        是否檢查 UID
 
     Returns
     ------
     `genshin.Client`
-        原神API的Client
+        原神 API 的 Client
     """
     user = await db.users.get(user_id)
     check, msg = await db.users.exist(user, check_uid=check_uid)
     if check is False or user is None:
         raise UserDataNotFound(msg)
 
-    if user.uid is not None and str(user.uid)[0] in ["1", "2", "5"]:
+    if game == genshin.Game.GENSHIN:
+        uid = user.uid or 0
+    else:
+        uid = user.uid_starrail or 0
+
+    if str(uid)[0] in ["1", "2", "5"]:
         client = genshin.Client(region=genshin.Region.CHINESE, lang="zh-cn")
     else:
         client = genshin.Client(lang="zh-tw")
+
     client.set_cookies(user.cookie)
-    client.default_game = genshin.Game.GENSHIN
-    client.uid = user.uid if user.uid else 0
+    client.default_game = game
+    client.uid = uid
     return client

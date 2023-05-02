@@ -36,7 +36,9 @@ class RedeemCode:
         msg = ""
         invalid_cookie_msg = ""  # genshin api 的 InvalidCookies 原始訊息
         try:
-            genshin_client = await genshin_app.get_genshin_client(user.id, check_uid=False)
+            genshin_client = await genshin_app.get_genshin_client(
+                user.id, game=game, check_uid=False
+            )
         except Exception as e:
             await interaction.edit_original_response(embed=EmbedTemplate.error(e))
             return
@@ -93,7 +95,7 @@ class GenshinTool(commands.Cog, name="原神工具"):
         self,
         interaction: discord.Interaction,
         code: str,
-        game: Literal["GENSHIN", "STARRAIL"] = "GENSHIN",
+        game: Literal["GENSHIN", "STARRAIL"],
         user: Optional[discord.User] = None,
     ):
         game_map = {"GENSHIN": genshin.Game.GENSHIN, "STARRAIL": genshin.Game.STARRAIL}

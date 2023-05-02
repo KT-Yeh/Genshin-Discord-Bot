@@ -108,7 +108,9 @@ class Setting(commands.Cog, name="設定"):
     class UidDropdown(discord.ui.Select):
         """選擇欲保存的 UID 的下拉選單"""
 
-        def __init__(self, accounts: typing.Sequence[genshin.models.GenshinAccount]):
+        def __init__(
+            self, accounts: typing.Sequence[genshin.models.GenshinAccount], game: genshin.Game
+        ):
             options = [
                 discord.SelectOption(
                     label=f"[{get_server_name(str(account.uid)[0])}] {account.uid}",
@@ -119,10 +121,14 @@ class Setting(commands.Cog, name="設定"):
             ]
             super().__init__(placeholder="請選擇要保存的UID：", options=options)
             self.accounts = accounts
+            self.game = game
 
         async def callback(self, interaction: discord.Interaction):
             uid = self.accounts[int(self.values[0])].uid
-            await db.users.update(interaction.user.id, uid=uid)
+            if self.game == genshin.Game.GENSHIN:
+                await db.users.update(interaction.user.id, uid=uid)
+            elif self.game == genshin.Game.STARRAIL:
+                await db.users.update(interaction.user.id, uid_starrail=uid)
             await interaction.response.edit_message(
                 embed=EmbedTemplate.normal(f"角色UID: {uid} 已設定完成"), view=None
             )
@@ -158,7 +164,7 @@ class Setting(commands.Cog, name="設定"):
                 await interaction.edit_original_response(embed=EmbedTemplate.error(e))
             else:
                 view = discord.ui.View(timeout=config.discord_view_short_timeout)
-                view.add_item(self.UidDropdown(accounts))
+                view.add_item(self.UidDropdown(accounts, game_map[game]))
                 await interaction.edit_original_response(view=view)
 
     # 清除資料確認按紐
