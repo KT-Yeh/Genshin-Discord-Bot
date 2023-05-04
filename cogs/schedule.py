@@ -267,7 +267,7 @@ class Schedule(commands.Cog, name="自動化"):
 
         # 設定前先確認使用者是否有Cookie資料
         user = await db.users.get(interaction.user.id)
-        check, msg = await db.users.exist(user)
+        check, msg = await db.users.exist(user, check_uid=(function == "NOTES"))
         if check is False and msg is not None:
             await interaction.response.send_message(embed=EmbedTemplate.error(msg))
             return

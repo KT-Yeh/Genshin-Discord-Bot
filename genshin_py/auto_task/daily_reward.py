@@ -171,13 +171,15 @@ class DailyReward:
                 has_genshin=user.has_genshin,
                 has_honkai3rd=user.has_honkai,
                 has_starrail=user.has_starrail,
-                is_scheduled=True,
             )
             return message
         else:  # 遠端 API 簽到
             user_data = await db.users.get(user.id)
             if user_data is None:
                 return None
+            check, msg = await db.users.exist(user_data, check_uid=False)
+            if check is False:
+                return msg
             payload = {
                 "discord_id": user.id,
                 "uid": user_data.uid or 0,

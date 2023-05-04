@@ -60,16 +60,22 @@ class Database:
         await self.schedule_resin.remove(user_id)
         await self.spiral_abyss.remove(user_id)
 
-    async def removeExpiredUser(self, diff_days: int = 30) -> None:
-        """將超過天數未使用的使用者刪除"""
+    async def removeExpiredUser(self, diff_days: int = 30, invalid_cookie: int = 30) -> None:
+        """將超過天數未使用、Cookie 錯誤次數的使用者刪除
+
+        Parameters:
+        ------
+        diff_days: `int`
+            刪除超過此天數未使用的使用者
+        invalid_cookie: `int`
+            刪除超過此錯誤次數的使用者
+        """
         now = datetime.now()
         count = 0
         users = await self.users.getAll()
         for user in users:
-            if user.last_used_time is None:
-                continue
-            interval = now - user.last_used_time
-            if interval.days > diff_days:
+            interval = now - (now if user.last_used_time is None else user.last_used_time)
+            if interval.days > diff_days or user.invalid_cookie > invalid_cookie:
                 await self.removeUser(user.id)
                 count += 1
         LOG.System(f"檢查過期使用者：{len(users)} 位使用者已檢查，已刪除 {count} 位過期使用者")
