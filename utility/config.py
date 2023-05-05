@@ -36,7 +36,7 @@ class Config(BaseModel):
         資料庫儲存的資料夾位置與檔名
     sentry_sdk_dsn: `Optional[str]`
         Sentry DSN 位址設定
-    notification_channel_id: `Optional[int]`
+    notification_channel_id: `list[int]`
         每日簽到完成後統計訊息欲發送到的 Discord 頻道 ID
     game_maintenance_time: `Optional[Tuple[datetime, datetime]]`
         遊戲的維護時間(起始, 結束)，在此期間內自動排程不會執行
@@ -57,7 +57,7 @@ class Config(BaseModel):
     discord_view_short_timeout: float = 60
     database_file_path: str = "data/bot/bot.db"
     sentry_sdk_dsn: typing.Optional[str] = None
-    notification_channel_id: typing.Optional[int] = None
+    notification_channel_id: typing.List[int] = []
     game_maintenance_time: typing.Optional[typing.Tuple[datetime, datetime]] = None
     prometheus_server_port: typing.Optional[int] = None
     daily_reward_api_list: typing.List[str] = []

@@ -120,7 +120,6 @@ class Admin(commands.Cog):
                 value="schedule_check_resin_interval",
             ),
             Choice(name="schedule_loop_delay", value="schedule_loop_delay"),
-            Choice(name="notification_channel_id", value="notification_channel_id"),
         ]
     )
     @SlashCommandLogger
@@ -128,7 +127,6 @@ class Admin(commands.Cog):
         if option in [
             "schedule_daily_reward_time",
             "schedule_check_resin_interval",
-            "notification_channel_id",
         ]:
             setattr(config, option, int(value))
         elif option in ["schedule_loop_delay"]:

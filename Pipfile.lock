@@ -278,11 +278,11 @@
         },
         "discord.py": {
             "hashes": [
-                "sha256:38fc52a784727b8e5e5749267089400035b187a009028eddfabeb182abcc6d52",
-                "sha256:b9944056bcb5711b2d04088848fd004466cf117c15c84fa798bf55470f28275f"
+                "sha256:792bdcfe71cfe013c446cf379b2e83e08b5050604322ad6fb592864e63511abd",
+                "sha256:f9df95795c6f52c5db43b7ab43634993e12ef233288636a759166dd9c134d077"
             ],
             "index": "pypi",
-            "version": "==2.2.2"
+            "version": "==2.2.3"
         },
         "enkanetwork.py": {
             "hashes": [
@@ -373,7 +373,7 @@
         },
         "genshin": {
             "git": "https://github.com/thesadru/genshin.py",
-            "ref": "263d2412caca302089b35ef4c5abb6184a384d91"
+            "ref": "5a7053fb180f5e905d8a603c8aec760028c98476"
         },
         "idna": {
             "hashes": [
@@ -674,11 +674,11 @@
         },
         "sentry-sdk": {
             "hashes": [
-                "sha256:092888f3abf7a2ea78f0bfcefc3e0465caee2b6f0efb26f538ccc60f95dca179",
-                "sha256:99c15556a23621be9f18c2955f7ce63321713bf1c0ad396b27b61399bac5f458"
+                "sha256:827fac0ed1c7921bd198727128a8aa890ad66242598aa18f4cdfa3e46bdd9a60",
+                "sha256:eb37b55ddfbbaf523dc91e59673caf10ab25e36cd4350ae71d19daa9c86506c7"
             ],
             "index": "pypi",
-            "version": "==1.21.1"
+            "version": "==1.22.0"
         },
         "six": {
             "hashes": [
@@ -706,11 +706,11 @@
         },
         "urllib3": {
             "hashes": [
-                "sha256:8f7f917bc6ff1c021c4b7b677229c455a7612878748581f6de39fd45e4fa21ae",
-                "sha256:da21131828d290d6331d0d93a18f062ead1ec4fe0cfebbcefc95ee5368f7188a"
+                "sha256:8a388717b9476f934a21484e8c8e61875ab60644d29b9b39e11e4b9dc1c6b305",
+                "sha256:aa751d169e23c7479ce47a0cb0da579e3ede798f994f5816a74e4f4500dcea42"
             ],
             "markers": "python_version >= '3.6'",
-            "version": "==2.0.0"
+            "version": "==1.26.15"
         },
         "wheel": {
             "hashes": [
