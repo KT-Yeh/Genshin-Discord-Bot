@@ -237,14 +237,13 @@ class DailyReward:
             setattr(schedule_cog, "avg_user_daily_time", avg_user_daily_time)
 
         # 發送統計結果到通知頻道
-        if config.notification_channel_id:
+        for channel_id in config.notification_channel_id:
             embed = EmbedTemplate.normal(
                 f"總共 {total} 人簽到，其中 {honkai_count} 人簽到崩壞3、{starrail_count} 人簽到星穹鐵道\n"
                 f"簽到時間：{start_time.strftime('%H:%M:%S')} ~ {end_time.strftime('%H:%M:%S')}\n"
                 f"平均時間：{avg_user_daily_time:.2f} 秒/人",
                 title="每日自動簽到結果",
             )
-            _id = config.notification_channel_id
-            _channel = bot.get_channel(_id) or await bot.fetch_channel(_id)
+            _channel = bot.get_channel(channel_id) or await bot.fetch_channel(channel_id)
             if isinstance(_channel, (discord.TextChannel, discord.Thread, discord.DMChannel)):
                 await _channel.send(embed=embed)

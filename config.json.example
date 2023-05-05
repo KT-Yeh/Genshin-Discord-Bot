@@ -11,7 +11,7 @@
     "discord_view_short_timeout": 60,
     "database_file_path": "data/bot/bot.db",
     "sentry_sdk_dsn": null,
-    "notification_channel_id": null,
+    "notification_channel_id": [],
     "prometheus_server_port": null,
     "daily_reward_api_list": []
 }
