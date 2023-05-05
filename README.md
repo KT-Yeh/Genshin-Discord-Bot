@@ -11,14 +11,15 @@ Discord 支援伺服器：https://discord.gg/myugWxgRjd
 
 ## 簡介
 使用機器人直接在 Discord 聊天頻道內查看原神內各項資訊，包含：
-- 查詢即時便箋，包含樹脂、洞天寶錢、參數質變儀、探索派遣完成時間...等
+- 查詢**即時便箋**，包含樹脂、洞天寶錢、參數質變儀、探索派遣完成時間...等
+- 每日早上 8 點開始 Hoyolab **自動簽到** (包含簽到**崩壞3**、**星穹鐵道**)
+- **自動檢查樹脂**、寶錢、質變儀、探索派遣，當快額滿時發送提醒
 - 查詢深境螺旋紀錄
 - 查詢旅行者札記
 - 個人紀錄卡片（遊戲天數、成就、神瞳、世界探索度...等等）
 - 使用 Hoyolab 兌換碼
-- 每日早上 8 點開始 Hoyolab 自動簽到 (包含簽到崩壞3)
-- 自動檢查樹脂、寶錢、質變儀、探索派遣，當快額滿時發送提醒
 - 查詢任意玩家的展示櫃，顯示展示櫃內角色的面板、聖遺物詳情
+- 查看原神遊戲內公告，包含活動、卡池資訊
 - 採用新的斜線指令，輸入 / 自動彈出指令提示，不需要記憶任何指令的使用方式
 
 
@@ -94,7 +95,7 @@ Genshin-Discord-Bot
 
 ### 本地端
 1. 下載本專案程式碼，下列方式二選一
-    1. 到 [Release 頁面](https://github.com/KT-Yeh/Genshin-Discord-Bot/releases) 下載最新版本的 zip 檔 (檔名：Genshin-Discord-Bot.zip)
+    1. 到 **[Release 頁面](https://github.com/KT-Yeh/Genshin-Discord-Bot/releases)** 下載最新版本的 zip 檔 (檔名：Genshin-Discord-Bot.zip)
     2. 使用 git 下載： `git clone --recursive https://github.com/KT-Yeh/Genshin-Discord-Bot.git` （注意：要加上 `--recursive` 參數）
 
 2. 新增 `config.json` 檔案：
@@ -178,7 +179,7 @@ pipenv run python .\main.py
     "discord_view_short_timeout": 60,       # Discord 短時間互動介面（例：確認、選擇按鈕）的逾時時間（單位：秒）
     "database_file_path": "data/bot/bot.db",# 資料庫儲存的資料夾位置與檔名
     "sentry_sdk_dsn": "https://XXX@XXX",    # Sentry DSN 位址設定，參考底下說明
-    "notification_channel_id": 123456,      # 每日簽到完成後統計訊息欲發送到的 Discord 頻道 ID
+    "notification_channel_id": [123456],    # 每日簽到完成後統計訊息欲發送到的 Discord 頻道 ID
     "prometheus_server_port": 9091          # Prometheus 服務的 port，參考底下說明
 }
 ```
