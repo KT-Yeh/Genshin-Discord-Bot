@@ -137,7 +137,7 @@ class Showcase:
         player = self.data.player
         embed.set_author(
             name=f"{player.name} 的角色展示櫃",
-            url=f"https://api.mihomo.me/sr_panel/{player.uid}?lang=cht",
+            url=f"https://api.mihomo.me/sr_panel/{player.uid}?lang=cht&chara_index={index}",
             icon_url=self.client.get_icon_url(player.icon),
         )
         embed.set_footer(text=f"{player.name}．Lv. {player.level}．UID: {player.uid}")
