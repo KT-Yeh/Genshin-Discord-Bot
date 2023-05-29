@@ -32,6 +32,8 @@ class Emoji(BaseModel):
     """聖遺物部位圖示"""
     tcg_dice_cost_elements: typing.Dict[str, str] = {}
     """七聖召喚骰子花費元素類型圖示"""
+    starrail_elements: typing.Dict[str, str] = {}
+    """星穹鐵道元素圖示"""
 
 
 path = Path("data/emoji.json")

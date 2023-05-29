@@ -26,26 +26,26 @@ async def trim_cookie(cookie: str) -> str | None:
     """
     # 嘗試匹配各式 token
     cookie_token = (
-        match.group() if (match := re.search("cookie_token=[0-9A-Za-z]{30,}", cookie)) else None
+        match.group() if (match := re.search(r"cookie_token=[^; \"]{30,}", cookie)) else None
     )
-    account_id = match.group() if (match := re.search("account_id=[0-9]{5,}", cookie)) else None
-    ltoken = match.group() if (match := re.search("ltoken=[0-9A-Za-z]{30,}", cookie)) else None
-    ltuid = match.group() if (match := re.search("ltuid=[0-9]{5,}", cookie)) else None
+    account_id = match.group() if (match := re.search(r"account_id=[0-9]{5,}", cookie)) else None
+    ltoken = match.group() if (match := re.search(r"ltoken=[^; \"]{30,}", cookie)) else None
+    ltuid = match.group() if (match := re.search(r"ltuid=[0-9]{5,}", cookie)) else None
 
     # V2 Cookies
     cookie_token_v2 = (
-        match.group() if (match := re.search("cookie_token_v2=[0-9A-Za-z]{10,}", cookie)) else None
+        match.group() if (match := re.search(r"cookie_token_v2=[^; \"]{10,}", cookie)) else None
     )
     account_id_v2 = (
-        match.group() if (match := re.search("account_id_v2=[0-9]{5,}", cookie)) else None
+        match.group() if (match := re.search(r"account_id_v2=[0-9]{5,}", cookie)) else None
     )
     ltoken_v2 = (
-        match.group() if (match := re.search("ltoken_v2=[0-9A-Za-z]{10,}", cookie)) else None
+        match.group() if (match := re.search(r"(ltoken_v2=[^; \"]{10,})", cookie)) else None
     )
-    ltuid_v2 = match.group() if (match := re.search("ltuid_v2=[0-9]{5,}", cookie)) else None
-    ltmid_v2 = match.group() if (match := re.search("ltmid_v2=[0-9A-Za-z]{5,}", cookie)) else None
+    ltuid_v2 = match.group() if (match := re.search(r"ltuid_v2=[0-9]{5,}", cookie)) else None
+    ltmid_v2 = match.group() if (match := re.search(r"(ltmid_v2=[^; \"]{5,})", cookie)) else None
     account_mid_v2 = (
-        match.group() if (match := re.search("account_mid_v2=[0-9A-Za-z]{5,}", cookie)) else None
+        match.group() if (match := re.search(r"account_mid_v2=[^; \"]{5,}", cookie)) else None
     )
 
     cookie_list: list[str] = []

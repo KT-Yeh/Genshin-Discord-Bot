@@ -8,6 +8,7 @@ from .schedule_daily import ScheduleDailyTable
 from .schedule_resin import ScheduleResinTable
 from .showcase import ShowcaseTable
 from .spiral_abyss import SpiralAbyssTable
+from .starrail_showcase import StarrailShowcaseTable
 from .users import UsersTable
 
 
@@ -28,6 +29,8 @@ class Database:
         深境螺旋資料的 Table
     showcase: `ShowcaseTable`
         展示櫃資料的 Table
+    starrail_showcase: `StarrailShowcaseTable`
+        星穹鐵道展示櫃資料的 Table
     """
 
     db: aiosqlite.Connection
@@ -42,12 +45,14 @@ class Database:
         self.schedule_resin = ScheduleResinTable(self.db)
         self.spiral_abyss = SpiralAbyssTable(self.db)
         self.showcase = ShowcaseTable(self.db)
+        self.starrail_showcase = StarrailShowcaseTable(self.db)
 
         await self.users.create()
         await self.schedule_daily.create()
         await self.schedule_resin.create()
         await self.spiral_abyss.create()
         await self.showcase.create()
+        await self.starrail_showcase.create()
 
     async def close(self) -> None:
         """關閉資料庫，在 bot 關閉前需要呼叫一次"""

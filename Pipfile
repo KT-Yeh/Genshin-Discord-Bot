@@ -14,6 +14,7 @@ beautifulsoup4 = "~=4.11"
 prometheus-client = "~=0.16"
 psutil = "~=5.9"
 "enkanetwork.py" = "~=1.4"
+mihomo = {git = "https://github.com/KT-Yeh/mihomo"}
 
 [dev-packages]
 black = "*"
