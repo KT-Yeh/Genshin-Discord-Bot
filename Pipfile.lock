@@ -452,7 +452,7 @@
         },
         "mihomo": {
             "git": "https://github.com/KT-Yeh/mihomo",
-            "ref": "dcd09ee97e58a2cd6237e31f56d66cb4f35679d4"
+            "ref": "2137332b7e05469995d6d3a4338d861bc35ec473"
         },
         "multidict": {
             "hashes": [

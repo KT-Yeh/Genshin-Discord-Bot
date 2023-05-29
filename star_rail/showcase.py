@@ -1,8 +1,9 @@
 from typing import Any, Callable
 
 import discord
+import mihomo
 import sentry_sdk
-from mihomo import MihomoAPI
+from mihomo import MihomoAPI, StarrailInfoParsed
 
 from data.database import db
 from utility import EmbedTemplate, config, emoji, get_app_command_mention
@@ -15,9 +16,26 @@ class Showcase:
     def __init__(self, uid: int) -> None:
         self.uid = uid
         self.client = MihomoAPI()
+        self.data: StarrailInfoParsed
+        self.is_cached_data: bool = False
 
     async def load_data(self) -> None:
-        self.data = await self.client.fetch_user(self.uid)
+        """取得玩家的角色展示櫃資料"""
+
+        cached_data = await db.starrail_showcase.get(self.uid)
+        try:
+            new_data = await self.client.fetch_user(self.uid)
+        except Exception as e:
+            if cached_data is None:
+                raise e from e
+            else:
+                self.data = cached_data
+                self.is_cached_data = True
+        else:
+            if cached_data is not None:
+                new_data = mihomo.tools.merge_character_data(new_data, cached_data)
+            self.data = mihomo.tools.remove_duplicate_character(new_data)
+            await db.starrail_showcase.add(self.uid, self.data)
 
     def get_player_overview_embed(self) -> discord.Embed:
         """取得玩家基本資料的嵌入訊息"""
@@ -35,9 +53,11 @@ class Showcase:
         if (hall := player_details.forgotten_hall) is not None:
             description += "忘卻之庭："
             if hall.memory_of_chaos is not None:
-                description += f"{hall.memory_of_chaos} / 10 混沌回憶"
+                description += f"{hall.memory_of_chaos} / 10 混沌回憶\n"
             else:
-                description += f"{hall.memory} / 15 回憶"
+                description += f"{hall.memory} / 15 回憶\n"
+        if self.is_cached_data is True:
+            description += "(目前無法連接 API，顯示的為快取資料)\n"
 
         embed = discord.Embed(title=player.name, description=description)
         embed.set_thumbnail(url=self.client.get_icon_url(player.icon))
@@ -154,6 +174,8 @@ class ShowcaseCharactersDropdown(discord.ui.Select):
         self.showcase = showcase
         options = [discord.SelectOption(label="玩家資料一覽", value="-1", emoji="📜")]
         for i, character in enumerate(showcase.data.characters):
+            if i >= 23:  # Discord 下拉欄位上限
+                break
             options.append(
                 discord.SelectOption(
                     label=f"★{character.rarity} Lv.{character.level} {character.name}",
@@ -161,6 +183,7 @@ class ShowcaseCharactersDropdown(discord.ui.Select):
                     emoji=emoji.starrail_elements.get(character.element),
                 )
             )
+        options.append(discord.SelectOption(label="刪除角色快取資料", value="-2", emoji="❌"))
         super().__init__(placeholder="選擇展示櫃角色：", options=options)
 
     async def callback(self, interaction: discord.Interaction) -> None:
@@ -175,6 +198,22 @@ class ShowcaseCharactersDropdown(discord.ui.Select):
             await interaction.response.edit_message(
                 embed=embed, view=ShowcaseView(self.showcase), attachments=[]
             )
+        elif index == -2:  # 刪除快取資料
+            # 檢查互動者的 UID 是否符合展示櫃的 UID
+            user = await db.users.get(interaction.user.id)
+            if user is None or user.uid_starrail != self.showcase.uid:
+                await interaction.response.send_message(
+                    embed=EmbedTemplate.error("非此UID本人，無法刪除資料"), ephemeral=True
+                )
+            elif len(user.cookie) == 0:
+                await interaction.response.send_message(
+                    embed=EmbedTemplate.error("未設定Cookie，無法驗證此UID本人，無法刪除資料"),
+                    ephemeral=True,
+                )
+            else:
+                embed = self.showcase.get_player_overview_embed()
+                await db.starrail_showcase.remove(self.showcase.uid)
+                await interaction.response.edit_message(embed=embed, view=None, attachments=[])
 
 
 class ShowcaseButton(discord.ui.Button):
