@@ -2,8 +2,9 @@ import random
 from io import BytesIO
 from pathlib import Path
 from typing import List, Optional, Sequence, Tuple
-from urllib import request
 
+import aiohttp
+import enkanetwork
 import genshin
 from PIL import Image, ImageDraw, ImageFont
 
@@ -13,7 +14,7 @@ from utility import get_server_name
 __all__ = ["draw_abyss_card", "draw_exploration_card", "draw_record_card"]
 
 
-def draw_avatar(img: Image.Image, avatar: Image.Image, pos: Tuple[float, float]):
+def draw_avatar(img: Image.Image, avatar: Image.Image, pos: Tuple[int, int]):
     """以圓形畫個人頭像"""
     mask = Image.new("L", avatar.size, 0)
     draw = ImageDraw.Draw(mask)
@@ -30,11 +31,17 @@ def draw_rounded_rect(img: Image.Image, pos: Tuple[float, float, float, float], 
 
 
 def draw_text(
-    img: Image.Image, pos: Tuple[float, float], text: str, font: str, size: int, fill, anchor=None
+    img: Image.Image,
+    pos: Tuple[float, float],
+    text: str,
+    font_name: str,
+    size: int,
+    fill,
+    anchor=None,
 ):
     """在圖片上印文字"""
     draw = ImageDraw.Draw(img)
-    font = ImageFont.truetype(f"data/font/{font}", size)  # type: ignore
+    font = ImageFont.truetype(f"data/font/{font_name}", size)  # type: ignore
     draw.text(pos, text, fill, font, anchor=anchor)
 
 
@@ -218,11 +225,11 @@ def draw_exploration_card(
     return fp
 
 
-def draw_character(
+async def draw_character(
     img: Image.Image,
     character: genshin.models.AbyssCharacter,
     size: Tuple[int, int],
-    pos: Tuple[float, float],
+    pos: Tuple[int, int],
 ):
     """畫角色頭像，包含背景框
 
@@ -230,7 +237,7 @@ def draw_character(
     Parameters
     character `AbyssCharacter`: 角色資料
     size `Tuple[int, int]`: 背景框大小
-    pos `Tuple[float, float]`: 要畫的左上角位置
+    pos `Tuple[int, int]`: 要畫的左上角位置
     """
     background = (
         Image.open(f"data/image/character/char_{character.rarity}star_bg.png")
@@ -240,7 +247,22 @@ def draw_character(
     avatar_file = Path(f"data/image/character/{character.id}.png")
     # 若本地沒有圖檔則從URL下載
     if avatar_file.exists() is False:
-        request.urlretrieve(character.icon, f"data/image/character/{character.id}.png")
+        avatar_img: bytes | None = None
+        async with aiohttp.ClientSession() as session:
+            async with session.get(character.icon) as resp:
+                if resp.status == 200:
+                    avatar_img = await resp.read()
+            # 當從 hoyolab 取得圖片失敗時改用 Enkanetwork CDN
+            if avatar_img is None:
+                enka_cdn = enkanetwork.Assets.character(character.id).images.icon.url  # type: ignore
+                async with session.get(enka_cdn) as resp:
+                    if resp.status == 200:
+                        avatar_img = await resp.read()
+        if avatar_img is None:
+            return
+        else:
+            with open(avatar_file, "wb") as fp:
+                fp.write(avatar_img)
     avatar = Image.open(avatar_file).resize((size[0], size[0]))
     img.paste(background, pos, background)
     img.paste(avatar, pos, avatar)
@@ -264,7 +286,7 @@ def draw_abyss_star(
         img.paste(star, (int(upper_left[0] + i * (size[0] + 2 * pad)), int(upper_left[1])), star)
 
 
-def draw_abyss_card(
+async def draw_abyss_card(
     abyss_floor: genshin.models.Floor, characters: Optional[Sequence[CharacterData]] = None
 ) -> BytesIO:
     """繪製深淵樓層紀錄圖，包含每一間星數以及上下半所使用的角色和等級
@@ -310,7 +332,7 @@ def draw_abyss_card(
             for k, character in enumerate(battle.characters):
                 x = left_upper[0] + k * (character_size[0] + 2 * character_pad)
                 y = left_upper[1]
-                draw_character(img, character, (172, 210), (x, y))
+                await draw_character(img, character, (172, 210), (x, y))
                 if characters is not None:
                     constellation = next(
                         (c.constellation for c in characters if c.id == character.id), 0
