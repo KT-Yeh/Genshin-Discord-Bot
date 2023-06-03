@@ -111,7 +111,7 @@ class SpiralAbyss:
                         embed=EmbedTemplate.error("僅限本人才能操作"), ephemeral=True
                     )
             else:  # 繪製樓層圖片
-                fp = draw.draw_abyss_card(
+                fp = await draw.draw_abyss_card(
                     self.abyss_data.abyss.floors[int(self.values[0])],
                     self.abyss_data.characters,
                 )
