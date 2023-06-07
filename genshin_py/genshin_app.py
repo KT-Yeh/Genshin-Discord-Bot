@@ -176,6 +176,8 @@ async def claim_daily_reward(
             return f"{game_name[game]}今日獎勵已經領過了！"
         except genshin.errors.InvalidCookies:
             return "Cookie已失效，請從Hoyolab重新取得新Cookie。"
+        except genshin.errors.GeetestTriggered:
+            return f"{game_name[game]}簽到失敗：受到網頁圖形驗證阻擋。"
         except Exception as e:
             if isinstance(e, genshin.errors.GenshinException) and e.retcode == -10002:
                 return f"{game_name[game]}簽到失敗，目前登入的帳號未查詢到角色資料。"
