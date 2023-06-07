@@ -187,9 +187,6 @@ class UsersTable:
             return False, f'找不到使用者，請先設定Cookie(使用 {get_app_command_mention("cookie設定")} 顯示說明)'
         if check_cookie and len(user.cookie) == 0:
             return False, f'找不到Cookie，請先設定Cookie(使用 {get_app_command_mention("cookie設定")} 顯示說明)'
-        if check_cookie and user.invalid_cookie > 0:
-            await self.update(user.id, invalid_cookie=True)
-            return False, "Cookie已失效，請從Hoyolab重新取得新Cookie"
         if check_uid and user.uid is None:
             return False, f'找不到原神角色UID，請先使用 {get_app_command_mention("uid設定")} 來設定UID)'
         await self.update(user.id, last_used_time=True)
