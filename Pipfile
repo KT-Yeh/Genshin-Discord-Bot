@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-genshin = {git = "https://github.com/thesadru/genshin.py"}
+genshin = {git = "https://github.com/thesadru/genshin.py", ref = "0d168cd"}
 "discord.py" = "~=2.2"
 pillow = "~=9.4"
 sentry-sdk = "~=1.16"
