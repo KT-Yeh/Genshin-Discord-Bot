@@ -1,5 +1,5 @@
 import asyncio
-from datetime import date, datetime
+from datetime import datetime, timedelta
 from typing import ClassVar, Final
 
 import aiohttp
@@ -7,7 +7,8 @@ import discord
 import sentry_sdk
 from discord.ext import commands
 
-from data.database import ScheduleDaily, db
+import database
+from database import Database, ScheduleDailyCheckin, User
 from utility import LOG, EmbedTemplate, config
 
 from .. import genshin_app
@@ -47,15 +48,15 @@ class DailyReward:
             LOG.System("每日自動簽到開始")
 
             # 初始化
-            queue: asyncio.Queue[ScheduleDaily] = asyncio.Queue()
+            queue: asyncio.Queue[ScheduleDailyCheckin] = asyncio.Queue()
             cls._total = {}
             cls._honkai_count = {}
             cls._starrail_count = {}
-            daily_users = await db.schedule_daily.getAll()
+            daily_users = await Database.select_all(ScheduleDailyCheckin)
 
             # 將所有需要簽到的使用者放入佇列 (Producer)
             for user in daily_users:
-                if user.last_checkin_date != date.today():
+                if user.next_checkin_time < datetime.now():
                     await queue.put(user)
 
             # 建立本地簽到任務 (Consumer)
@@ -82,7 +83,7 @@ class DailyReward:
 
     @classmethod
     async def _claim_daily_reward_task(
-        cls, queue: asyncio.Queue[ScheduleDaily], host: str, bot: commands.Bot
+        cls, queue: asyncio.Queue[ScheduleDailyCheckin], host: str, bot: commands.Bot
     ):
         """從傳入的 asyncio.Queue 裡面取得使用者，然後進行每日簽到，並根據簽到結果發送訊息給使用者
 
@@ -131,18 +132,19 @@ class DailyReward:
                     return
             else:
                 # 簽到成功後，更新資料庫中的簽到日期、發送訊息給使用者、更新計數器
-                await db.schedule_daily.update(user.id, last_checkin_date=True)
+                user.next_checkin_time += timedelta(days=1)
+                await Database.insert_or_replace(user)
                 if message is not None:
                     await cls._send_message(bot, user, message)
                     cls._total[host] += 1
-                    cls._honkai_count[host] += int(user.has_honkai)
+                    cls._honkai_count[host] += int(user.has_honkai3rd)
                     cls._starrail_count[host] += int(user.has_starrail)
                     await asyncio.sleep(config.schedule_loop_delay)
             finally:
                 queue.task_done()
 
     @classmethod
-    async def _claim_daily_reward(cls, host: str, user: ScheduleDaily) -> str | None:
+    async def _claim_daily_reward(cls, host: str, user: ScheduleDailyCheckin) -> str | None:
         """
         為使用者進行每日簽到。
 
@@ -167,25 +169,29 @@ class DailyReward:
         """
         if host == "LOCAL":  # 本地簽到
             message = await genshin_app.claim_daily_reward(
-                user.id,
+                user.discord_id,
                 has_genshin=user.has_genshin,
-                has_honkai3rd=user.has_honkai,
+                has_honkai3rd=user.has_honkai3rd,
                 has_starrail=user.has_starrail,
             )
             return message
         else:  # 遠端 API 簽到
-            user_data = await db.users.get(user.id)
+            # 為了有 cookie，所以這裡從資料庫取得 User Table 的資料
+            user_data = await Database.select_one(User, User.discord_id.is_(user.discord_id))
             if user_data is None:
                 return None
-            check, msg = await db.users.exist(user_data, check_uid=False)
+            check, msg = await database.Tool.check_user(user_data)
             if check is False:
                 return msg
             payload = {
-                "discord_id": user.id,
-                "uid": user_data.uid or 0,
-                "cookie": user_data.cookie,
+                "discord_id": user.discord_id,
+                "uid": 0,
+                "cookie": user_data.cookie_default,
+                "cookie_genshin": user_data.cookie_genshin,
+                "cookie_honkai3rd": user_data.cookie_honkai3rd,
+                "cookie_starrail": user_data.cookie_starrail,
                 "has_genshin": "true" if user.has_genshin else "false",
-                "has_honkai": "true" if user.has_honkai else "false",
+                "has_honkai": "true" if user.has_honkai3rd else "false",
                 "has_starrail": "true" if user.has_starrail else "false",
             }
             async with aiohttp.ClientSession() as session:
@@ -198,13 +204,14 @@ class DailyReward:
                         raise Exception(f"{host} 簽到失敗，HTTP 狀態碼：{resp.status}")
 
     @classmethod
-    async def _send_message(cls, bot: commands.Bot, user: ScheduleDaily, result: str):
+    async def _send_message(cls, bot: commands.Bot, user: ScheduleDailyCheckin, result: str):
         """向使用者發送簽到結果的訊息"""
         try:
-            channel = bot.get_channel(user.channel_id) or await bot.fetch_channel(user.channel_id)
+            _id = user.discord_channel_id
+            channel = bot.get_channel(_id) or await bot.fetch_channel(_id)
             # 若不用@提及使用者，則先取得此使用者的暱稱然後發送訊息
             if user.is_mention is False:
-                _user = await bot.fetch_user(user.id)
+                _user = await bot.fetch_user(user.discord_id)
                 await channel.send(f"[自動簽到] {_user.display_name}：{result}")  # type: ignore
             else:
                 await channel.send(f"[自動簽到] <@{user.id}> {result}")  # type: ignore
@@ -213,8 +220,8 @@ class DailyReward:
             discord.NotFound,
             discord.InvalidData,
         ) as e:  # 發送訊息失敗，移除此使用者
-            LOG.Except(f"自動簽到發送訊息失敗，移除此使用者 {LOG.User(user.id)}：{e}")
-            await db.schedule_daily.remove(user.id)
+            LOG.Except(f"自動簽到發送訊息失敗，移除此使用者 {LOG.User(user.discord_id)}：{e}")
+            await Database.delete_instance(user)
         except Exception as e:
             sentry_sdk.capture_exception(e)
 

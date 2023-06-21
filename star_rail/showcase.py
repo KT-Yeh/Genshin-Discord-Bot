@@ -1,11 +1,11 @@
 from typing import Any, Callable
 
 import discord
-import mihomo
 import sentry_sdk
 from mihomo import MihomoAPI, StarrailInfoParsedV1
+from mihomo import tools as mihomo_tools
 
-from data.database import db
+from database import Database, StarrailShowcase, User
 from utility import EmbedTemplate, config, emoji, get_app_command_mention
 from utility.custom_log import LOG
 
@@ -22,10 +22,17 @@ class Showcase:
     async def load_data(self) -> None:
         """取得玩家的角色展示櫃資料"""
 
-        cached_data = await db.starrail_showcase.get(self.uid)
+        # 從資料庫取得舊資料作為快取資料
+        srshowcase = await Database.select_one(
+            StarrailShowcase, StarrailShowcase.uid.is_(self.uid)
+        )
+        cached_data: StarrailInfoParsedV1 | None = None
+        if srshowcase:
+            cached_data = srshowcase.data
         try:
             new_data = await self.client.fetch_user_v1(self.uid)
         except Exception as e:
+            # 無法從 API 取得時，改用資料庫資料，若兩者都沒有則拋出錯誤
             if cached_data is None:
                 raise e from e
             else:
@@ -33,9 +40,9 @@ class Showcase:
                 self.is_cached_data = True
         else:
             if cached_data is not None:
-                new_data = mihomo.tools.merge_character_data(new_data, cached_data)
-            self.data = mihomo.tools.remove_duplicate_character(new_data)
-            await db.starrail_showcase.add(self.uid, self.data)
+                new_data = mihomo_tools.merge_character_data(new_data, cached_data)
+            self.data = mihomo_tools.remove_duplicate_character(new_data)
+            await Database.insert_or_replace(StarrailShowcase(self.uid, self.data))
 
     def get_player_overview_embed(self) -> discord.Embed:
         """取得玩家基本資料的嵌入訊息"""
@@ -200,19 +207,22 @@ class ShowcaseCharactersDropdown(discord.ui.Select):
             )
         elif index == -2:  # 刪除快取資料
             # 檢查互動者的 UID 是否符合展示櫃的 UID
-            user = await db.users.get(interaction.user.id)
+            user = await Database.select_one(User, User.discord_id.is_(interaction.user.id))
             if user is None or user.uid_starrail != self.showcase.uid:
                 await interaction.response.send_message(
                     embed=EmbedTemplate.error("非此UID本人，無法刪除資料"), ephemeral=True
                 )
-            elif len(user.cookie) == 0:
+            elif user.cookie_default is None:
                 await interaction.response.send_message(
                     embed=EmbedTemplate.error("未設定Cookie，無法驗證此UID本人，無法刪除資料"),
                     ephemeral=True,
                 )
             else:
                 embed = self.showcase.get_player_overview_embed()
-                await db.starrail_showcase.remove(self.showcase.uid)
+                await Database.delete(
+                    StarrailShowcase,
+                    StarrailShowcase.uid.is_(self.showcase.uid),
+                )
                 await interaction.response.edit_message(embed=embed, view=None, attachments=[])
 
 
@@ -253,7 +263,8 @@ async def starrail_showcase(
     uid: int | None = None,
 ):
     await interaction.response.defer()
-    uid = uid or (_user.uid_starrail if (_user := await db.users.get(user.id)) else None)
+    _u = await Database.select_one(User, User.discord_id.is_(user.id))
+    uid = uid or (_u.uid_starrail if _u else None)
     if uid is None:
         await interaction.edit_original_response(
             embed=EmbedTemplate.error(

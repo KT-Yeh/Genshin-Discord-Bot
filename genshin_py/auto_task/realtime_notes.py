@@ -7,7 +7,7 @@ import genshin
 import sentry_sdk
 from discord.ext import commands
 
-from data.database import ScheduleResin, db
+from database import Database, GenshinScheduleNotes
 from utility import LOG, EmbedTemplate, config
 
 from .. import errors, genshin_app, parser
@@ -40,10 +40,10 @@ class RealtimeNotes:
             LOG.System("自動檢查樹脂開始")
 
             count = 0  # 統計人數
-            resin_users = await db.schedule_resin.getAll()
+            resin_users = await Database.select_all(GenshinScheduleNotes)
 
             for user in resin_users:
-                result = await cls._check_realtime_notes(user.id)
+                result = await cls._check_realtime_notes(user.discord_id)
                 if result is None:
                     continue
                 count += 1
@@ -77,7 +77,11 @@ class RealtimeNotes:
             - 若跳過此使用者，回傳 None
         """
         # 要檢查的當下從資料庫重新取得最新的使用者資料
-        if (user := await db.schedule_resin.get(user_discord_id)) is None:
+        user = await Database.select_one(
+            GenshinScheduleNotes,
+            GenshinScheduleNotes.discord_id.is_(user_discord_id),
+        )
+        if user is None:
             return None
         # 若還沒到檢查時間則跳過此使用者
         if user.next_check_time and datetime.now() < user.next_check_time:
@@ -86,22 +90,20 @@ class RealtimeNotes:
         msg = ""
         embed = None
         try:
-            notes = await genshin_app.get_realtime_notes(user.id)
+            notes = await genshin_app.get_realtime_notes(user.discord_id)
         except Exception as e:
             # 當錯誤為 InternalDatabaseError 時，忽略並設定1小時後檢查
             if isinstance(e, errors.GenshinAPIException) and isinstance(
                 e.origin, genshin.errors.InternalDatabaseError
             ):
-                await db.schedule_resin.update(
-                    user.id, next_check_time=(datetime.now() + timedelta(hours=1))
-                )
+                user.next_check_time = datetime.now() + timedelta(hours=1)
+                await Database.insert_or_replace(user)
             else:
                 msg = "自動檢查樹脂時發生錯誤，預計5小時後再檢查"
                 embed = EmbedTemplate.error(e)
                 # 當發生錯誤時，預計5小時後再檢查
-                await db.schedule_resin.update(
-                    user.id, next_check_time=(datetime.now() + timedelta(hours=5))
-                )
+                user.next_check_time = datetime.now() + timedelta(hours=5)
+                await Database.insert_or_replace(user)
                 return (msg, embed)
         else:  # 正常檢查即時便箋
             embed = await parser.parse_realtime_notes(notes, shortForm=True)
@@ -191,47 +193,47 @@ class RealtimeNotes:
                 )
             # 檢查每日委託
             if isinstance(user.check_commission_time, datetime):
-                _next_check_time = user.check_commission_time
                 # 當現在時間已超過設定的檢查時間
                 if datetime.now() >= user.check_commission_time:
                     if not notes.claimed_commission_reward:
                         msg += "今日的委託任務還未完成！"
                     # 下次檢查時間為今天+1天，並更新至資料庫
-                    _next_check_time += timedelta(days=1)
-                    await db.schedule_resin.update(user.id, check_commission_time=_next_check_time)
-                next_check_time.append(_next_check_time)
+                    user.check_commission_time += timedelta(days=1)
+                next_check_time.append(user.check_commission_time)
 
             # 設定下次檢查時間，從上面設定的時間中取最小的值
             check_time = min(next_check_time)
             # 若此次需要發送訊息，則將下次檢查時間設為至少1小時
             if len(msg) > 0:
                 check_time = max(check_time, datetime.now() + timedelta(minutes=60))
-            await db.schedule_resin.update(user.id, next_check_time=check_time)
+            user.next_check_time = check_time
+            await Database.insert_or_replace(user)
 
             return (msg, embed)
         return None
 
     @classmethod
     async def _send_message(
-        cls, bot: commands.Bot, user: ScheduleResin, msg: str, embed: discord.Embed
+        cls, bot: commands.Bot, user: GenshinScheduleNotes, msg: str, embed: discord.Embed
     ) -> None:
         """發送訊息提醒使用者"""
 
         try:  # 發送訊息提醒使用者
-            channel = bot.get_channel(user.channel_id) or await bot.fetch_channel(user.channel_id)
-            _user = await bot.fetch_user(user.id)
-            msg_sent = await channel.send(f"{_user.mention}，{msg}", embed=embed)  # type: ignore
+            _id = user.discord_channel_id
+            channel = bot.get_channel(_id) or await bot.fetch_channel(_id)
+            discord_user = await bot.fetch_user(user.discord_id)
+            msg_sent = await channel.send(f"{discord_user.mention}，{msg}", embed=embed)  # type: ignore
         except (
             discord.Forbidden,
             discord.NotFound,
             discord.InvalidData,
         ) as e:  # 發送訊息失敗，移除此使用者
-            LOG.Except(f"自動檢查樹脂發送訊息失敗，移除此使用者 {LOG.User(user.id)}：{e}")
-            await db.schedule_resin.remove(user.id)
+            LOG.Except(f"自動檢查樹脂發送訊息失敗，移除此使用者 {LOG.User(user.discord_id)}：{e}")
+            await Database.delete_instance(user)
         except Exception as e:
             sentry_sdk.capture_exception(e)
         else:  # 成功發送訊息
             # 若使用者不在發送訊息的頻道則移除
-            if _user.mentioned_in(msg_sent) is False:
-                LOG.Except(f"自動檢查樹脂使用者不在頻道，移除此使用者 {LOG.User(_user)}")
-                await db.schedule_resin.remove(user.id)
+            if discord_user.mentioned_in(msg_sent) is False:
+                LOG.Except(f"自動檢查樹脂使用者不在頻道，移除此使用者 {LOG.User(discord_user)}")
+                await Database.delete_instance(user)

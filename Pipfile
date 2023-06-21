@@ -15,6 +15,7 @@ prometheus-client = "~=0.16"
 psutil = "~=5.9"
 "enkanetwork.py" = "~=1.4"
 mihomo = {git = "https://github.com/KT-Yeh/mihomo"}
+sqlalchemy = {version = "~=2.0.16", extras = ["asyncio"]}
 
 [dev-packages]
 black = "*"

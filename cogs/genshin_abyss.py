@@ -7,7 +7,7 @@ from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands
 
-from data.database import SpiralAbyssData, db
+from database import Database, GenshinSpiralAbyss
 from genshin_py import draw, genshin_app, parser
 from utility import EmbedTemplate, config, custom_log
 
@@ -21,7 +21,7 @@ class SpiralAbyss:
         def __init__(
             self,
             user: Union[discord.User, discord.Member],
-            abyss_data_list: Sequence[SpiralAbyssData],
+            abyss_data_list: Sequence[GenshinSpiralAbyss],
         ):
             def honor(abyss: genshin.models.SpiralAbyss) -> str:
                 """判斷一些特殊紀錄，例如12通、單通、雙通"""
@@ -66,7 +66,7 @@ class SpiralAbyss:
         def __init__(
             self,
             overview: discord.Embed,
-            abyss_data: SpiralAbyssData,
+            abyss_data: GenshinSpiralAbyss,
             save_or_remove: Literal["SAVE", "REMOVE"],
         ):
             # 第一個選項依據參數顯示為保存或是刪除紀錄
@@ -95,14 +95,14 @@ class SpiralAbyss:
             # 儲存或刪除深淵資料
             if self.values[0] == self.save_or_remove:
                 # 檢查互動者是否為深淵資料本人
-                if interaction.user.id == self.abyss_data.id:
+                if interaction.user.id == self.abyss_data.discord_id:
                     if self.save_or_remove == "SAVE":
-                        await db.spiral_abyss.add(self.abyss_data)
+                        await Database.insert_or_replace(self.abyss_data)
                         await interaction.response.send_message(
                             embed=EmbedTemplate.normal("已儲存本次深淵紀錄"), ephemeral=True
                         )
                     else:  # self.save_or_remove == 'REMOVE'
-                        await db.spiral_abyss.remove(self.abyss_data.id, self.abyss_data.season)
+                        await Database.delete_instance(self.abyss_data)
                         await interaction.response.send_message(
                             embed=EmbedTemplate.normal("已刪除本次深淵紀錄"), ephemeral=True
                         )
@@ -125,7 +125,7 @@ class SpiralAbyss:
     async def presentation(
         interaction: discord.Interaction,
         user: Union[discord.User, discord.Member],
-        abyss_data: SpiralAbyssData,
+        abyss_data: GenshinSpiralAbyss,
         *,
         view_item: Optional[discord.ui.Item] = None,
     ):
@@ -149,7 +149,10 @@ class SpiralAbyss:
         season_choice: Literal["THIS_SEASON", "PREVIOUS_SEASON", "HISTORICAL_RECORD"],
     ):
         if season_choice == "HISTORICAL_RECORD":  # 查詢歷史紀錄
-            abyss_data_list = await db.spiral_abyss.get(user.id)
+            abyss_data_list = await Database.select_all(
+                GenshinSpiralAbyss,
+                GenshinSpiralAbyss.discord_id.is_(user.id),
+            )
             if len(abyss_data_list) == 0:
                 await interaction.response.send_message(
                     embed=EmbedTemplate.normal("此使用者沒有保存任何歷史紀錄")

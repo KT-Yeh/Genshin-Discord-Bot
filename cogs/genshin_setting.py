@@ -7,7 +7,7 @@ from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands
 
-from data.database import User, db
+from database import Database, User
 from genshin_py import genshin_app
 from utility import EmbedTemplate, config, custom_log, get_app_command_mention, get_server_name
 
@@ -83,19 +83,34 @@ class Setting(commands.Cog, name="設定"):
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
     class UIDModal(discord.ui.Modal, title="提交UID"):
-        """提交原神 UID 的表單"""
+        """提交 UID 的表單"""
+
+        def __init__(self, game: genshin.Game) -> None:
+            self.game = game
+            super().__init__()
 
         uid: discord.ui.TextInput[discord.ui.Modal] = discord.ui.TextInput(
             label="UID",
-            placeholder="請輸入你原神遊戲內的UID(9位數字)",
+            placeholder="請輸入遊戲內的UID(9位數字)",
             required=True,
             min_length=9,
             max_length=9,
         )
 
         async def on_submit(self, interaction: discord.Interaction):
+            user = await Database.select_one(User, User.discord_id.is_(interaction.user.id))
+            if user is None:
+                user = User(interaction.user.id)
+
+            match self.game:
+                case genshin.Game.GENSHIN:
+                    user.uid_genshin = int(self.uid.value)
+                case genshin.Game.HONKAI:
+                    user.uid_honkai3rd = int(self.uid.value)
+                case genshin.Game.STARRAIL:
+                    user.uid_starrail = int(self.uid.value)
             try:
-                await db.users.add(User(id=interaction.user.id, uid=int(self.uid.value)))
+                await Database.insert_or_replace(user)
             except Exception as e:
                 await interaction.response.send_message(
                     embed=EmbedTemplate.error(e), ephemeral=True
@@ -125,10 +140,15 @@ class Setting(commands.Cog, name="設定"):
 
         async def callback(self, interaction: discord.Interaction):
             uid = self.accounts[int(self.values[0])].uid
-            if self.game == genshin.Game.GENSHIN:
-                await db.users.update(interaction.user.id, uid=uid)
-            elif self.game == genshin.Game.STARRAIL:
-                await db.users.update(interaction.user.id, uid_starrail=uid)
+            user = await Database.select_one(User, User.discord_id.is_(interaction.user.id))
+            if user is None:
+                raise (ValueError("找不到此使用者"))
+            match self.game:
+                case genshin.Game.GENSHIN:
+                    user.uid_genshin = uid
+                case genshin.Game.STARRAIL:
+                    user.uid_starrail = uid
+            await Database.insert_or_replace(user)
             await interaction.response.edit_message(
                 embed=EmbedTemplate.normal(f"角色UID: {uid} 已設定完成"), view=None
             )
@@ -146,13 +166,25 @@ class Setting(commands.Cog, name="設定"):
     async def slash_uid(
         self, interaction: discord.Interaction, game: typing.Literal["原神", "星穹鐵道"]
     ):
-        user = await db.users.get(interaction.user.id)
-        if user is None or len(user.cookie) == 0:
+        game_map = {"原神": genshin.Game.GENSHIN, "星穹鐵道": genshin.Game.STARRAIL}
+
+        user = await Database.select_one(User, User.discord_id.is_(interaction.user.id))
+        cookie = None
+        # 取得使用者對應遊戲的 cookie
+        if user is not None:
+            match game_map[game]:
+                case genshin.Game.GENSHIN:
+                    cookie = user.cookie_genshin
+                case genshin.Game.HONKAI:
+                    cookie = user.cookie_honkai3rd
+                case genshin.Game.STARRAIL:
+                    cookie = user.cookie_starrail
+
+        if user is None or cookie is None:
             # 當只用展示櫃，沒有存過 Cookie 時，顯示 UID 設定表單
-            await interaction.response.send_modal(self.UIDModal())
+            await interaction.response.send_modal(self.UIDModal(game_map[game]))
         else:
             # 當有存過 Cookie 時，取得帳號資料，並顯示帳號內 UID 選單
-            game_map = {"原神": genshin.Game.GENSHIN, "星穹鐵道": genshin.Game.STARRAIL}
             try:
                 defer, accounts = await asyncio.gather(
                     interaction.response.defer(ephemeral=True),
@@ -194,7 +226,7 @@ class Setting(commands.Cog, name="設定"):
 
         await view.wait()
         if view.value is True:
-            await db.removeUser(interaction.user.id)
+            await Database.delete_all(interaction.user.id)
             await interaction.edit_original_response(content="使用者資料已全部刪除", view=None)
         else:
             await interaction.edit_original_response(content="取消指令", view=None)

@@ -5,7 +5,7 @@ import discord
 import genshin
 from bs4 import BeautifulSoup
 
-from data.database import db
+from database import Database, User
 from utility import emoji, get_day_of_week, get_server_name
 
 
@@ -254,8 +254,8 @@ async def parse_realtime_notes(
         embed.add_field(name=resin_title, value=(resin_msg + exped_title))
 
     if user is not None:
-        _u = await db.users.get(user.id)
-        uid = str(_u.uid if _u else "")
+        _u = await Database.select_one(User, User.discord_id.is_(user.id))
+        uid = str(_u.uid_genshin if _u else "")
         embed.set_author(name=f"{get_server_name(uid[0])} {uid}", icon_url=user.display_avatar.url)
     return embed
 

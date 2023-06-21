@@ -7,7 +7,7 @@ import sentry_sdk
 from discord import app_commands
 from discord.ext import commands
 
-from data.database import db
+from database import Database, GenshinShowcase, User
 from enka_network import Showcase, enka_assets
 from star_rail.showcase import starrail_showcase
 from utility import EmbedTemplate, config, emoji, get_app_command_mention
@@ -57,19 +57,22 @@ class ShowcaseCharactersDropdown(discord.ui.Select):
             )
         elif index == -2:  # 刪除快取資料
             # 檢查互動者的 UID 是否符合展示櫃的 UID
-            user = await db.users.get(interaction.user.id)
-            if user is None or user.uid != self.showcase.uid:
+            user = await Database.select_one(User, User.discord_id.is_(interaction.user.id))
+            if user is None or user.uid_genshin != self.showcase.uid:
                 await interaction.response.send_message(
                     embed=EmbedTemplate.error("非此UID本人，無法刪除資料"), ephemeral=True
                 )
-            elif len(user.cookie) == 0:
+            elif user.cookie_genshin is None:
                 await interaction.response.send_message(
                     embed=EmbedTemplate.error("未設定Cookie，無法驗證此UID本人，無法刪除資料"),
                     ephemeral=True,
                 )
             else:
                 embed = self.showcase.get_player_overview_embed()
-                await db.showcase.remove(self.showcase.uid)
+                await Database.delete(
+                    GenshinShowcase,
+                    GenshinShowcase.uid.is_(self.showcase.uid),
+                )
                 await interaction.response.edit_message(embed=embed, view=None, attachments=[])
 
 
@@ -140,7 +143,8 @@ async def showcase(
     uid: Optional[int] = None,
 ):
     await interaction.response.defer()
-    uid = uid or (_user.uid if (_user := await db.users.get(user.id)) else None)
+    _user = await Database.select_one(User, User.discord_id.is_(user.id))
+    uid = uid or (_user.uid_genshin if _user else None)
     if uid is None:
         await interaction.edit_original_response(
             embed=EmbedTemplate.error(
@@ -167,7 +171,7 @@ async def showcase(
             await interaction.edit_original_response(embed=embed)
 
 
-class GenshinShowcase(commands.Cog, name="原神展示櫃"):
+class GenshinShowcaseCog(commands.Cog, name="原神展示櫃"):
     """斜線指令"""
 
     def __init__(self, bot: commands.Bot):
@@ -205,7 +209,7 @@ async def setup(client: commands.Bot):
         await enka.update_assets()
     enkanetwork.Assets(lang=enkanetwork.Language.CHT)
 
-    await client.add_cog(GenshinShowcase(client))
+    await client.add_cog(GenshinShowcaseCog(client))
 
     # ---------------------------------------------------------------
     # 下面為Context Menu指令

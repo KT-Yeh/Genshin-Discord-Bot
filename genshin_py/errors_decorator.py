@@ -1,11 +1,12 @@
 import asyncio
+import datetime
 from typing import Callable
 
 import aiohttp
 import genshin
 import sentry_sdk
 
-from data.database import db
+from database import Database, User
 from utility import LOG
 
 from .errors import GenshinAPIException, UserDataNotFound
@@ -26,7 +27,15 @@ def generalErrorHandler(func: Callable):
             RETRY_MAX = 3
             for retry in range(RETRY_MAX, -1, -1):
                 try:
-                    return await func(*args, **kwargs)
+                    result = await func(*args, **kwargs)
+
+                    # 成功使用指令則更新使用者的最後使用時間
+                    user = await Database.select_one(User, User.discord_id.is_(user_id))
+                    if user is not None:
+                        user.last_used_time = datetime.datetime.now()
+                        await Database.insert_or_replace(user)
+
+                    return result
                 except (genshin.errors.InternalDatabaseError, aiohttp.ClientOSError) as e:
                     LOG.FuncExceptionLog(user_id, f"{func.__name__} (retry={retry})", e)
                     if retry == 0:  # 當重試次數用完時拋出例外
@@ -40,7 +49,6 @@ def generalErrorHandler(func: Callable):
             raise GenshinAPIException(e, "此功能權限未開啟，請先從Hoyolab網頁或App上的個人戰績->設定，將此功能啟用")
         except genshin.errors.InvalidCookies as e:
             LOG.FuncExceptionLog(user_id, func.__name__, e)
-            await db.users.update(user_id, invalid_cookie=True)
             raise GenshinAPIException(e, "Cookie已失效，請從Hoyolab重新取得新Cookie")
         except genshin.errors.RedemptionException as e:
             LOG.FuncExceptionLog(user_id, func.__name__, e)

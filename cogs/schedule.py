@@ -9,7 +9,8 @@ from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands, tasks
 
-from data.database import ScheduleDaily, ScheduleResin, db
+import database
+from database import Database, GenshinScheduleNotes, ScheduleDailyCheckin
 from genshin_py import auto_task, genshin_app
 from utility import EmbedTemplate, config, get_app_command_mention
 from utility.custom_log import LOG, SlashCommandLogger
@@ -114,7 +115,7 @@ class Schedule(commands.Cog, name="自動化"):
             min_length=4,
         )
 
-        def __init__(self, user_setting: Optional[ScheduleResin] = None) -> None:
+        def __init__(self, user_setting: Optional[GenshinScheduleNotes] = None) -> None:
             """設定表單預設值；若使用者在資料庫已有設定值，則帶入表單預設值"""
             self.resin.default = "1"
             self.realm_currency.default = None
@@ -180,10 +181,10 @@ class Schedule(commands.Cog, name="自動化"):
                 )
             else:
                 # 儲存設定資料
-                await db.schedule_resin.add(
-                    ScheduleResin(
-                        id=interaction.user.id,
-                        channel_id=interaction.channel_id or 0,
+                await Database.insert_or_replace(
+                    GenshinScheduleNotes(
+                        discord_id=interaction.user.id,
+                        discord_channel_id=interaction.channel_id or 0,
                         threshold_resin=resin,
                         threshold_currency=realm_currency,
                         threshold_transformer=transformer,
@@ -266,9 +267,13 @@ class Schedule(commands.Cog, name="自動化"):
             return
 
         # 設定前先確認使用者是否有Cookie資料
-        user = await db.users.get(interaction.user.id)
-        check, msg = await db.users.exist(user, check_uid=(function == "NOTES"))
-        if check is False and msg is not None:
+        user = await Database.select_one(
+            database.User, database.User.discord_id.is_(interaction.user.id)
+        )
+        check, msg = await database.Tool.check_user(user)
+        # TO-DO 使用即時便箋需要檢查 UID
+
+        if check is False:
             await interaction.response.send_message(embed=EmbedTemplate.error(msg))
             return
 
@@ -289,16 +294,18 @@ class Schedule(commands.Cog, name="自動化"):
                     return
 
                 # 新增使用者
-                await db.schedule_daily.add(
-                    ScheduleDaily(
-                        id=interaction.user.id,
-                        channel_id=interaction.channel_id or 0,
-                        is_mention=options_view.is_mention,
-                        has_genshin=options_view.has_genshin,
-                        has_honkai=options_view.has_honkai3rd,
-                        has_starrail=options_view.has_starrail,
-                    )
+                checkin_time = datetime.combine(datetime.now(), time(8, 0))
+                checkin_user = ScheduleDailyCheckin(
+                    discord_id=interaction.user.id,
+                    discord_channel_id=interaction.channel_id or 0,
+                    is_mention=options_view.is_mention,
+                    next_checkin_time=checkin_time,
+                    has_genshin=options_view.has_genshin,
+                    has_honkai3rd=options_view.has_honkai3rd,
+                    has_starrail=options_view.has_starrail,
                 )
+                await Database.insert_or_replace(checkin_user)
+
                 await interaction.edit_original_response(
                     embed=EmbedTemplate.normal(
                         f"{options_view.value} 每日自動簽到已開啟，"
@@ -315,19 +322,29 @@ class Schedule(commands.Cog, name="自動化"):
                     has_honkai3rd=options_view.has_honkai3rd,
                     has_starrail=options_view.has_starrail,
                 )
-                await db.schedule_daily.update(interaction.user.id, last_checkin_date=True)
+                checkin_user.update_next_checkin_time()
+                await Database.insert_or_replace(checkin_user)
+
             elif switch == "OFF":  # 關閉簽到功能
-                await db.schedule_daily.remove(interaction.user.id)
+                await Database.delete(
+                    ScheduleDailyCheckin, ScheduleDailyCheckin.discord_id.is_(interaction.user.id)
+                )
                 await interaction.response.send_message(embed=EmbedTemplate.normal("每日自動簽到已關閉"))
 
         elif function == "NOTES":  # 即時便箋檢查提醒
             if switch == "ON":  # 開啟即時便箋檢查功能
-                user_setting = await db.schedule_resin.get(interaction.user.id)
+                user_setting = await Database.select_one(
+                    GenshinScheduleNotes,
+                    GenshinScheduleNotes.discord_id.is_(interaction.user.id),
+                )
                 await interaction.response.send_modal(
                     self.CheckingNotesThresholdModal(user_setting)
                 )
             elif switch == "OFF":  # 關閉即時便箋檢查功能
-                await db.schedule_resin.remove(interaction.user.id)
+                await Database.delete(
+                    GenshinScheduleNotes,
+                    GenshinScheduleNotes.discord_id.is_(interaction.user.id),
+                )
                 await interaction.response.send_message(embed=EmbedTemplate.normal("即時便箋檢查提醒已關閉"))
 
     # 具有頻道管理訊息權限的人可使用本指令，移除指定使用者的頻道排程設定
@@ -346,12 +363,18 @@ class Schedule(commands.Cog, name="自動化"):
         self, interaction: discord.Interaction, function: str, user: discord.User
     ):
         if function == "daily":
-            await db.schedule_daily.remove(user.id)
+            await Database.delete(
+                ScheduleDailyCheckin,
+                ScheduleDailyCheckin.discord_id.is_(user.id),
+            )
             await interaction.response.send_message(
                 embed=EmbedTemplate.normal(f"{user.display_name}的每日自動簽到已關閉")
             )
         elif function == "resin":
-            await db.schedule_resin.remove(user.id)
+            await Database.delete(
+                GenshinScheduleNotes,
+                GenshinScheduleNotes.discord_id.is_(user.id),
+            )
             await interaction.response.send_message(
                 embed=EmbedTemplate.normal(f"{user.display_name}的樹脂額滿提醒已關閉")
             )
@@ -384,7 +407,7 @@ class Schedule(commands.Cog, name="自動化"):
             except Exception as e:
                 LOG.Error(str(e))
                 sentry_sdk.capture_exception(e)
-            asyncio.create_task(db.removeExpiredUser(config.expired_user_days))
+            asyncio.create_task(database.Tool.remove_expired_user(config.expired_user_days))
 
     @schedule.before_loop
     async def before_schedule(self):
@@ -392,7 +415,7 @@ class Schedule(commands.Cog, name="自動化"):
 
     async def predict_daily_checkin_time(self) -> str:
         """現在登記簽到，預計的簽到時間 (%H:%M)"""
-        total_users = await db.schedule_daily.getTotalNumber()
+        total_users = len(await Database.select_all(ScheduleDailyCheckin))
         base_time = datetime.combine(
             date.today(), time(config.schedule_daily_reward_time)
         )  # 每日開始簽到的時間

@@ -4,7 +4,8 @@ from typing import Sequence, Tuple
 import genshin
 import sentry_sdk
 
-from data.database import SpiralAbyssData, User, db
+import database
+from database import Database, GenshinSpiralAbyss, User
 from utility import LOG, get_app_command_mention, trim_cookie
 
 from .errors import UserDataNotFound
@@ -40,16 +41,25 @@ async def set_cookie(user_id: int, cookie: str) -> str:
         client.region = genshin.Region.CHINESE
         accounts = await client.get_game_accounts()
 
-    await db.users.add(User(id=user_id, cookie=trimed_cookie))
+    user = await Database.select_one(User, User.discord_id.is_(user_id))
+    if user is None:
+        user = User(user_id)
+    # TO-DO 加入個別遊戲設定 cookie
+    user.cookie_genshin = trimed_cookie
+    user.cookie_default = trimed_cookie
+
     LOG.Info(f"{LOG.User(user_id)} Cookie設置成功")
 
+    # TO-DO 加入個別遊戲設定 cookie
     gs_accounts = [account for account in accounts if account.game == genshin.types.Game.GENSHIN]
     sr_accounts = [account for account in accounts if account.game == genshin.types.Game.STARRAIL]
 
     if len(gs_accounts) == 1:
-        await db.users.update(user_id, uid=gs_accounts[0].uid)
+        user.uid_genshin = gs_accounts[0].uid
     if len(sr_accounts) == 1:
-        await db.users.update(user_id, uid_starrail=sr_accounts[0].uid)
+        user.uid_starrail = sr_accounts[0].uid
+
+    await Database.insert_or_replace(user)
     result = "Cookie已設定完成！"
 
     _msg = f"請使用 {get_app_command_mention('uid設定')} 指定要保存的角色。"
@@ -216,7 +226,7 @@ async def claim_daily_reward(
 
 
 @generalErrorHandler
-async def get_spiral_abyss(user_id: int, previous: bool = False) -> SpiralAbyssData:
+async def get_spiral_abyss(user_id: int, previous: bool = False) -> GenshinSpiralAbyss:
     """取得深境螺旋資訊
 
     Parameters
@@ -242,8 +252,8 @@ async def get_spiral_abyss(user_id: int, previous: bool = False) -> SpiralAbyssD
     if isinstance(abyss, BaseException):
         raise abyss
     if isinstance(characters, BaseException):
-        return SpiralAbyssData(user_id, abyss, characters=None)
-    return SpiralAbyssData(user_id, abyss, characters=characters)
+        return GenshinSpiralAbyss(user_id, abyss.season, abyss, None)
+    return GenshinSpiralAbyss(user_id, abyss.season, abyss, characters)
 
 
 @generalErrorHandler
@@ -340,22 +350,28 @@ async def get_genshin_client(
     `genshin.Client`
         原神 API 的 Client
     """
-    user = await db.users.get(user_id)
-    check, msg = await db.users.exist(user, check_uid=check_uid)
+    user = await Database.select_one(User, User.discord_id.is_(user_id))
+    check, msg = await database.Tool.check_user(user, check_uid=check_uid, game=game)
     if check is False or user is None:
         raise UserDataNotFound(msg)
 
-    if game == genshin.Game.GENSHIN:
-        uid = user.uid or 0
-    else:
-        uid = user.uid_starrail or 0
+    match game:
+        case genshin.Game.GENSHIN:
+            uid = user.uid_genshin or 0
+            cookie = user.cookie_genshin or user.cookie_default
+        case genshin.Game.STARRAIL:
+            uid = user.uid_starrail or 0
+            cookie = user.cookie_starrail or user.cookie_default
+        case _:
+            uid = 0
+            cookie = user.cookie_default
 
     if str(uid)[0] in ["1", "2", "5"]:
         client = genshin.Client(region=genshin.Region.CHINESE, lang="zh-cn")
     else:
         client = genshin.Client(lang="zh-tw")
 
-    client.set_cookies(user.cookie)
+    client.set_cookies(cookie)
     client.default_game = game
     client.uid = uid
     return client

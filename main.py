@@ -6,7 +6,7 @@ import prometheus_client
 import sentry_sdk
 from discord.ext import commands
 
-from data import database
+from database import Database
 from utility import LOG, config, sentry_logging
 
 intents = discord.Intents.default()
@@ -14,22 +14,19 @@ intents = discord.Intents.default()
 
 class GenshinDiscordBot(commands.AutoShardedBot):
     def __init__(self):
-        self.db = database.db
+        self.db = Database
         super().__init__(
             command_prefix=commands.when_mentioned_or("$"),
             intents=intents,
             application_id=config.application_id,
         )
 
-    async def is_owner(self, user: discord.User) -> bool:
-        return await super().is_owner(user)
-
     async def setup_hook(self) -> None:
         # 載入 jishaku
         await self.load_extension("jishaku")
 
         # 初始化資料庫
-        await self.db.create(config.database_file_path)
+        await Database.init()
 
         # 初始化 genshin api 角色名字
         await genshin.utility.update_characters_ambr(["zh-tw"])
@@ -59,7 +56,7 @@ class GenshinDiscordBot(commands.AutoShardedBot):
 
     async def close(self) -> None:
         # 關閉資料庫
-        await database.db.close()
+        await Database.close()
         LOG.System("on_close: 資料庫已關閉")
         await super().close()
         LOG.System("on_close: 機器人已結束")
