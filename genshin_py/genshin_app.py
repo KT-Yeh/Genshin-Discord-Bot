@@ -187,7 +187,12 @@ async def claim_daily_reward(
         except genshin.errors.InvalidCookies:
             return "Cookie已失效，請從Hoyolab重新取得新Cookie。"
         except genshin.errors.GeetestTriggered:
-            return f"{game_name[game]}簽到失敗：受到網頁圖形驗證阻擋。"
+            link: str = {
+                genshin.Game.GENSHIN: "https://act.hoyolab.com/ys/event/signin-sea-v3/index.html?act_id=e202102251931481",
+                genshin.Game.HONKAI: "https://act.hoyolab.com/bbs/event/signin-bh3/index.html?act_id=e202110291205111",
+                genshin.Game.STARRAIL: "https://act.hoyolab.com/bbs/event/signin/hkrpg/index.html?act_id=e202303301540311",
+            }.get(game, "")
+            return f"{game_name[game]}簽到失敗：受到圖形驗證阻擋，請到 [官網]({link}) 上手動簽到。"
         except Exception as e:
             if isinstance(e, genshin.errors.GenshinException) and e.retcode == -10002:
                 return f"{game_name[game]}簽到失敗，目前登入的帳號未查詢到角色資料。"
