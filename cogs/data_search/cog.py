@@ -10,25 +10,12 @@ from discord.ext import commands
 import genshin_db
 from utility import EmbedTemplate, config, custom_log
 
+from .ui import SearchResultsDropdown
+
 StrCategory = Literal["角色", "武器", "聖遺物", "物品/食物", "成就", "七聖召喚"]
 
 
-class SearchResultsDropdown(discord.ui.Select):
-    """以下拉選單方式選擇多個搜尋結果"""
-
-    def __init__(self, titles: list[str], embeds: list[discord.Embed]):
-        self.embeds = embeds
-        options = [
-            discord.SelectOption(label=title, value=str(i)) for i, title in enumerate(titles)
-        ]
-        super().__init__(options=options)
-
-    async def callback(self, interaction: discord.Interaction):
-        index = int(self.values[0])
-        await interaction.response.edit_message(embed=self.embeds[index])
-
-
-class Search(commands.Cog):
+class Search(commands.Cog, name="資料搜尋"):
     def __init__(self, bot: commands.Bot, genshin_db_data: genshin_db.GenshinDbAllData):
         self.bot = bot
         self.db = genshin_db_data

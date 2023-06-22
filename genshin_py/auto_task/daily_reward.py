@@ -239,7 +239,7 @@ class DailyReward:
         avg_user_daily_time = (end_time - start_time).total_seconds() / (total if total > 0 else 1)
 
         # 將平均簽到時間儲存到 schedule cog
-        schedule_cog = bot.get_cog("自動化")
+        schedule_cog = bot.get_cog("排程設定指令")
         if schedule_cog is not None:
             setattr(schedule_cog, "avg_user_daily_time", avg_user_daily_time)
 

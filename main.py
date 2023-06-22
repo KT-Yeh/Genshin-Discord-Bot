@@ -31,10 +31,13 @@ class GenshinDiscordBot(commands.AutoShardedBot):
         # 初始化 genshin api 角色名字
         await genshin.utility.update_characters_ambr(["zh-tw"])
 
-        # 從cogs資料夾載入所有cog
-        for filepath in Path("./cogs").glob("**/*.py"):
-            cog_name = Path(filepath).stem
-            await self.load_extension(f"cogs.{cog_name}")
+        # 從 cogs 資料夾載入所有 cog
+        for filepath in Path("./cogs").glob("**/*cog.py"):
+            parts = list(filepath.parts)
+            parts[-1] = filepath.stem
+            await self.load_extension(".".join(parts))
+
+        # 從 cogs_external 資料夾載入所有 cog
         for filepath in Path("./cogs_external").glob("**/*.py"):
             cog_name = Path(filepath).stem
             await self.load_extension(f"cogs_external.{cog_name}")

@@ -1,17 +1,14 @@
 import asyncio
-from typing import Any, Callable, Literal, Optional, Union
+from typing import Any, Callable, Optional, Union
 
 import discord
 import enkanetwork
 import sentry_sdk
-from discord import app_commands
-from discord.ext import commands
 
 from database import Database, GenshinShowcase, User
 from enka_network import Showcase, enka_assets
-from star_rail.showcase import starrail_showcase
 from utility import EmbedTemplate, config, emoji, get_app_command_mention
-from utility.custom_log import LOG, ContextCommandLogger, SlashCommandLogger
+from utility.custom_log import LOG
 
 
 class ShowcaseCharactersDropdown(discord.ui.Select):
@@ -133,10 +130,6 @@ class ShowcaseView(discord.ui.View):
             self.add_item(ShowcaseCharactersDropdown(showcase))
 
 
-# -------------------------------------------------------------------
-# 下面為Discord指令呼叫
-
-
 async def showcase(
     interaction: discord.Interaction,
     user: Union[discord.User, discord.Member],
@@ -169,51 +162,3 @@ async def showcase(
                 str(e) + f"\n你可以點擊 [連結]({showcase.url}) 查看網站狀態", title=f"UID：{uid}"
             )
             await interaction.edit_original_response(embed=embed)
-
-
-class GenshinShowcaseCog(commands.Cog, name="原神展示櫃"):
-    """斜線指令"""
-
-    def __init__(self, bot: commands.Bot):
-        self.bot = bot
-
-    # 角色展示櫃
-    @app_commands.command(name="showcase角色展示櫃", description="查詢指定UID玩家的公開角色展示櫃")
-    @app_commands.rename(game="遊戲", user="使用者")
-    @app_commands.describe(uid="欲查詢的玩家UID，若小幫手已保存資料的話查自己不需要填本欄位", user="查詢其他成員的資料，不填寫則查詢自己")
-    @app_commands.choices(
-        game=[
-            app_commands.Choice(name="原神", value="原神"),
-            app_commands.Choice(name="星穹鐵道", value="星穹鐵道"),
-        ]
-    )
-    @SlashCommandLogger
-    async def slash_showcase(
-        self,
-        interaction: discord.Interaction,
-        game: Literal["原神", "星穹鐵道"],
-        uid: Optional[int] = None,
-        user: Optional[discord.User] = None,
-    ):
-        match game:
-            case "原神":
-                await showcase(interaction, user or interaction.user, uid)
-            case "星穹鐵道":
-                await starrail_showcase(interaction, user or interaction.user, uid)
-
-
-async def setup(client: commands.Bot):
-    # 更新 Enka 素材資料
-    enka = enkanetwork.EnkaNetworkAPI()
-    async with enka:
-        await enka.update_assets()
-    enkanetwork.Assets(lang=enkanetwork.Language.CHT)
-
-    await client.add_cog(GenshinShowcaseCog(client))
-
-    # ---------------------------------------------------------------
-    # 下面為Context Menu指令
-    @client.tree.context_menu(name="角色展示櫃")
-    @ContextCommandLogger
-    async def context_showcase(interaction: discord.Interaction, user: discord.User):
-        await showcase(interaction, user, None)
