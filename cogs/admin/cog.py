@@ -2,7 +2,6 @@ import asyncio
 import random
 import typing
 from datetime import datetime, time, timedelta
-from pathlib import Path
 
 import discord
 import enkanetwork
@@ -24,22 +23,6 @@ class Admin(commands.Cog):
     async def cog_unload(self) -> None:
         self.change_presence.cancel()
         self.refresh_genshin_db.cancel()
-
-    # /sync指令：同步 Slash commands 到全域或是當前伺服器
-    @app_commands.command(name="sync", description="同步Slash commands到全域或是當前伺服器")
-    @app_commands.rename(area="範圍")
-    @app_commands.choices(area=[Choice(name="當前伺服器", value=0), Choice(name="全域伺服器", value=1)])
-    @SlashCommandLogger
-    async def slash_sync(self, interaction: discord.Interaction, area: int = 0):
-        await interaction.response.defer()
-        if area == 0 and interaction.guild:  # 複製全域指令，同步到當前伺服器，不需等待
-            self.bot.tree.copy_global_to(guild=interaction.guild)
-            result = await self.bot.tree.sync(guild=interaction.guild)
-        else:  # 同步到全域，需等待一小時
-            result = await self.bot.tree.sync()
-
-        msg = f'已同步以下指令到{"全部" if area == 1 else "當前"}伺服器：{"、".join(cmd.name for cmd in result)}'
-        await interaction.edit_original_response(content=msg)
 
     # /status指令：顯示機器人相關狀態
     @app_commands.command(name="status", description="顯示小幫手狀態")
@@ -65,14 +48,11 @@ class Admin(commands.Cog):
                     embed = discord.Embed(title=f"已連接伺服器名稱({i + 1})", description=msg)
                     await interaction.followup.send(embed=embed)
 
-    # /system指令：操作cog、更改機器人狀態...
-    @app_commands.command(name="system", description="使用系統命令(操作cog、更改機器人狀態)")
+    # /system指令：更改機器人狀態、執行任務...
+    @app_commands.command(name="system", description="使用系統命令(更改機器人狀態、執行任務...)")
     @app_commands.rename(option="選項", param="參數")
     @app_commands.choices(
         option=[
-            Choice(name="載入 cog", value="LOAD_COG"),
-            Choice(name="卸載 cog", value="UNLOAD_COG"),
-            Choice(name="重新載入 cog", value="RELOAD_COG"),
             Choice(name="自訂機器人狀態", value="CHANGE_PRESENCE"),
             Choice(name="立即執行領取每日獎勵", value="CLAIM_DAILY_REWARD"),
             Choice(name="更新 Enka 新版本資料", value="UPDATE_ENKA_ASSETS"),
@@ -84,15 +64,6 @@ class Admin(commands.Cog):
     ):
         await interaction.response.defer()
         match option:
-            case "LOAD_COG":
-                await self._operate_cogs(self.bot.load_extension, param, pass_self=True)
-                await interaction.edit_original_response(content=f"{param or '全部'}指令集載入完成")
-            case "UNLOAD_COG":
-                await self._operate_cogs(self.bot.unload_extension, param, pass_self=True)
-                await interaction.edit_original_response(content=f"{param or '全部'}指令集卸載完成")
-            case "RELOAD_COG":
-                await self._operate_cogs(self.bot.reload_extension, param)
-                await interaction.edit_original_response(content=f"{param or '全部'}指令集重新載入完成")
             case "CHANGE_PRESENCE":  # 更改機器人狀態
                 if param is not None:
                     self.presence_string = param.split(",")
@@ -160,6 +131,8 @@ class Admin(commands.Cog):
                 + "若每日自動簽到時間在此範圍內，請使用 /config 指令更改每日自動簽到時間"
             )
 
+    # ======== Loop Task ========
+
     # 每一定時間更改機器人狀態
     @tasks.loop(minutes=1)
     async def change_presence(self):
@@ -177,28 +150,11 @@ class Admin(commands.Cog):
     # 每天定時重整 genshin_db API 資料
     @tasks.loop(time=time(hour=20, minute=00))
     async def refresh_genshin_db(self):
-        await self._operate_cogs(self.bot.reload_extension, "search")
+        await self.bot.reload_extension("cogs.data_search.cog")
 
     @refresh_genshin_db.before_loop
     async def before_refresh_genshin_db(self):
         await self.bot.wait_until_ready()
-
-    async def _operate_cogs(
-        self,
-        func: typing.Callable[[str], typing.Awaitable[None]],
-        param: typing.Optional[str] = None,
-        *,
-        pass_self: bool = False,
-    ):
-        """操作 cog，func 為操作函式，param 為操作的 cog 名稱，pass_self 為是否跳過 admin cog"""
-        if param is None:  # 操作全部cog
-            for filepath in Path("./cogs").glob("**/*.py"):
-                cog_name = Path(filepath).stem
-                if pass_self and cog_name == "admin":
-                    continue
-                await func(f"cogs.{cog_name}")
-        else:  # 操作單一cog
-            await func(f"cogs.{param}")
 
 
 async def setup(client: commands.Bot):
