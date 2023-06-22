@@ -401,7 +401,7 @@ class Schedule(commands.Cog, name="自動化"):
         # 每日凌晨一點備份資料庫、刪除過期使用者資料
         if now.hour == 1 and now.minute < self.loop_interval:
             try:
-                db_path = config.database_file_path
+                db_path = "data/bot/bot.db"
                 today = date.today()
                 shutil.copyfile(db_path, f"{db_path.split('.')[0]}_backup_{today}.db")
             except Exception as e:

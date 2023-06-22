@@ -3,17 +3,14 @@ __pycache__
 *.pyc
 
 # Config
-config.json
-data/*.yml
+.env
 
 # External/private cogs
 cogs_external/
 
 # Data
 *.db
-*.json
-data/*.log
-data/image/character/[0-9]*.png
+data/
 
 # VS Code
 .vscode
