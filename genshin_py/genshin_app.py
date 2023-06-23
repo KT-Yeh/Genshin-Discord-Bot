@@ -6,15 +6,15 @@ import sentry_sdk
 
 import database
 from database import Database, GenshinSpiralAbyss, User
-from utility import LOG, get_app_command_mention, trim_cookie
+from utility import LOG, get_app_command_mention
 
 from .errors import UserDataNotFound
 from .errors_decorator import generalErrorHandler
 
 
 @generalErrorHandler
-async def set_cookie(user_id: int, cookie: str) -> str:
-    """設定使用者Cookie
+async def set_cookie(user_id: int, cookie: str, games: Sequence[genshin.Game]) -> str:
+    """根據遊戲設定使用者 Cookie
 
     Parameters
     ------
@@ -22,6 +22,8 @@ async def set_cookie(user_id: int, cookie: str) -> str:
         使用者Discord ID
     cookie: `str`
         Hoyolab cookie
+    games: `Sequence[genshin.Game]`
+        要設定哪些遊戲的 cookie
 
     Returns
     ------
@@ -29,44 +31,58 @@ async def set_cookie(user_id: int, cookie: str) -> str:
         回覆給使用者的訊息
     """
     LOG.Info(f"設定 {LOG.User(user_id)} 的Cookie：{cookie}")
-    trimed_cookie = await trim_cookie(cookie)
-    if trimed_cookie is None:
-        return f'錯誤或無效的Cookie，請重新輸入(使用 {get_app_command_mention("cookie設定")} 顯示說明)'
+
     client = genshin.Client(lang="zh-tw")
-    client.set_cookies(trimed_cookie)
+    client.set_cookies(cookie)
+
     # 先以國際服 client 取得帳號資訊，若失敗則嘗試使用中國服 client
     try:
         accounts = await client.get_game_accounts()
     except genshin.errors.InvalidCookies:
         client.region = genshin.Region.CHINESE
         accounts = await client.get_game_accounts()
+    gs_accounts = [a for a in accounts if a.game == genshin.Game.GENSHIN]
+    hk3_accounts = [a for a in accounts if a.game == genshin.Game.HONKAI]
+    sr_accounts = [a for a in accounts if a.game == genshin.Game.STARRAIL]
 
     user = await Database.select_one(User, User.discord_id.is_(user_id))
     if user is None:
         user = User(user_id)
-    # TO-DO 加入個別遊戲設定 cookie
-    user.cookie_genshin = trimed_cookie
-    user.cookie_default = trimed_cookie
 
-    LOG.Info(f"{LOG.User(user_id)} Cookie設置成功")
+    # 個別遊戲設定 cookie、UID
+    character_list: list[str] = []  # 保存角色數量訊息
+    user.cookie_default = cookie
+    if genshin.Game.GENSHIN in games:
+        user.cookie_genshin = cookie
+        if len(gs_accounts) == 1:
+            user.uid_genshin = gs_accounts[0].uid
+        elif len(gs_accounts) > 1:
+            character_list.append(f"{len(gs_accounts)}名原神角色")
 
-    # TO-DO 加入個別遊戲設定 cookie
-    gs_accounts = [account for account in accounts if account.game == genshin.types.Game.GENSHIN]
-    sr_accounts = [account for account in accounts if account.game == genshin.types.Game.STARRAIL]
+    if genshin.Game.HONKAI in games:
+        user.cookie_honkai3rd = cookie
+        if len(hk3_accounts) == 1:
+            user.uid_honkai3rd = hk3_accounts[0].uid
+        elif len(hk3_accounts) > 1:
+            character_list.append(f"{len(hk3_accounts)}名崩壞3角色")
 
-    if len(gs_accounts) == 1:
-        user.uid_genshin = gs_accounts[0].uid
-    if len(sr_accounts) == 1:
-        user.uid_starrail = sr_accounts[0].uid
+    if genshin.Game.STARRAIL in games:
+        user.cookie_starrail = cookie
+        if len(sr_accounts) == 1:
+            user.uid_starrail = sr_accounts[0].uid
+        if len(sr_accounts) > 1:
+            character_list.append(f"{len(sr_accounts)}名星穹鐵道角色")
 
     await Database.insert_or_replace(user)
-    result = "Cookie已設定完成！"
+    LOG.Info(f"{LOG.User(user_id)} Cookie設置成功")
 
-    _msg = f"請使用 {get_app_command_mention('uid設定')} 指定要保存的角色。"
-    if len(gs_accounts) > 1:
-        result += f"\n你的帳號內共有{len(gs_accounts)}名原神角色，{_msg}"
-    if len(sr_accounts) > 1:
-        result += f"\n你的帳號內共有{len(sr_accounts)}名星穹鐵道角色，{_msg}"
+    result = "Cookie已設定完成！"
+    # 若有多名角色，則提示使用者要設定 UID
+    if len(character_list) > 0:
+        result += (
+            f"\n你的帳號內共有{'、'.join(character_list)}，"
+            + f"請使用 {get_app_command_mention('uid設定')} 指定要保存的角色。"
+        )
     return result
 
 
@@ -88,7 +104,7 @@ async def get_game_accounts(
     `Sequence[GenshinAccount]`
         查詢結果
     """
-    client = await get_genshin_client(user_id, check_uid=False)
+    client = await get_genshin_client(user_id, game=game, check_uid=False)
     accounts = await client.get_game_accounts()
     return [account for account in accounts if account.game == game]
 
@@ -364,6 +380,9 @@ async def get_genshin_client(
         case genshin.Game.GENSHIN:
             uid = user.uid_genshin or 0
             cookie = user.cookie_genshin or user.cookie_default
+        case genshin.Game.HONKAI:
+            uid = user.uid_honkai3rd or 0
+            cookie = user.cookie_honkai3rd or user.cookie_default
         case genshin.Game.STARRAIL:
             uid = user.uid_starrail or 0
             cookie = user.cookie_starrail or user.cookie_default

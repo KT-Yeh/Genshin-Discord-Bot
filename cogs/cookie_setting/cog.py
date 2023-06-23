@@ -5,7 +5,7 @@ from discord.ext import commands
 
 from utility import EmbedTemplate, custom_log, get_app_command_mention
 
-from .ui import CookieModal
+from .ui import GameSelectionView
 
 
 class CookieSettingCog(commands.Cog, name="Cookie 設定"):
@@ -23,7 +23,7 @@ class CookieSettingCog(commands.Cog, name="Cookie 設定"):
     )
     @custom_log.SlashCommandLogger
     async def slash_cookie(self, interaction: discord.Interaction, option: int):
-        if option == 0:
+        if option == 0:  # 顯示說明如何取得 Cookie
             embed = EmbedTemplate.normal(
                 "**1.** 先複製本文最底下整行程式碼\n"
                 "**2.** PC或手機使用 **Chrome** 開啟 [HoYoLAB官網](https://www.hoyolab.com)"
@@ -38,9 +38,16 @@ class CookieSettingCog(commands.Cog, name="Cookie 設定"):
             code_msg = "script: document.write(document.cookie)"
             await interaction.response.send_message(embed=embed)
             await interaction.followup.send(content=code_msg)
-        elif option == 1:
-            await interaction.response.send_modal(CookieModal())
-        elif option == 2:
+
+        elif option == 1:  # 提交已取得的Cookie給小幫手
+            view = GameSelectionView()
+            await interaction.response.send_message(
+                embed=EmbedTemplate.normal("請選擇要設定Cookie的遊戲，不同遊戲可以設定不同帳號的Cookie"),
+                view=view,
+                ephemeral=True,
+            )
+
+        elif option == 2:  # 顯示小幫手Cookie使用與保存告知
             msg = (
                 "· Cookie的內容包含你個人的識別代碼，不包含帳號與密碼\n"
                 "· 因此無法用來登入遊戲，也無法更改帳密，Cookie內容大概長這樣："
