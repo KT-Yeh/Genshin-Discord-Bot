@@ -209,12 +209,12 @@ class DailyReward:
         try:
             _id = user.discord_channel_id
             channel = bot.get_channel(_id) or await bot.fetch_channel(_id)
-            # 若不用@提及使用者，則先取得此使用者的暱稱然後發送訊息
+            # 若不用@提及使用者，則先取得此使用者的名稱然後發送訊息
             if user.is_mention is False:
                 _user = await bot.fetch_user(user.discord_id)
-                await channel.send(f"[自動簽到] {_user.display_name}：{result}")  # type: ignore
+                await channel.send(f"[自動簽到] {_user.name}：{result}")  # type: ignore
             else:
-                await channel.send(f"[自動簽到] <@{user.id}> {result}")  # type: ignore
+                await channel.send(f"[自動簽到] <@{user.discord_id}> {result}")  # type: ignore
         except (
             discord.Forbidden,
             discord.NotFound,

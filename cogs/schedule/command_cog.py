@@ -172,7 +172,7 @@ class ScheduleCommandCog(commands.Cog, name="排程設定指令"):
                 ScheduleDailyCheckin.discord_id.is_(user.id),
             )
             await interaction.response.send_message(
-                embed=EmbedTemplate.normal(f"{user.display_name}的每日自動簽到已關閉")
+                embed=EmbedTemplate.normal(f"{user.name}的每日自動簽到已關閉")
             )
         elif function == "resin":
             await Database.delete(
@@ -180,7 +180,7 @@ class ScheduleCommandCog(commands.Cog, name="排程設定指令"):
                 GenshinScheduleNotes.discord_id.is_(user.id),
             )
             await interaction.response.send_message(
-                embed=EmbedTemplate.normal(f"{user.display_name}的樹脂額滿提醒已關閉")
+                embed=EmbedTemplate.normal(f"{user.name}的樹脂額滿提醒已關閉")
             )
 
     async def predict_daily_checkin_time(self) -> str:
