@@ -6,11 +6,11 @@ from pydantic import BaseSettings
 class Config(BaseSettings):
     """機器人的配置"""
 
-    application_id: int
+    application_id: int = 0
     """機器人 Application ID，從 Discord Developer 網頁上取得"""
-    test_server_id: int
+    test_server_id: int = 0
     """測試伺服器 ID，用來測試斜線指令，管理員指令只能在本伺服器使用"""
-    bot_token: str
+    bot_token: str = ""
     """機器人 Token，從 Discord Developer 網頁取得"""
     enka_api_key: str | None = None
     """向 Enka Network API 發送請求的金鑰"""

@@ -10,26 +10,26 @@ DatabaseModel = Base
 T_DatabaseModel = TypeVar("T_DatabaseModel", bound=Base)
 
 
-engine = create_async_engine("sqlite+aiosqlite:///data/bot/bot.db")
-sessionmaker = async_sessionmaker(engine, expire_on_commit=False)
+_engine = create_async_engine("sqlite+aiosqlite:///data/bot/bot.db")
+_sessionmaker = async_sessionmaker(_engine, expire_on_commit=False)
 
 
 class Database:
     """資料庫方法類別，提供類別方法來操作資料庫，包含了：初始化、關閉、插入、選擇、刪除"""
 
-    engine = engine
-    sessionmaker = sessionmaker
+    engine = _engine
+    sessionmaker = _sessionmaker
 
     @classmethod
     async def init(cls) -> None:
         """初始化資料庫，在 bot 最初運行時需要呼叫一次"""
-        async with engine.begin() as conn:
+        async with cls.engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
 
     @classmethod
     async def close(cls) -> None:
         """關閉資料庫，在 bot 關閉前需要呼叫一次"""
-        await engine.dispose()
+        await cls.engine.dispose()
 
     @classmethod
     async def insert_or_replace(cls, instance: DatabaseModel) -> None:
@@ -41,7 +41,7 @@ class Database:
         instance: `DatabaseModel`
             資料庫 Table (ORM) 的實例物件
         """
-        async with sessionmaker() as session:
+        async with cls.sessionmaker() as session:
             await session.merge(instance)
             await session.commit()
 
@@ -66,7 +66,7 @@ class Database:
         `T_DatabaseModel` | `None`:
             根據參數所選擇出該 Table 符合條件的物件，若無任何符合則回傳 `None`
         """
-        async with sessionmaker() as session:
+        async with cls.sessionmaker() as session:
             stmt = sqlalchemy.select(table)
             if whereclause is not None:
                 stmt = stmt.where(whereclause)
@@ -94,7 +94,7 @@ class Database:
         `Sequence[T_DatabaseModel]`:
             根據參數所選擇出該 Table 符合條件的全部物件
         """
-        async with sessionmaker() as session:
+        async with cls.sessionmaker() as session:
             stmt = sqlalchemy.select(table)
             if whereclause is not None:
                 stmt = stmt.where(whereclause)
@@ -110,7 +110,7 @@ class Database:
         instance: `DatabaseModel`
             資料庫 Table (ORM) 的實例物件
         """
-        async with sessionmaker() as session:
+        async with cls.sessionmaker() as session:
             await session.delete(instance)
             await session.commit()
 

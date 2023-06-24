@@ -1,3 +1,5 @@
+import argparse
+import asyncio
 from pathlib import Path
 
 import discord
@@ -6,15 +8,16 @@ import prometheus_client
 import sentry_sdk
 from discord.ext import commands
 
-from database import Database
+import database
 from utility import LOG, config, sentry_logging
 
 intents = discord.Intents.default()
+argparser = argparse.ArgumentParser()
 
 
 class GenshinDiscordBot(commands.AutoShardedBot):
     def __init__(self):
-        self.db = Database
+        self.db = database.Database
         super().__init__(
             command_prefix=commands.when_mentioned_or("$"),
             intents=intents,
@@ -26,7 +29,7 @@ class GenshinDiscordBot(commands.AutoShardedBot):
         await self.load_extension("jishaku")
 
         # 初始化資料庫
-        await Database.init()
+        await database.Database.init()
 
         # 初始化 genshin api 角色名字
         await genshin.utility.update_characters_ambr(["zh-tw"])
@@ -59,7 +62,7 @@ class GenshinDiscordBot(commands.AutoShardedBot):
 
     async def close(self) -> None:
         # 關閉資料庫
-        await Database.close()
+        await database.Database.close()
         LOG.System("on_close: 資料庫已關閉")
         await super().close()
         LOG.System("on_close: 機器人已結束")
@@ -70,6 +73,13 @@ class GenshinDiscordBot(commands.AutoShardedBot):
     async def on_command_error(self, ctx: commands.Context, error):
         LOG.ErrorLog(ctx, error)
 
+
+argparser.add_argument("--migrate_database", action="store_true")
+args = argparser.parse_args()
+
+if args.migrate_database:
+    asyncio.run(database.migration.migrate())
+    exit()
 
 sentry_sdk.init(dsn=config.sentry_sdk_dsn, integrations=[sentry_logging], traces_sample_rate=1.0)
 
