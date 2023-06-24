@@ -5,7 +5,7 @@ import discord
 import genshin
 from discord.ext import commands
 
-from genshin_py import errors, genshin_app
+import genshin_py
 from utility import EmbedTemplate, custom_log
 
 
@@ -29,7 +29,7 @@ async def redeem(
     msg = ""
     invalid_cookie_msg = ""  # genshin api 的 InvalidCookies 原始訊息
     try:
-        genshin_client = await genshin_app.get_genshin_client(user.id, game=game, check_uid=False)
+        genshin_client = await genshin_py.get_client(user.id, game=game, check_uid=False)
     except Exception as e:
         await interaction.edit_original_response(embed=EmbedTemplate.error(e))
         return
@@ -42,8 +42,8 @@ async def redeem(
             )
             await asyncio.sleep(5)
         try:
-            result = "✅" + await genshin_app.redeem_code(user.id, genshin_client, code, game)
-        except errors.GenshinAPIException as e:
+            result = "✅" + await genshin_py.redeem_code(user.id, genshin_client, code, game)
+        except genshin_py.GenshinAPIException as e:
             result = "❌"
             if isinstance(e.origin, genshin.errors.InvalidCookies):
                 result += "無效的Cookie"

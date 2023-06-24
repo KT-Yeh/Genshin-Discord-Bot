@@ -5,7 +5,7 @@ import genshin
 from discord import app_commands
 from discord.ext import commands
 
-from genshin_py import genshin_app
+import genshin_py
 from utility import EmbedTemplate
 from utility.custom_log import SlashCommandLogger
 
@@ -21,7 +21,7 @@ class NoticesCog(commands.Cog, name="遊戲公告"):
     async def slash_notices(self, interaction: discord.Interaction):
         try:
             defer, notices = await asyncio.gather(
-                interaction.response.defer(), genshin_app.get_game_notices()
+                interaction.response.defer(), genshin_py.get_genshin_notices()
             )
         except Exception as e:
             await interaction.edit_original_response(embed=EmbedTemplate.error(e))

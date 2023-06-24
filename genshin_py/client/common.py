@@ -1,15 +1,90 @@
 import asyncio
-from typing import Sequence, Tuple
+from typing import Sequence
 
 import genshin
 import sentry_sdk
 
 import database
-from database import Database, GenshinSpiralAbyss, User
+from database import Database, User
 from utility import LOG, get_app_command_mention
 
-from .errors import UserDataNotFound
-from .errors_decorator import generalErrorHandler
+from ..errors import UserDataNotFound
+from ..errors_decorator import generalErrorHandler
+
+
+async def get_client(
+    user_id: int,
+    *,
+    game: genshin.Game = genshin.Game.GENSHIN,
+    check_uid=True,
+) -> genshin.Client:
+    """設定並取得原神 API 的 Client
+
+    Parameters
+    ------
+    user_id: `int`
+        使用者 Discord ID
+    game: `genshin.Game`
+        要取得的遊戲 Client
+    check_uid: `bool`
+        是否檢查 UID
+
+    Returns
+    ------
+    `genshin.Client`
+        原神 API 的 Client
+    """
+    user = await Database.select_one(User, User.discord_id.is_(user_id))
+    check, msg = await database.Tool.check_user(user, check_uid=check_uid, game=game)
+    if check is False or user is None:
+        raise UserDataNotFound(msg)
+
+    match game:
+        case genshin.Game.GENSHIN:
+            uid = user.uid_genshin or 0
+            cookie = user.cookie_genshin or user.cookie_default
+        case genshin.Game.HONKAI:
+            uid = user.uid_honkai3rd or 0
+            cookie = user.cookie_honkai3rd or user.cookie_default
+        case genshin.Game.STARRAIL:
+            uid = user.uid_starrail or 0
+            cookie = user.cookie_starrail or user.cookie_default
+        case _:
+            uid = 0
+            cookie = user.cookie_default
+
+    if str(uid)[0] in ["1", "2", "5"]:
+        client = genshin.Client(region=genshin.Region.CHINESE, lang="zh-cn")
+    else:
+        client = genshin.Client(lang="zh-tw")
+
+    client.set_cookies(cookie)
+    client.default_game = game
+    client.uid = uid
+    return client
+
+
+@generalErrorHandler
+async def get_game_accounts(
+    user_id: int, game: genshin.Game
+) -> Sequence[genshin.models.GenshinAccount]:
+    """取得同一個Hoyolab帳號下，指定遊戲的所有伺服器帳號
+
+    Parameters
+    ------
+    user_id: `int`
+        使用者 Discord ID
+    game: `genshin.Game`
+        指定遊戲
+
+    Returns
+    ------
+    `Sequence[GenshinAccount]`
+        查詢結果
+    """
+    client = await get_client(user_id, game=game, check_uid=False)
+    accounts = await client.get_game_accounts()
+    return [account for account in accounts if account.game == game]
 
 
 @generalErrorHandler
@@ -87,47 +162,6 @@ async def set_cookie(user_id: int, cookie: str, games: Sequence[genshin.Game]) -
 
 
 @generalErrorHandler
-async def get_game_accounts(
-    user_id: int, game: genshin.Game
-) -> Sequence[genshin.models.GenshinAccount]:
-    """取得同一個Hoyolab帳號下，指定遊戲的所有伺服器帳號
-
-    Parameters
-    ------
-    user_id: `int`
-        使用者 Discord ID
-    game: `genshin.Game`
-        指定遊戲
-
-    Returns
-    ------
-    `Sequence[GenshinAccount]`
-        查詢結果
-    """
-    client = await get_genshin_client(user_id, game=game, check_uid=False)
-    accounts = await client.get_game_accounts()
-    return [account for account in accounts if account.game == game]
-
-
-@generalErrorHandler
-async def get_realtime_notes(user_id: int) -> genshin.models.Notes:
-    """取得使用者的即時便箋
-
-    Parameters
-    ------
-    user_id: `int`
-        使用者Discord ID
-
-    Returns
-    ------
-    `Notes`
-        查詢結果
-    """
-    client = await get_genshin_client(user_id)
-    return await client.get_genshin_notes(client.uid)
-
-
-@generalErrorHandler
 async def redeem_code(
     user_id: int, client: genshin.Client, code: str, game: genshin.Game = genshin.Game.GENSHIN
 ) -> str:
@@ -185,7 +219,7 @@ async def claim_daily_reward(
         回覆給使用者的訊息
     """
     try:
-        client = await get_genshin_client(user_id, check_uid=False)
+        client = await get_client(user_id, check_uid=False)
     except Exception as e:
         return str(e)
 
@@ -244,158 +278,3 @@ async def claim_daily_reward(
         LOG.FuncExceptionLog(user_id, "claimDailyReward: Hoyolab", e)
 
     return result
-
-
-@generalErrorHandler
-async def get_spiral_abyss(user_id: int, previous: bool = False) -> GenshinSpiralAbyss:
-    """取得深境螺旋資訊
-
-    Parameters
-    ------
-    user_id: `int`
-        使用者Discord ID
-    previous: `bool`
-        `True`查詢前一期的資訊、`False`查詢本期資訊
-
-    Returns
-    ------
-    `SpiralAbyssData`
-        查詢結果
-    """
-    client = await get_genshin_client(user_id)
-    # 為了刷新戰鬥數據榜，需要先對record card發出請求
-    await client.get_record_cards()
-    abyss, characters = await asyncio.gather(
-        client.get_genshin_spiral_abyss(client.uid or 0, previous=previous),
-        client.get_genshin_characters(client.uid or 0),
-        return_exceptions=True,
-    )
-    if isinstance(abyss, BaseException):
-        raise abyss
-    if isinstance(characters, BaseException):
-        return GenshinSpiralAbyss(user_id, abyss.season, abyss, None)
-    return GenshinSpiralAbyss(user_id, abyss.season, abyss, characters)
-
-
-@generalErrorHandler
-async def get_traveler_diary(user_id: int, month: int) -> genshin.models.Diary:
-    """取得使用者旅行者札記
-
-    Parameters
-    ------
-    user_id: `int`
-        使用者Discord ID
-    month: `int`
-        欲查詢的月份
-
-    Returns
-    ------
-    `Diary`
-        查詢結果
-    """
-    client = await get_genshin_client(user_id)
-    diary = await client.get_diary(client.uid, month=month)
-    return diary
-
-
-@generalErrorHandler
-async def get_record_card(user_id: int) -> Tuple[int, genshin.models.PartialGenshinUserStats]:
-    """取得使用者記錄卡片(成就、活躍天數、角色數、神瞳、寶箱數...等等)
-
-    Parameters
-    ------
-    user_id: `int`
-        使用者Discord ID
-
-    Returns
-    ------
-    `(int, PartialGenshinUserStats)`
-        查詢結果，包含UID與原神使用者資料
-    """
-    client = await get_genshin_client(user_id)
-    userstats = await client.get_partial_genshin_user(client.uid or 0)
-    return (client.uid or 0, userstats)
-
-
-@generalErrorHandler
-async def get_characters(user_id: int) -> Sequence[genshin.models.Character]:
-    """取得使用者所有角色資料
-
-    Parameters
-    ------
-    user_id: `int`
-        使用者Discord ID
-
-    Returns
-    ------
-    `Sequence[Character]`
-        查詢結果
-    """
-    client = await get_genshin_client(user_id)
-    return await client.get_genshin_characters(client.uid or 0)
-
-
-@generalErrorHandler
-async def get_game_notices() -> Sequence[genshin.models.Announcement]:
-    """取得遊戲內公告事項
-
-    Returns
-    ------
-    `Sequence[Announcement]`
-        公告事項查詢結果
-    """
-    client = genshin.Client(lang="zh-tw")
-    notices = await client.get_genshin_announcements()
-    return notices
-
-
-async def get_genshin_client(
-    user_id: int,
-    *,
-    game: genshin.Game = genshin.Game.GENSHIN,
-    check_uid=True,
-) -> genshin.Client:
-    """設定並取得原神 API 的 Client
-
-    Parameters
-    ------
-    user_id: `int`
-        使用者 Discord ID
-    game: `genshin.Game`
-        要取得的遊戲 Client
-    check_uid: `bool`
-        是否檢查 UID
-
-    Returns
-    ------
-    `genshin.Client`
-        原神 API 的 Client
-    """
-    user = await Database.select_one(User, User.discord_id.is_(user_id))
-    check, msg = await database.Tool.check_user(user, check_uid=check_uid, game=game)
-    if check is False or user is None:
-        raise UserDataNotFound(msg)
-
-    match game:
-        case genshin.Game.GENSHIN:
-            uid = user.uid_genshin or 0
-            cookie = user.cookie_genshin or user.cookie_default
-        case genshin.Game.HONKAI:
-            uid = user.uid_honkai3rd or 0
-            cookie = user.cookie_honkai3rd or user.cookie_default
-        case genshin.Game.STARRAIL:
-            uid = user.uid_starrail or 0
-            cookie = user.cookie_starrail or user.cookie_default
-        case _:
-            uid = 0
-            cookie = user.cookie_default
-
-    if str(uid)[0] in ["1", "2", "5"]:
-        client = genshin.Client(region=genshin.Region.CHINESE, lang="zh-cn")
-    else:
-        client = genshin.Client(lang="zh-tw")
-
-    client.set_cookies(cookie)
-    client.default_game = game
-    client.uid = uid
-    return client

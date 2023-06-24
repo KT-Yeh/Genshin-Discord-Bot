@@ -6,7 +6,7 @@ from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands
 
-from genshin_py import genshin_app, parser
+import genshin_py
 from utility import EmbedTemplate
 from utility.custom_log import LOG, ContextCommandLogger, SlashCommandLogger
 
@@ -21,9 +21,9 @@ class TravelerDiary:
         try:
             defer, diary = await asyncio.gather(
                 interaction.response.defer(),
-                genshin_app.get_traveler_diary(user.id, month),
+                genshin_py.get_genshin_traveler_diary(user.id, month),
             )
-            embed = parser.parse_diary(diary, month)
+            embed = genshin_py.parse_genshin_diary(diary, month)
         except Exception as e:
             await interaction.edit_original_response(embed=EmbedTemplate.error(e))
         else:

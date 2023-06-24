@@ -3,7 +3,7 @@ from typing import Sequence, Union
 import discord
 import genshin
 
-from genshin_py import parser
+import genshin_py
 from utility import config, emoji
 
 
@@ -38,7 +38,7 @@ class Dropdown(discord.ui.Select):
         self.characters = characters
 
     async def callback(self, interaction: discord.Interaction):
-        embed = parser.parse_character(self.characters[int(self.values[0])])
+        embed = genshin_py.parse_genshin_character(self.characters[int(self.values[0])])
         embed.set_author(
             name=f"{self.user.display_name} 的角色一覽",
             icon_url=self.user.display_avatar.url,

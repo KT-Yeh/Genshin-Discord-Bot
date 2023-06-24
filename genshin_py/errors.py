@@ -27,4 +27,4 @@ class GenshinAPIException(Exception):
         super().__init__(message)
 
     def __str__(self) -> str:
-        return f"{self.message} ({self.origin})"
+        return f"{self.message}\n```{repr(self.origin)}```"

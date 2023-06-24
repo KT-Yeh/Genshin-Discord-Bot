@@ -11,7 +11,7 @@ import database
 from database import Database, ScheduleDailyCheckin, User
 from utility import LOG, EmbedTemplate, config
 
-from .. import genshin_app
+from .. import claim_daily_reward
 
 
 class DailyReward:
@@ -168,7 +168,7 @@ class DailyReward:
             如果簽到失敗，會拋出一個 Exception。
         """
         if host == "LOCAL":  # 本地簽到
-            message = await genshin_app.claim_daily_reward(
+            message = await claim_daily_reward(
                 user.discord_id,
                 has_genshin=user.has_genshin,
                 has_honkai3rd=user.has_honkai3rd,

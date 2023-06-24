@@ -4,7 +4,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from genshin_py import genshin_app
+import genshin_py
 from utility import EmbedTemplate
 from utility.custom_log import SlashCommandLogger
 
@@ -22,7 +22,8 @@ class CharactersCog(commands.Cog, name="角色一覽"):
     async def slash_characters(self, interaction: discord.Interaction):
         try:
             defer, characters = await asyncio.gather(
-                interaction.response.defer(), genshin_app.get_characters(interaction.user.id)
+                interaction.response.defer(),
+                genshin_py.get_genshin_characters(interaction.user.id),
             )
         except Exception as e:
             await interaction.edit_original_response(embed=EmbedTemplate.error(e))

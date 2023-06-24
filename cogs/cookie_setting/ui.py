@@ -4,7 +4,7 @@ from http.cookies import SimpleCookie
 import discord
 import genshin
 
-from genshin_py import genshin_app
+import genshin_py
 from utility import LOG, EmbedTemplate, get_app_command_mention
 
 
@@ -55,7 +55,7 @@ class CookieModal(discord.ui.Modal, title="提交Cookie"):
                 raise Exception(
                     f"錯誤或無效的Cookie，請重新輸入(使用 {get_app_command_mention('cookie設定')} 顯示說明)"
                 )
-            msg = await genshin_app.set_cookie(interaction.user.id, cookie, self.games)
+            msg = await genshin_py.set_cookie(interaction.user.id, cookie, self.games)
         except Exception as e:
             await interaction.edit_original_response(embed=EmbedTemplate.error(e))
         else:

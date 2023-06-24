@@ -7,8 +7,8 @@ from discord.app_commands import Choice
 from discord.ext import commands
 
 import database
+import genshin_py
 from database import Database, GenshinScheduleNotes, ScheduleDailyCheckin
-from genshin_py import genshin_app
 from utility import EmbedTemplate, config, get_app_command_mention
 from utility.custom_log import SlashCommandLogger
 
@@ -122,7 +122,7 @@ class ScheduleCommandCog(commands.Cog, name="排程設定指令"):
                     view=None,
                 )
                 # 設定完成後幫使用者當日簽到
-                await genshin_app.claim_daily_reward(
+                await genshin_py.claim_daily_reward(
                     interaction.user.id,
                     has_genshin=options_view.has_genshin,
                     has_honkai3rd=options_view.has_honkai3rd,

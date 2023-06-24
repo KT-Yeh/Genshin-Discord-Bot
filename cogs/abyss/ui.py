@@ -4,8 +4,8 @@ from typing import Literal, Optional, Sequence, Union
 import discord
 import genshin
 
+import genshin_py
 from database import Database, GenshinSpiralAbyss
-from genshin_py import draw, genshin_app, parser
 from utility import EmbedTemplate, config
 
 
@@ -76,7 +76,7 @@ class AbyssFloorDropdown(discord.ui.Select):
         options = option + [
             discord.SelectOption(
                 label=f"[★{floor.stars}] 第 {floor.floor} 層",
-                description=parser.parse_abyss_chamber(floor.chambers[-1]),
+                description=genshin_py.parse_genshin_abyss_chamber(floor.chambers[-1]),
                 value=str(i),
             )
             for i, floor in enumerate(abyss_data.abyss.floors)
@@ -106,7 +106,7 @@ class AbyssFloorDropdown(discord.ui.Select):
                     embed=EmbedTemplate.error("僅限本人才能操作"), ephemeral=True
                 )
         else:  # 繪製樓層圖片
-            fp = await draw.draw_abyss_card(
+            fp = await genshin_py.draw_abyss_card(
                 self.abyss_data.abyss.floors[int(self.values[0])],
                 self.abyss_data.characters,
             )
@@ -128,7 +128,7 @@ class SpiralAbyssUI:
         *,
         view_item: Optional[discord.ui.Item] = None,
     ):
-        embed = parser.parse_abyss_overview(abyss_data.abyss)
+        embed = genshin_py.parse_genshin_abyss_overview(abyss_data.abyss)
         embed.title = f"{user.display_name} 的深境螺旋戰績"
         embed.set_thumbnail(url=user.display_avatar.url)
         view = None
@@ -164,7 +164,9 @@ class SpiralAbyssUI:
             try:
                 defer, abyss_data = await asyncio.gather(
                     interaction.response.defer(),
-                    genshin_app.get_spiral_abyss(user.id, (season_choice == "PREVIOUS_SEASON")),
+                    genshin_py.get_genshin_spiral_abyss(
+                        user.id, (season_choice == "PREVIOUS_SEASON")
+                    ),
                 )
             except Exception as e:
                 await interaction.edit_original_response(embed=EmbedTemplate.error(e))

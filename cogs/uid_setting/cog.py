@@ -7,8 +7,8 @@ from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands
 
+import genshin_py
 from database import Database, User
-from genshin_py import genshin_app
 from utility import EmbedTemplate, config, custom_log
 
 from .ui import UidDropdown, UIDModal
@@ -55,7 +55,7 @@ class UIDSettingCog(commands.Cog, name="UID 設定"):
             try:
                 defer, accounts = await asyncio.gather(
                     interaction.response.defer(ephemeral=True),
-                    genshin_app.get_game_accounts(interaction.user.id, game),
+                    genshin_py.get_game_accounts(interaction.user.id, game),
                 )
                 if len(accounts) == 0:
                     raise Exception(f"此帳號內沒有任何角色")

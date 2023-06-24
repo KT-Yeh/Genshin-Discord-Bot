@@ -6,7 +6,7 @@ from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands
 
-from genshin_py import genshin_app
+import genshin_py
 from utility import EmbedTemplate, custom_log
 
 
@@ -41,7 +41,7 @@ class DailyCheckinCog(commands.Cog, name="每日簽到"):
         _user = user or interaction.user
         defer, result = await asyncio.gather(
             interaction.response.defer(),
-            genshin_app.claim_daily_reward(_user.id, **game_option),
+            genshin_py.claim_daily_reward(_user.id, **game_option),
         )
         await interaction.edit_original_response(embed=EmbedTemplate.normal(result))
 

@@ -2,14 +2,14 @@ from datetime import datetime
 
 import aiosqlite
 
-from utility.custom_log import LOG
-
 from .schedule_daily import ScheduleDailyTable
 from .schedule_resin import ScheduleResinTable
 from .showcase import ShowcaseTable
 from .spiral_abyss import SpiralAbyssTable
 from .starrail_showcase import StarrailShowcaseTable
 from .users import UsersTable
+
+# from utility.custom_log import LOG
 
 
 class Database:
@@ -83,7 +83,6 @@ class Database:
             if interval.days > diff_days or user.invalid_cookie > invalid_cookie:
                 await self.removeUser(user.id)
                 count += 1
-        LOG.System(f"檢查過期使用者：{len(users)} 位使用者已檢查，已刪除 {count} 位過期使用者")
 
 
 db = Database()

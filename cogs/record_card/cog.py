@@ -7,7 +7,7 @@ from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands
 
-from genshin_py import draw, genshin_app
+import genshin_py
 from utility import EmbedTemplate, config
 from utility.custom_log import LOG, ContextCommandLogger, SlashCommandLogger
 
@@ -23,7 +23,7 @@ class RecordCard:
     ):
         try:
             defer, (uid, userstats) = await asyncio.gather(
-                interaction.response.defer(), genshin_app.get_record_card(user.id)
+                interaction.response.defer(), genshin_py.get_genshin_record_card(user.id)
             )
         except Exception as e:
             await interaction.edit_original_response(embed=EmbedTemplate.error(e))
@@ -32,9 +32,9 @@ class RecordCard:
         try:
             avatar_bytes = await user.display_avatar.read()
             if option == "RECORD":
-                fp = draw.draw_record_card(avatar_bytes, uid, userstats)
+                fp = genshin_py.draw_record_card(avatar_bytes, uid, userstats)
             elif option == "EXPLORATION":
-                fp = draw.draw_exploration_card(avatar_bytes, uid, userstats)
+                fp = genshin_py.draw_exploration_card(avatar_bytes, uid, userstats)
         except Exception as e:
             LOG.ErrorLog(interaction, e)
             sentry_sdk.capture_exception(e)

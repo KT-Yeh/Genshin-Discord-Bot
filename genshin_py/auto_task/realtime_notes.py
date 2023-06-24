@@ -10,7 +10,7 @@ from discord.ext import commands
 from database import Database, GenshinScheduleNotes
 from utility import LOG, EmbedTemplate, config
 
-from .. import errors, genshin_app, parser
+from .. import errors, get_genshin_notes, parse_genshin_notes
 
 
 class RealtimeNotes:
@@ -90,7 +90,7 @@ class RealtimeNotes:
         msg = ""
         embed = None
         try:
-            notes = await genshin_app.get_realtime_notes(user.discord_id)
+            notes = await get_genshin_notes(user.discord_id)
         except Exception as e:
             # 當錯誤為 InternalDatabaseError 時，忽略並設定1小時後檢查
             if isinstance(e, errors.GenshinAPIException) and isinstance(
@@ -106,7 +106,7 @@ class RealtimeNotes:
                 await Database.insert_or_replace(user)
                 return (msg, embed)
         else:  # 正常檢查即時便箋
-            embed = await parser.parse_realtime_notes(notes, shortForm=True)
+            embed = await parse_genshin_notes(notes, shortForm=True)
             next_check_time: list[datetime] = [datetime.now() + timedelta(days=1)]  # 設定一個基本的下次檢查時間
             # 計算下次檢查時間的函式：預計完成時間-使用者設定的時間
             cal_nxt_check_time: Callable[[timedelta, int], datetime] = (

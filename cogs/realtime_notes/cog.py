@@ -5,7 +5,7 @@ from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands
 
-from genshin_py import genshin_app, parser
+import genshin_py
 from utility import EmbedTemplate
 from utility.custom_log import ContextCommandLogger, SlashCommandLogger
 
@@ -22,12 +22,12 @@ class RealtimeNotes:
     ):
         try:
             defer, notes = await asyncio.gather(
-                interaction.response.defer(), genshin_app.get_realtime_notes(user.id)
+                interaction.response.defer(), genshin_py.get_genshin_notes(user.id)
             )
         except Exception as e:
             await interaction.edit_original_response(embed=EmbedTemplate.error(e))
         else:
-            embed = await parser.parse_realtime_notes(notes, user=user, shortForm=shortForm)
+            embed = await genshin_py.parse_genshin_notes(notes, user=user, shortForm=shortForm)
             await interaction.edit_original_response(embed=embed)
 
 
