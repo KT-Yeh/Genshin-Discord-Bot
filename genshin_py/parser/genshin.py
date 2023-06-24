@@ -254,5 +254,8 @@ async def parse_genshin_notes(
     if user is not None:
         _u = await Database.select_one(User, User.discord_id.is_(user.id))
         uid = str(_u.uid_genshin if _u else "")
-        embed.set_author(name=f"{get_server_name(uid[0])} {uid}", icon_url=user.display_avatar.url)
+        embed.set_author(
+            name=f"原神 {get_server_name(uid[0])} {uid}",
+            icon_url=user.display_avatar.url,
+        )
     return embed

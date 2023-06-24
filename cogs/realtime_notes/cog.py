@@ -1,6 +1,8 @@
 import asyncio
+import typing
 
 import discord
+import genshin
 from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands
@@ -17,17 +19,29 @@ class RealtimeNotes:
     async def notes(
         interaction: discord.Interaction,
         user: discord.User | discord.Member,
+        game: genshin.Game,
         *,
         shortForm: bool = False,
     ):
         try:
-            defer, notes = await asyncio.gather(
-                interaction.response.defer(), genshin_py.get_genshin_notes(user.id)
-            )
+            match game:
+                case genshin.Game.GENSHIN:
+                    defer, notes = await asyncio.gather(
+                        interaction.response.defer(), genshin_py.get_genshin_notes(user.id)
+                    )
+                    embed = await genshin_py.parse_genshin_notes(
+                        notes, user=user, shortForm=shortForm
+                    )
+                case genshin.Game.STARRAIL:
+                    defer, notes = await asyncio.gather(
+                        interaction.response.defer(), genshin_py.get_starrail_notes(user.id)
+                    )
+                    embed = await genshin_py.parse_starrail_notes(notes, user)
+                case _:
+                    return
         except Exception as e:
             await interaction.edit_original_response(embed=EmbedTemplate.error(e))
         else:
-            embed = await genshin_py.parse_genshin_notes(notes, user=user, shortForm=shortForm)
             await interaction.edit_original_response(embed=embed)
 
 
@@ -38,23 +52,33 @@ class RealtimeNotesCog(commands.Cog, name="即時便箋"):
         self.bot = bot
 
     @app_commands.command(name="notes即時便箋", description="查詢即時便箋，包含樹脂、洞天寶錢、探索派遣...等")
-    @app_commands.rename(shortForm="顯示格式", user="使用者")
+    @app_commands.rename(game_str="遊戲", shortForm="顯示格式", user="使用者")
     @app_commands.describe(shortForm="選擇顯示完整或簡約格式(省略每日、週本、探索派遣)", user="查詢其他成員的資料，不填寫則查詢自己")
-    @app_commands.choices(shortForm=[Choice(name="完整", value=0), Choice(name="簡約", value=1)])
+    @app_commands.choices(
+        game_str=[
+            Choice(name="原神", value="genshin"),
+            Choice(name="星穹鐵道", value="hkrpg"),
+        ],
+        shortForm=[Choice(name="完整", value="完整"), Choice(name="簡約", value="簡約")],
+    )
     @SlashCommandLogger
     async def slash_notes(
         self,
         interaction: discord.Interaction,
-        shortForm: int = 0,
+        game_str: typing.Literal["genshin", "honkai3rd", "hkrpg"],
+        shortForm: typing.Literal["完整", "簡約"] = "完整",
         user: discord.User | None = None,
     ):
-        await RealtimeNotes.notes(interaction, user or interaction.user, shortForm=bool(shortForm))
+        game = genshin.Game(game_str)
+        await RealtimeNotes.notes(
+            interaction, user or interaction.user, game, shortForm=(shortForm == "簡約")
+        )
 
 
 async def setup(client: commands.Bot):
     await client.add_cog(RealtimeNotesCog(client))
 
-    @client.tree.context_menu(name="即時便箋")
+    @client.tree.context_menu(name="即時便箋(原神)")
     @ContextCommandLogger
     async def context_notes(interaction: discord.Interaction, user: discord.User):
-        await RealtimeNotes.notes(interaction, user)
+        await RealtimeNotes.notes(interaction, user, genshin.Game.GENSHIN)
