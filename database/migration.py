@@ -12,7 +12,14 @@ from utility import LOG
 from .app import Database as new_db
 from .dataclass import spiral_abyss
 from .legacy.database import db as old_db
-from .models import *
+from .models import (
+    GenshinScheduleNotes,
+    GenshinShowcase,
+    GenshinSpiralAbyss,
+    ScheduleDailyCheckin,
+    StarrailShowcase,
+    User,
+)
 
 sys.modules["data.database"] = legacy
 
@@ -138,7 +145,7 @@ async def migrate() -> None:
             stmt = sqlalchemy.insert(GenshinShowcase).values(uid=uid, _raw_data=data)
             try:
                 await session.execute(stmt)
-            except:
+            except Exception:
                 pass
         await session.commit()
 
@@ -156,7 +163,7 @@ async def migrate() -> None:
             stmt = sqlalchemy.insert(StarrailShowcase).values(uid=uid, _raw_data=data)
             try:
                 await session.execute(stmt)
-            except:
+            except Exception:
                 pass
         await session.commit()
 

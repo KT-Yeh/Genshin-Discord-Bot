@@ -84,7 +84,7 @@ class CookieModal(discord.ui.Modal, title="提交Cookie"):
             try:
                 r = await genshin.complete_cookies(cookie, refresh=True)
                 cookie.update(SimpleCookie(r))
-            except:
+            except Exception:
                 pass
 
         if len(cookie) == 0:

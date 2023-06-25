@@ -1,16 +1,16 @@
 from datetime import date, datetime, time, timedelta
-from typing import Callable, Optional, Union
+from typing import overload
 
 import discord
 
-from database import Database, GenshinScheduleNotes
+from database import Database, GenshinScheduleNotes, StarrailScheduleNotes
 from utility import EmbedTemplate, config
 
 
 class DailyRewardOptionsView(discord.ui.View):
     """自動簽到每日的選項，包含遊戲與是否 tag 使用者"""
 
-    def __init__(self, author: Union[discord.User, discord.Member]):
+    def __init__(self, author: discord.User | discord.Member):
         super().__init__(timeout=config.discord_view_short_timeout)
         self.value: str | None = None
         self.has_genshin: bool = False
@@ -56,8 +56,34 @@ class DailyRewardOptionsView(discord.ui.View):
         self.stop()
 
 
-class CheckingNotesThresholdModal(discord.ui.Modal, title="設定即時便箋提醒"):
-    """設定檢查即時便箋各項閾值的表單"""
+class BaseNotesThresholdModal(discord.ui.Modal):
+    def _int_to_str(self, value: int | None) -> str | None:
+        return str(value) if isinstance(value, int) else None
+
+    def _str_to_int(self, value: str) -> int | None:
+        return int(value) if len(value) > 0 else None
+
+    @overload
+    def _to_msg(self, title: str, value: int | None) -> str:
+        ...
+
+    @overload
+    def _to_msg(self, title: str, value: datetime | None) -> str:
+        ...
+
+    def _to_msg(self, title: str, value: int | datetime | None) -> str:
+        if value is None:
+            return ""
+        if isinstance(value, datetime):
+            return f"． {title}：每天 {value.strftime('%H:%M')} 檢查\n"
+        if value == 0:
+            return f"． {title}：當完成時提醒\n"
+        else:
+            return f"． {title}：完成前 {value} 小時提醒\n"
+
+
+class GenshinNotesThresholdModal(BaseNotesThresholdModal, title="設定原神即時便箋提醒"):
+    """設定原神檢查即時便箋各項閾值的表單"""
 
     resin: discord.ui.TextInput[discord.ui.Modal] = discord.ui.TextInput(
         label="原粹樹脂：設定樹脂額滿之前幾小時發送提醒 (不填表示不提醒)",
@@ -91,7 +117,7 @@ class CheckingNotesThresholdModal(discord.ui.Modal, title="設定即時便箋提
         min_length=4,
     )
 
-    def __init__(self, user_setting: Optional[GenshinScheduleNotes] = None) -> None:
+    def __init__(self, user_setting: GenshinScheduleNotes | None = None) -> None:
         """設定表單預設值；若使用者在資料庫已有設定值，則帶入表單預設值"""
         self.resin.default = "1"
         self.realm_currency.default = None
@@ -100,13 +126,10 @@ class CheckingNotesThresholdModal(discord.ui.Modal, title="設定即時便箋提
         self.commission.default = None
 
         if user_setting:
-            int_to_str: Callable[[Optional[int]], Optional[str]] = (
-                lambda i: str(i) if isinstance(i, int) else None
-            )
-            self.resin.default = int_to_str(user_setting.threshold_resin)
-            self.realm_currency.default = int_to_str(user_setting.threshold_currency)
-            self.transformer.default = int_to_str(user_setting.threshold_transformer)
-            self.expedition.default = int_to_str(user_setting.threshold_expedition)
+            self.resin.default = self._int_to_str(user_setting.threshold_resin)
+            self.realm_currency.default = self._int_to_str(user_setting.threshold_currency)
+            self.transformer.default = self._int_to_str(user_setting.threshold_transformer)
+            self.expedition.default = self._int_to_str(user_setting.threshold_expedition)
             self.commission.default = (
                 user_setting.check_commission_time.strftime("%H%M")
                 if user_setting.check_commission_time
@@ -116,15 +139,11 @@ class CheckingNotesThresholdModal(discord.ui.Modal, title="設定即時便箋提
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
         try:
-            # 將字串轉為數字
-            str_to_int: Callable[[str], Optional[int]] = (
-                lambda string: int(string) if len(string) > 0 else None
-            )
-            resin = str_to_int(self.resin.value)
-            realm_currency = str_to_int(self.realm_currency.value)
-            transformer = str_to_int(self.transformer.value)
-            expedition = str_to_int(self.expedition.value)
-            commission = str_to_int(self.commission.value)
+            resin = self._str_to_int(self.resin.value)
+            realm_currency = self._str_to_int(self.realm_currency.value)
+            transformer = self._str_to_int(self.transformer.value)
+            expedition = self._str_to_int(self.expedition.value)
+            commission = self._str_to_int(self.commission.value)
 
             # 檢查數字範圍
             if (
@@ -168,25 +187,75 @@ class CheckingNotesThresholdModal(discord.ui.Modal, title="設定即時便箋提
                     check_commission_time=commission_time,
                 )
             )
-            to_msg: Callable[[str, Optional[int]], str] = (
-                lambda title, value: ""
-                if value is None
-                else f"． {title}：當完成時提醒\n"
-                if value == 0
-                else f"． {title}：完成前 {value} 小時提醒\n"
+            await interaction.response.send_message(
+                embed=EmbedTemplate.normal(
+                    f"原神設定完成，當達到以下設定值時會發送提醒訊息：\n"
+                    f"{self._to_msg('原粹樹脂', resin)}"
+                    f"{self._to_msg('洞天寶錢', realm_currency)}"
+                    f"{self._to_msg('質變儀　', transformer)}"
+                    f"{self._to_msg('探索派遣', expedition)}"
+                    f"{self._to_msg('每日委託', commission_time)}"
+                )
             )
-            commission_to_msg: Callable[[str, Optional[datetime]], str] = (
-                lambda title, value: ""
-                if value is None
-                else f"． {title}：每天 {value.strftime('%H:%M')} 檢查\n"
+
+
+class StarrailCheckNotesThresholdModal(BaseNotesThresholdModal, title="設定星穹鐵道即時便箋提醒"):
+    """設定星穹鐵道檢查即時便箋各項閾值的表單"""
+
+    power: discord.ui.TextInput[discord.ui.Modal] = discord.ui.TextInput(
+        label="開拓力：設定開拓力額滿之前幾小時發送提醒 (不填表示不提醒)",
+        placeholder="請輸入一個介於 0 ~ 5 的整數",
+        required=False,
+        max_length=1,
+    )
+    expedition: discord.ui.TextInput[discord.ui.Modal] = discord.ui.TextInput(
+        label="委託：設定全部委託完成之前幾小時發送提醒 (不填表示不提醒)",
+        placeholder="請輸入一個介於 0 ~ 5 的整數",
+        required=False,
+        max_length=1,
+    )
+
+    def __init__(self, user_setting: StarrailScheduleNotes | None = None):
+        """設定表單預設值；若使用者在資料庫已有設定值，則帶入表單預設值"""
+        self.power.default = "1"
+        self.expedition.default = None
+
+        if user_setting:
+            self.power.default = self._int_to_str(user_setting.threshold_power)
+            self.expedition.default = self._int_to_str(user_setting.threshold_expedition)
+        super().__init__()
+
+    async def on_submit(self, interaction: discord.Interaction) -> None:
+        try:
+            power = self._str_to_int(self.power.value)
+            expedition = self._str_to_int(self.expedition.value)
+
+            # 檢查數字範圍
+            if power is None and expedition is None:
+                raise ValueError()
+            if (isinstance(power, int) and not (0 <= power <= 5)) or (
+                isinstance(expedition, int) and not (0 <= expedition <= 5)
+            ):
+                raise ValueError()
+        except Exception:
+            await interaction.response.send_message(
+                embed=EmbedTemplate.error("輸入數值有誤，請確認輸入的數值為整數且在規定範圍內"),
+                ephemeral=True,
+            )
+        else:
+            # 儲存設定資料
+            await Database.insert_or_replace(
+                StarrailScheduleNotes(
+                    discord_id=interaction.user.id,
+                    discord_channel_id=interaction.channel_id or 0,
+                    threshold_power=power,
+                    threshold_expedition=expedition,
+                )
             )
             await interaction.response.send_message(
                 embed=EmbedTemplate.normal(
-                    f"設定完成，當達到以下設定值時會發送提醒訊息：\n"
-                    f"{to_msg('原粹樹脂', resin)}"
-                    f"{to_msg('洞天寶錢', realm_currency)}"
-                    f"{to_msg('質變儀　', transformer)}"
-                    f"{to_msg('探索派遣', expedition)}"
-                    f"{commission_to_msg('每日委託', commission_time)}"
+                    f"星穹鐵道設定完成，當達到以下設定值時會發送提醒訊息：\n"
+                    f"{self._to_msg('開拓力　', power)}"
+                    f"{self._to_msg('委託執行', expedition)}"
                 )
             )

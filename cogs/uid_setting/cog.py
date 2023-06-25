@@ -58,7 +58,7 @@ class UIDSettingCog(commands.Cog, name="UID 設定"):
                     genshin_py.get_game_accounts(interaction.user.id, game),
                 )
                 if len(accounts) == 0:
-                    raise Exception(f"此帳號內沒有任何角色")
+                    raise Exception("此帳號內沒有任何角色")
             except Exception as e:
                 await interaction.edit_original_response(embed=EmbedTemplate.error(e))
             else:

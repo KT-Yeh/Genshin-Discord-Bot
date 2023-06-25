@@ -2,12 +2,14 @@ import discord
 import genshin
 
 from database import Database, User
-from utility import emoji, get_day_of_week, get_server_name
+from utility import get_day_of_week, get_server_name
 
 
 async def parse_starrail_notes(
     notes: genshin.models.StarRailNote,
     user: discord.User | discord.Member | None = None,
+    *,
+    short_form: bool = False,
 ) -> discord.Embed:
     # 開拓力
     stamina_title = f"當前開拓力：{notes.current_stamina}/{notes.max_stamina}\n"
@@ -29,6 +31,16 @@ async def parse_starrail_notes(
         else:
             day_msg = get_day_of_week(expedition.completion_time)
             exped_msg += f"{day_msg} {expedition.completion_time.strftime('%H:%M')}\n"
+    if short_form is True:  # 簡約格式只留最久的完成時間
+        longest_expedition = max(notes.expeditions, key=lambda epd: epd.remaining_time)
+        if longest_expedition.finished is True:
+            exped_msg = "． 完成時間：已完成\n"
+        else:
+            day_msg = get_day_of_week(longest_expedition.completion_time)
+            exped_msg = (
+                f"． 完成時間：{day_msg} {longest_expedition.completion_time.strftime('%H:%M')}\n"
+            )
+
     exped_title = f"委託執行：{exped_finished}/{len(notes.expeditions)}"
 
     # 根據開拓力數量，以 90 作分界，embed 顏色從綠色 (0x28c828) 漸變到黃色 (0xc8c828)，再漸變到紅色 (0xc82828)
@@ -51,3 +63,11 @@ async def parse_starrail_notes(
             icon_url=user.display_avatar.url,
         )
     return embed
+
+
+def parse_starrail_diary(diary: genshin.models.StarRailDiary, month: int) -> discord.Embed:
+    ...
+
+
+def parse_starrail_character(character: genshin.models.StarRailDetailCharacter) -> discord.Embed:
+    ...

@@ -2,17 +2,22 @@ from datetime import date, datetime, time, timedelta
 from typing import Literal
 
 import discord
+import genshin
 from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands
 
 import database
 import genshin_py
-from database import Database, GenshinScheduleNotes, ScheduleDailyCheckin
+from database import Database, GenshinScheduleNotes, ScheduleDailyCheckin, StarrailScheduleNotes
 from utility import EmbedTemplate, config, get_app_command_mention
 from utility.custom_log import SlashCommandLogger
 
-from .ui import CheckingNotesThresholdModal, DailyRewardOptionsView
+from .ui import (
+    DailyRewardOptionsView,
+    GenshinNotesThresholdModal,
+    StarrailCheckNotesThresholdModal,
+)
 
 
 class ScheduleCommandCog(commands.Cog, name="排程設定指令"):
@@ -30,7 +35,8 @@ class ScheduleCommandCog(commands.Cog, name="排程設定指令"):
             Choice(name="① 顯示使用說明", value="HELP"),
             Choice(name="② 訊息推送測試", value="TEST"),
             Choice(name="★ 每日自動簽到", value="DAILY"),
-            Choice(name="★ 即時便箋提醒", value="NOTES"),
+            Choice(name="★ 即時便箋提醒(原神)", value="GENSHIN_NOTES"),
+            Choice(name="★ 即時便箋提醒(星穹鐵道)", value="STARRAIL_NOTES"),
         ],
         switch=[Choice(name="開啟或更新設定", value="ON"), Choice(name="關閉功能", value="OFF")],
     )
@@ -38,7 +44,7 @@ class ScheduleCommandCog(commands.Cog, name="排程設定指令"):
     async def slash_schedule(
         self,
         interaction: discord.Interaction,
-        function: Literal["HELP", "TEST", "DAILY", "NOTES"],
+        function: Literal["HELP", "TEST", "DAILY", "GENSHIN_NOTES", "STARRAIL_NOTES"],
         switch: Literal["ON", "OFF"],
     ):
         msg: str | None  # 欲傳給使用者的訊息
@@ -51,7 +57,7 @@ class ScheduleCommandCog(commands.Cog, name="排程設定指令"):
                 f"現在登記預計簽到時間為 {await self.predict_daily_checkin_time()}，"
                 f'設定前請先使用 {get_app_command_mention("daily每日簽到")} 指令確認小幫手能幫你簽到\n'
                 f'· 即時便箋提醒：當超過設定值時會發送提醒，設定前請先用 {get_app_command_mention("notes即時便箋")} '
-                f"指令確認小幫手能讀到你的樹脂資訊\n"
+                f"指令確認小幫手能讀到你的即時便箋資訊\n"
             )
             await interaction.response.send_message(
                 embed=EmbedTemplate.normal(msg, title="排程功能使用說明"), ephemeral=True
@@ -76,8 +82,17 @@ class ScheduleCommandCog(commands.Cog, name="排程設定指令"):
         user = await Database.select_one(
             database.User, database.User.discord_id.is_(interaction.user.id)
         )
-        check, msg = await database.Tool.check_user(user)
-        # TO-DO 使用即時便箋需要檢查 UID
+        match function:
+            case "DAILY":
+                check, msg = await database.Tool.check_user(user)
+            case "GENSHIN_NOTES":
+                check, msg = await database.Tool.check_user(
+                    user, check_uid=True, game=genshin.Game.GENSHIN
+                )
+            case "STARRAIL_NOTES":
+                check, msg = await database.Tool.check_user(
+                    user, check_uid=True, game=genshin.Game.STARRAIL
+                )
 
         if check is False:
             await interaction.response.send_message(embed=EmbedTemplate.error(msg))
@@ -137,19 +152,39 @@ class ScheduleCommandCog(commands.Cog, name="排程設定指令"):
                 )
                 await interaction.response.send_message(embed=EmbedTemplate.normal("每日自動簽到已關閉"))
 
-        elif function == "NOTES":  # 即時便箋檢查提醒
+        elif function == "GENSHIN_NOTES":  # 原神即時便箋檢查提醒
             if switch == "ON":  # 開啟即時便箋檢查功能
-                user_setting = await Database.select_one(
+                genshin_setting = await Database.select_one(
                     GenshinScheduleNotes,
                     GenshinScheduleNotes.discord_id.is_(interaction.user.id),
                 )
-                await interaction.response.send_modal(CheckingNotesThresholdModal(user_setting))
+                await interaction.response.send_modal(GenshinNotesThresholdModal(genshin_setting))
             elif switch == "OFF":  # 關閉即時便箋檢查功能
                 await Database.delete(
                     GenshinScheduleNotes,
                     GenshinScheduleNotes.discord_id.is_(interaction.user.id),
                 )
-                await interaction.response.send_message(embed=EmbedTemplate.normal("即時便箋檢查提醒已關閉"))
+                await interaction.response.send_message(
+                    embed=EmbedTemplate.normal("原神即時便箋檢查提醒已關閉")
+                )
+
+        elif function == "STARRAIL_NOTES":  # 星穹鐵道即時便箋檢查提醒
+            if switch == "ON":  # 開啟即時便箋檢查功能
+                starrail_setting = await Database.select_one(
+                    StarrailScheduleNotes,
+                    StarrailScheduleNotes.discord_id.is_(interaction.user.id),
+                )
+                await interaction.response.send_modal(
+                    StarrailCheckNotesThresholdModal(starrail_setting)
+                )
+            elif switch == "OFF":  # 關閉即時便箋檢查功能
+                await Database.delete(
+                    StarrailScheduleNotes,
+                    StarrailScheduleNotes.discord_id.is_(interaction.user.id),
+                )
+                await interaction.response.send_message(
+                    embed=EmbedTemplate.normal("星穹鐵道即時便箋檢查提醒已關閉")
+                )
 
     # 具有頻道管理訊息權限的人可使用本指令，移除指定使用者的頻道排程設定
     @app_commands.command(name="移除排程使用者", description="擁有管理此頻道訊息權限的人可使用本指令，移除指定使用者的排程設定")
@@ -157,30 +192,46 @@ class ScheduleCommandCog(commands.Cog, name="排程設定指令"):
     @app_commands.describe(function="選擇要移除的功能")
     @app_commands.choices(
         function=[
-            Choice(name="每日自動簽到", value="daily"),
-            Choice(name="樹脂額滿提醒", value="resin"),
+            Choice(name="每日自動簽到", value="DAILY"),
+            Choice(name="即時便箋提醒(原神)", value="GENSHIN_NOTES"),
+            Choice(name="即時便箋提醒(星穹鐵道)", value="STARRAIL_NOTES"),
         ]
     )
     @app_commands.default_permissions(manage_messages=True)
     @SlashCommandLogger
     async def slash_remove_user(
-        self, interaction: discord.Interaction, function: str, user: discord.User
+        self,
+        interaction: discord.Interaction,
+        function: Literal["DAILY", "GENSHIN_NOTES", "STARRAIL_NOTES"],
+        user: discord.User,
     ):
-        if function == "daily":
+        channel_id = interaction.channel_id
+        if function == "DAILY":
             await Database.delete(
                 ScheduleDailyCheckin,
-                ScheduleDailyCheckin.discord_id.is_(user.id),
+                ScheduleDailyCheckin.discord_id.is_(user.id)
+                & ScheduleDailyCheckin.discord_channel_id.is_(channel_id),
             )
             await interaction.response.send_message(
                 embed=EmbedTemplate.normal(f"{user.name}的每日自動簽到已關閉")
             )
-        elif function == "resin":
+        elif function == "GENSHIN_NOTES":
             await Database.delete(
                 GenshinScheduleNotes,
-                GenshinScheduleNotes.discord_id.is_(user.id),
+                GenshinScheduleNotes.discord_id.is_(user.id)
+                & GenshinScheduleNotes.discord_channel_id.is_(channel_id),
             )
             await interaction.response.send_message(
-                embed=EmbedTemplate.normal(f"{user.name}的樹脂額滿提醒已關閉")
+                embed=EmbedTemplate.normal(f"{user.name}的原神即時便箋提醒已關閉")
+            )
+        elif function == "STARRAIL_NOTES":
+            await Database.delete(
+                StarrailScheduleNotes,
+                StarrailScheduleNotes.discord_id.is_(user.id)
+                & StarrailScheduleNotes.discord_channel_id.is_(channel_id),
+            )
+            await interaction.response.send_message(
+                embed=EmbedTemplate.normal(f"{user.name}的星穹鐵道即時便箋提醒已關閉")
             )
 
     async def predict_daily_checkin_time(self) -> str:

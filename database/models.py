@@ -193,6 +193,26 @@ class GenshinShowcase(Base):
         return json.loads(data)
 
 
+class StarrailScheduleNotes(Base):
+    """星穹鐵道排程自動檢查即時便箋資料庫 Table"""
+
+    __tablename__ = "starrail_schedule_notes"
+
+    discord_id: Mapped[int] = mapped_column(primary_key=True)
+    """使用者 Discord ID"""
+    discord_channel_id: Mapped[int]
+    """發送通知訊息的 Discord 頻道的 ID"""
+    next_check_time: Mapped[datetime.datetime | None] = mapped_column(
+        insert_default=sqlalchemy.func.now(), default=None
+    )
+    """下次檢查的時間，當檢查時超過此時間才會對 Hoyolab 請求資料"""
+
+    threshold_power: Mapped[int | None] = mapped_column(default=None)
+    """開拓力額滿之前幾小時發送提醒"""
+    threshold_expedition: Mapped[int | None] = mapped_column(default=None)
+    """全部委託完成之前幾小時發送提醒"""
+
+
 class StarrailShowcase(Base):
     """星穹鐵道展示櫃資料庫 Table"""
 

@@ -4,7 +4,15 @@ import sqlalchemy
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.sql._typing import ColumnExpressionArgument
 
-from .models import *
+from .models import (
+    Base,
+    GenshinScheduleNotes,
+    GenshinShowcase,
+    GenshinSpiralAbyss,
+    ScheduleDailyCheckin,
+    StarrailShowcase,
+    User,
+)
 
 DatabaseModel = Base
 T_DatabaseModel = TypeVar("T_DatabaseModel", bound=Base)

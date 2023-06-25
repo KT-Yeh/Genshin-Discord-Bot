@@ -8,7 +8,7 @@ from discord.ext import commands
 
 import genshin_py
 from utility import EmbedTemplate
-from utility.custom_log import LOG, ContextCommandLogger, SlashCommandLogger
+from utility.custom_log import SlashCommandLogger
 
 
 class TravelerDiary:

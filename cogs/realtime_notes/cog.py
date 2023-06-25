@@ -21,7 +21,7 @@ class RealtimeNotes:
         user: discord.User | discord.Member,
         game: genshin.Game,
         *,
-        shortForm: bool = False,
+        short_form: bool = False,
     ):
         try:
             match game:
@@ -30,13 +30,15 @@ class RealtimeNotes:
                         interaction.response.defer(), genshin_py.get_genshin_notes(user.id)
                     )
                     embed = await genshin_py.parse_genshin_notes(
-                        notes, user=user, shortForm=shortForm
+                        notes, user=user, short_form=short_form
                     )
                 case genshin.Game.STARRAIL:
                     defer, notes = await asyncio.gather(
                         interaction.response.defer(), genshin_py.get_starrail_notes(user.id)
                     )
-                    embed = await genshin_py.parse_starrail_notes(notes, user)
+                    embed = await genshin_py.parse_starrail_notes(
+                        notes, user, short_form=short_form
+                    )
                 case _:
                     return
         except Exception as e:
@@ -52,26 +54,26 @@ class RealtimeNotesCog(commands.Cog, name="即時便箋"):
         self.bot = bot
 
     @app_commands.command(name="notes即時便箋", description="查詢即時便箋，包含樹脂、洞天寶錢、探索派遣...等")
-    @app_commands.rename(game_str="遊戲", shortForm="顯示格式", user="使用者")
-    @app_commands.describe(shortForm="選擇顯示完整或簡約格式(省略每日、週本、探索派遣)", user="查詢其他成員的資料，不填寫則查詢自己")
+    @app_commands.rename(game_str="遊戲", short_form="顯示格式", user="使用者")
+    @app_commands.describe(short_form="選擇顯示完整或簡約格式(省略每日、週本、探索派遣)", user="查詢其他成員的資料，不填寫則查詢自己")
     @app_commands.choices(
         game_str=[
             Choice(name="原神", value="genshin"),
             Choice(name="星穹鐵道", value="hkrpg"),
         ],
-        shortForm=[Choice(name="完整", value="完整"), Choice(name="簡約", value="簡約")],
+        short_form=[Choice(name="完整", value="完整"), Choice(name="簡約", value="簡約")],
     )
     @SlashCommandLogger
     async def slash_notes(
         self,
         interaction: discord.Interaction,
         game_str: typing.Literal["genshin", "honkai3rd", "hkrpg"],
-        shortForm: typing.Literal["完整", "簡約"] = "完整",
+        short_form: typing.Literal["完整", "簡約"] = "完整",
         user: discord.User | None = None,
     ):
         game = genshin.Game(game_str)
         await RealtimeNotes.notes(
-            interaction, user or interaction.user, game, shortForm=(shortForm == "簡約")
+            interaction, user or interaction.user, game, short_form=(short_form == "簡約")
         )
 
 

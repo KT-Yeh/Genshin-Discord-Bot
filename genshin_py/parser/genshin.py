@@ -166,7 +166,7 @@ async def parse_genshin_notes(
     notes: genshin.models.Notes,
     *,
     user: Union[discord.User, discord.Member, None] = None,
-    shortForm: bool = False,
+    short_form: bool = False,
 ) -> discord.Embed:
     """解析即時便箋的資料，將內容排版成discord嵌入格式回傳
 
@@ -174,7 +174,7 @@ async def parse_genshin_notes(
     Parameters
     notes `Notes`: 即時便箋的資料
     user `discord.User`: Discord使用者
-    shortForm `bool`: 設為`False`，完整顯示樹脂、寶錢、參數質變儀、派遣、每日、週本；設為`True`，只顯示樹脂、寶錢、參數質變儀
+    short_form `bool`: 設為`False`，完整顯示樹脂、寶錢、參數質變儀、派遣、每日、週本；設為`True`，只顯示樹脂、寶錢、參數質變儀
     ------
     Returns
     `discord.Embed`: discord嵌入格式
@@ -196,13 +196,13 @@ async def parse_genshin_notes(
         if notes.max_commissions == notes.completed_commissions
         else f"剩餘 {notes.max_commissions - notes.completed_commissions} 個\n"
     )
-    if not shortForm:
+    if not short_form:
         resin_msg += (
             f"{emoji.notes.enemies_of_note}週本樹脂減半：剩餘 {notes.remaining_resin_discounts} 次\n"
         )
     # 洞天寶錢恢復時間
     resin_msg += f"{emoji.notes.realm_currency}當前洞天寶錢：{notes.current_realm_currency}/{notes.max_realm_currency}\n"
-    if not shortForm and notes.max_realm_currency > 0:
+    if not short_form and notes.max_realm_currency > 0:
         if notes.current_realm_currency >= notes.max_realm_currency:
             recover_time = "已額滿！"
         else:
@@ -245,7 +245,7 @@ async def parse_genshin_notes(
     )
     embed = discord.Embed(color=color)
 
-    if (not shortForm) and (exped_msg != ""):
+    if (not short_form) and (exped_msg != ""):
         embed.add_field(name=resin_title, value=resin_msg)
         embed.add_field(name=exped_title, value=exped_msg)
     else:
