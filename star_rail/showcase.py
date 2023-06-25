@@ -3,7 +3,7 @@ from typing import Any, Callable
 import discord
 import mihomo
 import sentry_sdk
-from mihomo import MihomoAPI, StarrailInfoParsed
+from mihomo import MihomoAPI, StarrailInfoParsedV1
 
 from data.database import db
 from utility import EmbedTemplate, config, emoji, get_app_command_mention
@@ -16,7 +16,7 @@ class Showcase:
     def __init__(self, uid: int) -> None:
         self.uid = uid
         self.client = MihomoAPI()
-        self.data: StarrailInfoParsed
+        self.data: StarrailInfoParsedV1
         self.is_cached_data: bool = False
 
     async def load_data(self) -> None:
@@ -24,7 +24,7 @@ class Showcase:
 
         cached_data = await db.starrail_showcase.get(self.uid)
         try:
-            new_data = await self.client.fetch_user(self.uid)
+            new_data = await self.client.fetch_user_v1(self.uid)
         except Exception as e:
             if cached_data is None:
                 raise e from e
