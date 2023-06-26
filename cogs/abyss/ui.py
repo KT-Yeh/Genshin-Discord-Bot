@@ -32,6 +32,7 @@ class AbyssRecordDropdown(discord.ui.Select):
                     return "(單通)"
             return ""
 
+        abyss_data_list = sorted(abyss_data_list, key=lambda x: x.season, reverse=True)
         options = [
             discord.SelectOption(
                 label=f"[第 {abyss.season} 期] ★ {abyss.abyss.total_stars} {honor(abyss.abyss)}",
