@@ -204,7 +204,7 @@ class DailyReward:
                         raise Exception(f"{host} 簽到失敗，HTTP 狀態碼：{resp.status}")
 
     @classmethod
-    async def _send_message(cls, bot: commands.Bot, user: ScheduleDailyCheckin, result: str):
+    async def _send_message(cls, bot: commands.Bot, user: ScheduleDailyCheckin, message: str):
         """向使用者發送簽到結果的訊息"""
         try:
             _id = user.discord_channel_id
@@ -212,9 +212,9 @@ class DailyReward:
             # 若不用@提及使用者，則先取得此使用者的名稱然後發送訊息
             if user.is_mention is False:
                 _user = await bot.fetch_user(user.discord_id)
-                await channel.send(f"[自動簽到] {_user.name}：{result}")  # type: ignore
+                await channel.send(embed=EmbedTemplate.normal(f"[自動簽到] {_user.name}：{message}"))  # type: ignore
             else:
-                await channel.send(f"[自動簽到] <@{user.discord_id}> {result}")  # type: ignore
+                await channel.send(embed=EmbedTemplate.normal(f"[自動簽到] <@{user.discord_id}> {message}"))  # type: ignore
         except (
             discord.Forbidden,
             discord.NotFound,
