@@ -200,7 +200,7 @@ async def claim_daily_reward(
     has_honkai3rd: bool = False,
     has_starrail: bool = False,
 ) -> str:
-    """為使用者在Hoyolab簽到
+    """為使用者在 Hoyolab 簽到
 
     Parameters
     ------
@@ -223,52 +223,7 @@ async def claim_daily_reward(
     except Exception as e:
         return str(e)
 
-    game_name = {
-        genshin.Game.GENSHIN: "原神",
-        genshin.Game.HONKAI: "崩壞3",
-        genshin.Game.STARRAIL: "星穹鐵道",
-    }
-
-    async def claim_reward(game: genshin.Game, retry: int = 5) -> str:
-        try:
-            reward = await client.claim_daily_reward(game=game)
-        except genshin.errors.AlreadyClaimed:
-            return f"{game_name[game]}今日獎勵已經領過了！"
-        except genshin.errors.InvalidCookies:
-            return "Cookie已失效，請從Hoyolab重新取得新Cookie。"
-        except genshin.errors.GeetestTriggered:
-            link: str = {
-                genshin.Game.GENSHIN: "https://act.hoyolab.com/ys/event/signin-sea-v3/index.html?act_id=e202102251931481",
-                genshin.Game.HONKAI: "https://act.hoyolab.com/bbs/event/signin-bh3/index.html?act_id=e202110291205111",
-                genshin.Game.STARRAIL: "https://act.hoyolab.com/bbs/event/signin/hkrpg/index.html?act_id=e202303301540311",
-            }.get(game, "")
-            return f"{game_name[game]}簽到失敗：受到圖形驗證阻擋，請到 [官網]({link}) 上手動簽到。"
-        except Exception as e:
-            if isinstance(e, genshin.errors.GenshinException) and e.retcode == -10002:
-                return f"{game_name[game]}簽到失敗，目前登入的帳號未查詢到角色資料。"
-
-            LOG.FuncExceptionLog(user_id, "claimDailyReward", e)
-            if retry > 0:
-                await asyncio.sleep(1)
-                return await claim_reward(game, retry - 1)
-
-            LOG.Error(f"{LOG.User(user_id)} {game_name[game]}簽到失敗")
-            sentry_sdk.capture_exception(e)
-            return f"{game_name[game]}簽到失敗：{e}。"
-        else:
-            return f"{game_name[game]}今日簽到成功，獲得 {reward.amount}x {reward.name}！"
-
-    if any([has_genshin, has_honkai3rd, has_starrail]) is False:
-        return "未選擇任何遊戲簽到"
-    result = ""
-    if has_genshin:
-        result += await claim_reward(genshin.Game.GENSHIN)
-    if has_honkai3rd:
-        result += await claim_reward(genshin.Game.HONKAI)
-    if has_starrail:
-        result += await claim_reward(genshin.Game.STARRAIL)
-
-    # Hoyolab社群簽到
+    # Hoyolab 社群簽到
     try:
         await client.check_in_community()
     except genshin.errors.GenshinException as e:
@@ -277,4 +232,60 @@ async def claim_daily_reward(
     except Exception as e:
         LOG.FuncExceptionLog(user_id, "claimDailyReward: Hoyolab", e)
 
+    # 遊戲簽到
+    if any([has_genshin, has_honkai3rd, has_starrail]) is False:
+        return "未選擇任何遊戲簽到"
+
+    result = ""
+    if has_genshin:
+        client = await get_client(user_id, game=genshin.Game.GENSHIN, check_uid=False)
+        result += await _claim_reward(user_id, client, genshin.Game.GENSHIN)
+    if has_honkai3rd:
+        client = await get_client(user_id, game=genshin.Game.HONKAI, check_uid=False)
+        result += await _claim_reward(user_id, client, genshin.Game.HONKAI)
+    if has_starrail:
+        client = await get_client(user_id, game=genshin.Game.STARRAIL, check_uid=False)
+        result += await _claim_reward(user_id, client, genshin.Game.STARRAIL)
+
     return result
+
+
+async def _claim_reward(
+    user_id: int, client: genshin.Client, game: genshin.Game, retry: int = 5
+) -> str:
+    """遊戲簽到函式"""
+    game_name = {
+        genshin.Game.GENSHIN: "原神",
+        genshin.Game.HONKAI: "崩壞3",
+        genshin.Game.STARRAIL: "星穹鐵道",
+    }
+
+    try:
+        reward = await client.claim_daily_reward(game=game)
+    except genshin.errors.AlreadyClaimed:
+        return f"{game_name[game]}今日獎勵已經領過了！"
+    except genshin.errors.InvalidCookies:
+        return "Cookie已失效，請從Hoyolab重新取得新Cookie。"
+    except genshin.errors.GeetestTriggered:
+        link: str = {
+            genshin.Game.GENSHIN: "https://act.hoyolab.com/ys/event/signin-sea-v3/index.html?act_id=e202102251931481",
+            genshin.Game.HONKAI: "https://act.hoyolab.com/bbs/event/signin-bh3/index.html?act_id=e202110291205111",
+            genshin.Game.STARRAIL: "https://act.hoyolab.com/bbs/event/signin/hkrpg/index.html?act_id=e202303301540311",
+        }.get(game, "")
+        return f"{game_name[game]}簽到失敗：受到圖形驗證阻擋，請到 [官網]({link}) 上手動簽到。"
+    except Exception as e:
+        if isinstance(e, genshin.errors.GenshinException) and e.retcode == -10002:
+            return f"{game_name[game]}簽到失敗，目前登入的帳號未查詢到角色資料。"
+        if isinstance(e, genshin.errors.GenshinException) and e.retcode == 50000:
+            return f"{game_name[game]}請求失敗，請稍後重試。"
+
+        LOG.FuncExceptionLog(user_id, "claimDailyReward", e)
+        if retry > 0:
+            await asyncio.sleep(1)
+            return await _claim_reward(user_id, client, game, retry - 1)
+
+        LOG.Error(f"{LOG.User(user_id)} {game_name[game]}簽到失敗")
+        sentry_sdk.capture_exception(e)
+        return f"{game_name[game]}簽到失敗：{e}。"
+    else:
+        return f"{game_name[game]}今日簽到成功，獲得 {reward.amount}x {reward.name}！"
