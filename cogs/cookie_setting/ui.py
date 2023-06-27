@@ -48,9 +48,8 @@ class CookieModal(discord.ui.Modal, title="提交Cookie"):
             embed=EmbedTemplate.normal("設定中，請稍後..."), ephemeral=True
         )
         LOG.Info(f"設定 {LOG.User(interaction.user)} 的Cookie：{self.cookie.value}")
-        cookie = await self._trim_cookies(self.cookie.value)
-
         try:
+            cookie = await self._trim_cookies(self.cookie.value)
             if cookie is None:
                 raise Exception(
                     f"錯誤或無效的Cookie，請重新輸入(使用 {get_app_command_mention('cookie設定')} 顯示說明)"

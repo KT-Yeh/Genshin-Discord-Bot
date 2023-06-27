@@ -44,14 +44,15 @@ async def migrate() -> None:
     LOG.Info("Migrating users table...")
     new_users: list[User] = []
     for _u in old_users:
+        cookie = None if len(_u.cookie) == 0 else _u.cookie
         new_users.append(
             User(
                 _u.id,
                 _u.last_used_time,
-                _u.cookie,
-                _u.cookie,
-                _u.cookie,
-                _u.cookie,
+                cookie,
+                cookie,
+                cookie,
+                cookie,
                 _u.uid,
                 None,
                 _u.uid_starrail,

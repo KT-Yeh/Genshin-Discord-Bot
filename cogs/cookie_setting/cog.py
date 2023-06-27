@@ -27,7 +27,7 @@ class CookieSettingCog(commands.Cog, name="Cookie 設定"):
             embed = EmbedTemplate.normal(
                 "**1.** 先複製本文最底下整行程式碼\n"
                 "**2.** PC或手機使用 **Chrome** 開啟 [HoYoLAB官網](https://www.hoyolab.com)"
-                "，並從右上角登入帳號 (若是已登入狀態，請先手動登出然後重新登入)\n"
+                "，登入帳號後→工具箱→戰績，到能看到自己角色的頁面\n"
                 "**3.** 如下圖，在網址列輸入 `java`，然後貼上程式碼\n"
                 "**4.** 按 Enter，網頁會變成顯示你的 Cookie，全選然後複製\n"
                 f"**5.** 在這裡使用指令 {get_app_command_mention('cookie設定')} 提交已取得的Cookie\n"

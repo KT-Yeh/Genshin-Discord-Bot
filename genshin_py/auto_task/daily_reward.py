@@ -214,7 +214,7 @@ class DailyReward:
                 _user = await bot.fetch_user(user.discord_id)
                 await channel.send(embed=EmbedTemplate.normal(f"[自動簽到] {_user.name}：{message}"))  # type: ignore
             else:
-                await channel.send(embed=EmbedTemplate.normal(f"[自動簽到] <@{user.discord_id}> {message}"))  # type: ignore
+                await channel.send(f"<@{user.discord_id}>", embed=EmbedTemplate.normal(f"[自動簽到] {message}"))  # type: ignore
         except (
             discord.Forbidden,
             discord.NotFound,
