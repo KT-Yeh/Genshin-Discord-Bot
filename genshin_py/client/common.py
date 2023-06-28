@@ -1,12 +1,12 @@
 import asyncio
-from typing import Sequence
+from typing import Mapping, Sequence
 
 import genshin
 import sentry_sdk
 
 import database
-from database import Database, User
-from utility import LOG, get_app_command_mention
+from database import Database, GeetestChallenge, User
+from utility import LOG, config, get_app_command_mention
 
 from ..errors import UserDataNotFound
 from ..errors_decorator import generalErrorHandler
@@ -199,6 +199,7 @@ async def claim_daily_reward(
     has_genshin: bool = False,
     has_honkai3rd: bool = False,
     has_starrail: bool = False,
+    is_geetest: bool = False,
 ) -> str:
     """為使用者在 Hoyolab 簽到
 
@@ -212,6 +213,8 @@ async def claim_daily_reward(
         是否簽到崩壞3
     has_starrail: `bool`
         是否簽到星穹鐵道
+    is_geetest: `bool`
+        是否要設定 Geetest 驗證，若 True 的話返回設定網頁連結
 
     Returns
     ------
@@ -236,22 +239,39 @@ async def claim_daily_reward(
     if any([has_genshin, has_honkai3rd, has_starrail]) is False:
         return "未選擇任何遊戲簽到"
 
+    # 使用者保存的 geetest 驗證資料
+    gt_challenge: GeetestChallenge | None = None
+    if not is_geetest:  # 若要設定新的 geetest 驗證，則不從資料庫取出舊的資料帶入 header
+        gt_challenge = await Database.select_one(
+            GeetestChallenge, GeetestChallenge.discord_id.is_(user_id)
+        )
+
     result = ""
     if has_genshin:
+        challenge = gt_challenge.genshin if gt_challenge else None
         client = await get_client(user_id, game=genshin.Game.GENSHIN, check_uid=False)
-        result += await _claim_reward(user_id, client, genshin.Game.GENSHIN)
+        result += await _claim_reward(user_id, client, genshin.Game.GENSHIN, is_geetest, challenge)
     if has_honkai3rd:
+        challenge = gt_challenge.honkai3rd if gt_challenge else None
         client = await get_client(user_id, game=genshin.Game.HONKAI, check_uid=False)
-        result += await _claim_reward(user_id, client, genshin.Game.HONKAI)
+        result += await _claim_reward(user_id, client, genshin.Game.HONKAI, is_geetest, challenge)
     if has_starrail:
+        challenge = gt_challenge.starrail if gt_challenge else None
         client = await get_client(user_id, game=genshin.Game.STARRAIL, check_uid=False)
-        result += await _claim_reward(user_id, client, genshin.Game.STARRAIL)
+        result += await _claim_reward(
+            user_id, client, genshin.Game.STARRAIL, is_geetest, challenge
+        )
 
     return result
 
 
 async def _claim_reward(
-    user_id: int, client: genshin.Client, game: genshin.Game, retry: int = 5
+    user_id: int,
+    client: genshin.Client,
+    game: genshin.Game,
+    is_geetest: bool = False,
+    gt_challenge: Mapping[str, str] | None = None,
+    retry: int = 5,
 ) -> str:
     """遊戲簽到函式"""
     game_name = {
@@ -261,12 +281,17 @@ async def _claim_reward(
     }
 
     try:
-        reward = await client.claim_daily_reward(game=game)
+        reward = await client.claim_daily_reward(game=game, challenge=gt_challenge)
     except genshin.errors.AlreadyClaimed:
         return f"{game_name[game]}今日獎勵已經領過了！"
     except genshin.errors.InvalidCookies:
         return "Cookie已失效，請從Hoyolab重新取得新Cookie。"
-    except genshin.errors.GeetestTriggered:
+    except genshin.errors.GeetestTriggered as exception:
+        if is_geetest is True and config.geetest_solver_url is not None:
+            url = config.geetest_solver_url
+            url += f"/geetest/{game}/{user_id}/{exception.gt}/{exception.challenge}"
+            return f"請到網站上解鎖圖形驗證：[點我開啟連結]({url})\n若出現錯誤則再次使用本指令重新產生連結"
+
         link: str = {
             genshin.Game.GENSHIN: "https://act.hoyolab.com/ys/event/signin-sea-v3/index.html?act_id=e202102251931481",
             genshin.Game.HONKAI: "https://act.hoyolab.com/bbs/event/signin-bh3/index.html?act_id=e202110291205111",
@@ -282,7 +307,7 @@ async def _claim_reward(
         LOG.FuncExceptionLog(user_id, "claimDailyReward", e)
         if retry > 0:
             await asyncio.sleep(1)
-            return await _claim_reward(user_id, client, game, retry - 1)
+            return await _claim_reward(user_id, client, game, is_geetest, gt_challenge, retry - 1)
 
         LOG.Error(f"{LOG.User(user_id)} {game_name[game]}簽到失敗")
         sentry_sdk.capture_exception(e)

@@ -14,7 +14,7 @@ services:
       # 機器人 Token，從 Discord Developer 網頁取得
       - BOT_TOKEN=ABCD123456789
       # ==========================
-      
+
       # ↓↓↓↓↓↓ 參數設定 (可選) ↓↓↓↓↓
       # 每日 Hoyolab 自動簽到的開始時間 (單位：時)
       - SCHEDULE_DAILY_REWARD_TIME=8
@@ -42,12 +42,27 @@ services:
       # - SENTRY_SDK_DSN=https://xxxxx@xxxx.ingest.sentry.io/xxx
       # Prometheus server 監聽的 Port
       # - PROMETHEUS_SERVER_PORT=9091
+      # hoyolab-geetest-webserver 網頁服務的位址，若要給別人使用，要改成自己電腦的公開 IP
+      - GEETEST_SOLVER_URL=http://127.0.0.1:8081
       # ==========================
     volumes:
       - ./data:/app/data
       - ./cogs_external:/app/cogs_external
     restart: always
-  
+
+  # 用於設定使用者圖形驗證的網頁服務
+  hoyolab-geetest-webserver:
+    image: ghcr.io/kt-yeh/hoyolab-geetest-webserver:main
+    container_name: HoyolabGeetestWebserver
+    environment:
+      - TZ=Asia/Taipei
+    volumes:
+      - ./data/bot/bot.db:/app/data/bot.db
+    ports:
+      # 左邊 8081 要與上面 GEETEST_SOLVER_URL 對應
+      - "8081:8000"
+    restart: always
+
   # 若要使用 Prometheus 監控
   # 1. 上面進階設定，取消註解 PROMETHEUS_SERVER_PORT=9091
   # 2. 修改 data/prometheus.yml 檔案內容

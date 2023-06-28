@@ -43,6 +43,8 @@ class Config(BaseSettings):
     """Sentry DSN 位址設定"""
     prometheus_server_port: int | None = None
     """Prometheus server 監聽的 Port，若為 None 表示不啟動 server"""
+    geetest_solver_url: str | None = None
+    """讓使用者設定圖形驗證的網址"""
 
     class Config:
         env_file = ".env"

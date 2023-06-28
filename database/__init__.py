@@ -3,6 +3,7 @@ from .dataclass import *
 from .migration import migrate
 from .models import (
     Base,
+    GeetestChallenge,
     GenshinScheduleNotes,
     GenshinShowcase,
     GenshinSpiralAbyss,

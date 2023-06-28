@@ -17,7 +17,7 @@ class DailyCheckinCog(commands.Cog, name="每日簽到"):
         self.bot = bot
 
     @app_commands.command(name="daily每日簽到", description="領取Hoyolab每日簽到獎勵")
-    @app_commands.rename(game="遊戲", user="使用者")
+    @app_commands.rename(game="遊戲", is_geetest="設定圖形驗證", user="使用者")
     @app_commands.choices(
         game=[
             Choice(name="原神", value="原神"),
@@ -25,23 +25,31 @@ class DailyCheckinCog(commands.Cog, name="每日簽到"):
             Choice(name="星穹鐵道", value="星穹鐵道"),
         ]
     )
+    @app_commands.choices(
+        is_geetest=[
+            Choice(name="是", value="是"),
+            Choice(name="否", value="否"),
+        ]
+    )
     @custom_log.SlashCommandLogger
     async def slash_daily(
         self,
         interaction: discord.Interaction,
         game: Literal["原神", "崩壞3", "星穹鐵道"],
+        is_geetest: Literal["是", "否"] = "否",
         user: Optional[discord.User] = None,
     ):
-        game_option = {
+        choice = {
             "has_genshin": True if game == "原神" else False,
             "has_honkai3rd": True if game == "崩壞3" else False,
             "has_starrail": True if game == "星穹鐵道" else False,
+            "is_geetest": True if is_geetest == "是" else False,
         }
 
         _user = user or interaction.user
         defer, result = await asyncio.gather(
-            interaction.response.defer(),
-            genshin_py.claim_daily_reward(_user.id, **game_option),
+            interaction.response.defer(ephemeral=(is_geetest == "是")),
+            genshin_py.claim_daily_reward(_user.id, **choice),
         )
         await interaction.edit_original_response(embed=EmbedTemplate.normal(result))
 

@@ -1,6 +1,6 @@
 import asyncio
 from datetime import datetime, timedelta
-from typing import ClassVar, Final
+from typing import Any, ClassVar, Final
 
 import aiohttp
 import discord
@@ -8,7 +8,7 @@ import sentry_sdk
 from discord.ext import commands
 
 import database
-from database import Database, ScheduleDailyCheckin, User
+from database import Database, GeetestChallenge, ScheduleDailyCheckin, User
 from utility import LOG, EmbedTemplate, config
 
 from .. import claim_daily_reward
@@ -178,12 +178,15 @@ class DailyReward:
         else:  # 遠端 API 簽到
             # 為了有 cookie，所以這裡從資料庫取得 User Table 的資料
             user_data = await Database.select_one(User, User.discord_id.is_(user.discord_id))
+            gt_challenge = await Database.select_one(
+                GeetestChallenge, GeetestChallenge.discord_id.is_(user.discord_id)
+            )
             if user_data is None:
                 return None
             check, msg = await database.Tool.check_user(user_data)
             if check is False:
                 return msg
-            payload = {
+            payload: dict[str, Any] = {
                 "discord_id": user.discord_id,
                 "uid": 0,
                 "cookie": user_data.cookie_default,
@@ -194,6 +197,14 @@ class DailyReward:
                 "has_honkai": "true" if user.has_honkai3rd else "false",
                 "has_starrail": "true" if user.has_starrail else "false",
             }
+            if gt_challenge is not None:
+                payload.update(
+                    {
+                        "geetest_genshin": gt_challenge.genshin,
+                        "geetest_honkai3rd": gt_challenge.honkai3rd,
+                        "geetest_starrail": gt_challenge.starrail,
+                    }
+                )
             async with aiohttp.ClientSession() as session:
                 async with session.post(url=host + "/daily-reward", json=payload) as resp:
                     if resp.status == 200:

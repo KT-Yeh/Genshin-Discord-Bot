@@ -57,7 +57,9 @@ class ScheduleCommandCog(commands.Cog, name="排程設定指令"):
                 f"現在登記預計簽到時間為 {await self.predict_daily_checkin_time()}，"
                 f'設定前請先使用 {get_app_command_mention("daily每日簽到")} 指令確認小幫手能幫你簽到\n'
                 f'· 即時便箋提醒：當超過設定值時會發送提醒，設定前請先用 {get_app_command_mention("notes即時便箋")} '
-                f"指令確認小幫手能讀到你的即時便箋資訊\n"
+                f"指令確認小幫手能讀到你的即時便箋資訊\n\n"
+                f"· 簽到圖形驗證問題：現在原神簽到會遇到圖形驗證的問題，需要先使用 "
+                f"{get_app_command_mention('daily每日簽到')} 指令，選項選擇「設定圖形驗證」"
             )
             await interaction.response.send_message(
                 embed=EmbedTemplate.normal(msg, title="排程功能使用說明"), ephemeral=True
