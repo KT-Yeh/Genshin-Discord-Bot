@@ -1,11 +1,9 @@
-import asyncio
 import re
 
 import discord
 import genshin
 from discord.ext import commands
 
-import genshin_py
 from utility import EmbedTemplate, custom_log
 
 
@@ -23,44 +21,15 @@ async def redeem(
     if len(codes) == 0:
         await interaction.response.send_message(embed=EmbedTemplate.error("沒有偵測到兌換碼，請重新輸入"))
         return
-    await interaction.response.defer()
 
     codes = codes[:5] if len(codes) > 5 else codes  # 避免使用者輸入過多內容
-    msg = ""
-    invalid_cookie_msg = ""  # genshin api 的 InvalidCookies 原始訊息
-    try:
-        genshin_client = await genshin_py.get_client(user.id, game=game, check_uid=False)
-    except Exception as e:
-        await interaction.edit_original_response(embed=EmbedTemplate.error(e))
-        return
-
+    msg = "請點下列連結兌換：\n> "
     for i, code in enumerate(codes):
-        # 使用兌換碼的間隔為5秒
-        if i > 0:
-            await interaction.edit_original_response(
-                embed=discord.Embed(color=0xFCC766, description=f"{msg}正在等待5秒冷卻時間使用第{i+1}組兌換碼...")
-            )
-            await asyncio.sleep(5)
-        try:
-            result = "✅" + await genshin_py.redeem_code(user.id, genshin_client, code, game)
-        except genshin_py.GenshinAPIException as e:
-            result = "❌"
-            if isinstance(e.origin, genshin.errors.InvalidCookies):
-                result += "無效的Cookie"
-                invalid_cookie_msg = str(e.origin)
-            else:
-                result += e.message
-        except Exception as e:
-            result = "❌" + str(e)
-        # 訊息加上官網兌換連結
         game_host = {genshin.Game.GENSHIN: "genshin", genshin.Game.STARRAIL: "hsr"}
-        msg += f"[{code}](https://{game_host.get(game)}.hoyoverse.com/gift?code={code})：{result}\n"
+        msg += f"{i+1}. [{code}](https://{game_host.get(game)}.hoyoverse.com/gift?code={code})\n"
 
     embed = discord.Embed(color=0x8FCE00, description=msg)
-    embed.set_footer(text="點擊上述兌換碼可代入兌換碼至官網兌換")
-    if len(invalid_cookie_msg) > 0:
-        embed.description += f"\n{invalid_cookie_msg}"  # type: ignore
-    await interaction.edit_original_response(embed=embed)
+    await interaction.response.send_message(embed=embed)
 
 
 class RedemptionCodeCog(commands.Cog, name="兌換碼"):
