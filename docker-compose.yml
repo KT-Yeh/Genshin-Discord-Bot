@@ -57,7 +57,7 @@ services:
     environment:
       - TZ=Asia/Taipei
     volumes:
-      - ./data/bot/bot.db:/app/data/bot.db
+      - ./data/bot/:/app/data/
     ports:
       # 左邊 8081 要與上面 GEETEST_SOLVER_URL 對應
       - "8081:8000"
