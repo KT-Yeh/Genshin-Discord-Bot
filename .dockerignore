@@ -1,3 +1,29 @@
 *.example
+*.json
+*.yml
+*.md
 docker-compose.yml
 Dockerfile
+
+# Cache
+__pycache__
+*.pyc
+.mypy_cache
+.git
+.github
+
+# Config
+.env
+
+# External/private cogs
+cogs_external/
+
+# Data
+*.db
+data/
+
+# VS Code
+.vscode
+
+# Jupyter
+*.ipynb

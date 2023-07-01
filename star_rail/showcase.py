@@ -1,13 +1,8 @@
-from typing import Any, Callable
-
 import discord
-import mihomo
-import sentry_sdk
 from mihomo import MihomoAPI, StarrailInfoParsedV1
+from mihomo import tools as mihomo_tools
 
-from data.database import db
-from utility import EmbedTemplate, config, emoji, get_app_command_mention
-from utility.custom_log import LOG
+from database import Database, StarrailShowcase
 
 
 class Showcase:
@@ -22,10 +17,17 @@ class Showcase:
     async def load_data(self) -> None:
         """取得玩家的角色展示櫃資料"""
 
-        cached_data = await db.starrail_showcase.get(self.uid)
+        # 從資料庫取得舊資料作為快取資料
+        srshowcase = await Database.select_one(
+            StarrailShowcase, StarrailShowcase.uid.is_(self.uid)
+        )
+        cached_data: StarrailInfoParsedV1 | None = None
+        if srshowcase:
+            cached_data = srshowcase.data
         try:
             new_data = await self.client.fetch_user_v1(self.uid)
         except Exception as e:
+            # 無法從 API 取得時，改用資料庫資料，若兩者都沒有則拋出錯誤
             if cached_data is None:
                 raise e from e
             else:
@@ -33,9 +35,9 @@ class Showcase:
                 self.is_cached_data = True
         else:
             if cached_data is not None:
-                new_data = mihomo.tools.merge_character_data(new_data, cached_data)
-            self.data = mihomo.tools.remove_duplicate_character(new_data)
-            await db.starrail_showcase.add(self.uid, self.data)
+                new_data = mihomo_tools.merge_character_data(new_data, cached_data)
+            self.data = mihomo_tools.remove_duplicate_character(new_data)
+            await Database.insert_or_replace(StarrailShowcase(self.uid, self.data))
 
     def get_player_overview_embed(self) -> discord.Embed:
         """取得玩家基本資料的嵌入訊息"""
@@ -163,115 +165,3 @@ class Showcase:
         embed.set_footer(text=f"{player.name}．Lv. {player.level}．UID: {player.uid}")
 
         return embed
-
-
-class ShowcaseCharactersDropdown(discord.ui.Select):
-    """展示櫃角色下拉選單"""
-
-    showcase: Showcase
-
-    def __init__(self, showcase: Showcase) -> None:
-        self.showcase = showcase
-        options = [discord.SelectOption(label="玩家資料一覽", value="-1", emoji="📜")]
-        for i, character in enumerate(showcase.data.characters):
-            if i >= 23:  # Discord 下拉欄位上限
-                break
-            options.append(
-                discord.SelectOption(
-                    label=f"★{character.rarity} Lv.{character.level} {character.name}",
-                    value=str(i),
-                    emoji=emoji.starrail_elements.get(character.element),
-                )
-            )
-        options.append(discord.SelectOption(label="刪除角色快取資料", value="-2", emoji="❌"))
-        super().__init__(placeholder="選擇展示櫃角色：", options=options)
-
-    async def callback(self, interaction: discord.Interaction) -> None:
-        index = int(self.values[0])
-        if index >= 0:  # 角色資料
-            embed = self.showcase.get_character_stat_embed(index)
-            await interaction.response.edit_message(
-                embed=embed, view=ShowcaseView(self.showcase, index)
-            )
-        elif index == -1:  # 玩家資料一覽
-            embed = self.showcase.get_player_overview_embed()
-            await interaction.response.edit_message(
-                embed=embed, view=ShowcaseView(self.showcase), attachments=[]
-            )
-        elif index == -2:  # 刪除快取資料
-            # 檢查互動者的 UID 是否符合展示櫃的 UID
-            user = await db.users.get(interaction.user.id)
-            if user is None or user.uid_starrail != self.showcase.uid:
-                await interaction.response.send_message(
-                    embed=EmbedTemplate.error("非此UID本人，無法刪除資料"), ephemeral=True
-                )
-            elif len(user.cookie) == 0:
-                await interaction.response.send_message(
-                    embed=EmbedTemplate.error("未設定Cookie，無法驗證此UID本人，無法刪除資料"),
-                    ephemeral=True,
-                )
-            else:
-                embed = self.showcase.get_player_overview_embed()
-                await db.starrail_showcase.remove(self.showcase.uid)
-                await interaction.response.edit_message(embed=embed, view=None, attachments=[])
-
-
-class ShowcaseButton(discord.ui.Button):
-    """角色展示櫃按鈕"""
-
-    def __init__(self, label: str, function: Callable[..., discord.Embed], *args, **kwargs):
-        super().__init__(style=discord.ButtonStyle.primary, label=label)
-        self.callback_func = function
-        self.callback_args = args
-        self.callback_kwargs = kwargs
-
-    async def callback(self, interaction: discord.Interaction) -> Any:
-        embed = self.callback_func(*self.callback_args, **self.callback_kwargs)
-        await interaction.response.edit_message(embed=embed, attachments=[])
-
-
-class ShowcaseView(discord.ui.View):
-    """角色展示櫃View，顯示角色面板、聖遺物詞條按鈕，以及角色下拉選單"""
-
-    def __init__(self, showcase: Showcase, character_index: int | None = None):
-        super().__init__(timeout=config.discord_view_long_timeout)
-        if character_index is not None:
-            self.add_item(ShowcaseButton("面板", showcase.get_character_stat_embed, character_index))
-            self.add_item(ShowcaseButton("遺器", showcase.get_relic_stat_embed, character_index))
-
-        if len(showcase.data.characters) > 0:
-            self.add_item(ShowcaseCharactersDropdown(showcase))
-
-
-# -------------------------------------------------------------------
-# 下面為Discord指令呼叫
-
-
-async def starrail_showcase(
-    interaction: discord.Interaction,
-    user: discord.User | discord.Member,
-    uid: int | None = None,
-):
-    await interaction.response.defer()
-    uid = uid or (_user.uid_starrail if (_user := await db.users.get(user.id)) else None)
-    if uid is None:
-        await interaction.edit_original_response(
-            embed=EmbedTemplate.error(
-                f"請先使用 {get_app_command_mention('uid設定')}，或是直接在指令uid參數中輸入欲查詢的UID",
-                title="找不到角色UID",
-            )
-        )
-    elif len(str(uid)) != 9 or str(uid)[0] not in ["1", "2", "5", "6", "7", "8", "9"]:
-        await interaction.edit_original_response(embed=EmbedTemplate.error("輸入的UID格式錯誤"))
-    else:
-        showcase = Showcase(uid)
-        try:
-            await showcase.load_data()
-            view = ShowcaseView(showcase)
-            embed = showcase.get_player_overview_embed()
-            await interaction.edit_original_response(embed=embed, view=view)
-        except Exception as e:
-            LOG.ErrorLog(interaction, e)
-            sentry_sdk.capture_exception(e)
-            embed = EmbedTemplate.error(e, title=f"UID：{uid}")
-            await interaction.edit_original_response(embed=embed)

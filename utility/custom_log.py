@@ -311,11 +311,9 @@ class LogTool(ColorTool):
     def User(self, user: discord.User | discord.Member | str | int):
         if isinstance(user, (str, int)):
             return f"{self._BRIGHT_YELLOW}@{user}{self.RESET}"
-        display_name = (
-            user.display_name if len(user.display_name) <= 15 else f"{user.display_name[:13]}..."
-        )
+
         return (
-            f"{self._BRIGHT_ORANGE}@{display_name}#{user.discriminator}{self.RESET}"
+            f"{self._BRIGHT_ORANGE}@{user.name}{self.RESET}"
             f"({self._BRIGHT_YELLOW}{user.id}{self.RESET})"
         )
 

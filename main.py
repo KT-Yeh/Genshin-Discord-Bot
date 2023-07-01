@@ -1,3 +1,5 @@
+import argparse
+import asyncio
 from pathlib import Path
 
 import discord
@@ -6,38 +8,39 @@ import prometheus_client
 import sentry_sdk
 from discord.ext import commands
 
-from data import database
+import database
 from utility import LOG, config, sentry_logging
 
 intents = discord.Intents.default()
+argparser = argparse.ArgumentParser()
 
 
 class GenshinDiscordBot(commands.AutoShardedBot):
     def __init__(self):
-        self.db = database.db
+        self.db = database.Database
         super().__init__(
             command_prefix=commands.when_mentioned_or("$"),
             intents=intents,
             application_id=config.application_id,
         )
 
-    async def is_owner(self, user: discord.User) -> bool:
-        return await super().is_owner(user)
-
     async def setup_hook(self) -> None:
         # 載入 jishaku
         await self.load_extension("jishaku")
 
         # 初始化資料庫
-        await self.db.create(config.database_file_path)
+        await database.Database.init()
 
         # 初始化 genshin api 角色名字
         await genshin.utility.update_characters_ambr(["zh-tw"])
 
-        # 從cogs資料夾載入所有cog
-        for filepath in Path("./cogs").glob("**/*.py"):
-            cog_name = Path(filepath).stem
-            await self.load_extension(f"cogs.{cog_name}")
+        # 從 cogs 資料夾載入所有 cog
+        for filepath in Path("./cogs").glob("**/*cog.py"):
+            parts = list(filepath.parts)
+            parts[-1] = filepath.stem
+            await self.load_extension(".".join(parts))
+
+        # 從 cogs_external 資料夾載入所有 cog
         for filepath in Path("./cogs_external").glob("**/*.py"):
             cog_name = Path(filepath).stem
             await self.load_extension(f"cogs_external.{cog_name}")
@@ -59,7 +62,7 @@ class GenshinDiscordBot(commands.AutoShardedBot):
 
     async def close(self) -> None:
         # 關閉資料庫
-        await database.db.close()
+        await database.Database.close()
         LOG.System("on_close: 資料庫已關閉")
         await super().close()
         LOG.System("on_close: 機器人已結束")
@@ -70,6 +73,13 @@ class GenshinDiscordBot(commands.AutoShardedBot):
     async def on_command_error(self, ctx: commands.Context, error):
         LOG.ErrorLog(ctx, error)
 
+
+argparser.add_argument("--migrate_database", action="store_true")
+args = argparser.parse_args()
+
+if args.migrate_database:
+    asyncio.run(database.migration.migrate())
+    exit()
 
 sentry_sdk.init(dsn=config.sentry_sdk_dsn, integrations=[sentry_logging], traces_sample_rate=1.0)
 

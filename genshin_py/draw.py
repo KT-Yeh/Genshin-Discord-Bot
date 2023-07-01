@@ -8,7 +8,7 @@ import enkanetwork
 import genshin
 from PIL import Image, ImageDraw, ImageFont
 
-from data.database import CharacterData
+from database.dataclass import spiral_abyss
 from utility import get_server_name
 
 __all__ = ["draw_abyss_card", "draw_exploration_card", "draw_record_card"]
@@ -287,7 +287,8 @@ def draw_abyss_star(
 
 
 async def draw_abyss_card(
-    abyss_floor: genshin.models.Floor, characters: Optional[Sequence[CharacterData]] = None
+    abyss_floor: genshin.models.Floor,
+    characters: Optional[Sequence[spiral_abyss.CharacterData]] = None,
 ) -> BytesIO:
     """繪製深淵樓層紀錄圖，包含每一間星數以及上下半所使用的角色和等級
 

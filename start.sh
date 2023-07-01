@@ -1,5 +1,18 @@
 #!/bin/bash
 
+if [ ! -d "data/bot" ]; then
+  mkdir -p data/bot
+fi
+if [ ! -d "data/image" ]; then
+  mkdir -p data/image
+fi
+if [ ! -d "data/font" ]; then
+  mkdir -p data/font
+fi
+cp -rn assets/image/* data/image/
+cp -rn assets/font/* data/font/
+cp -rn configs/* data/
+
 pid=0
 
 term_handler() {

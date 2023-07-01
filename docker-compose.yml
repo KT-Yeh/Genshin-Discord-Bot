@@ -6,21 +6,69 @@ services:
     container_name: GenshinDiscordBot
     environment:
       - TZ=Asia/Taipei
+      # ↓↓↓↓↓↓↓↓ 必填設定 ↓↓↓↓↓↓↓↓
+      # 機器人 Application ID，從 Discord Developer 網頁上取得
+      - APPLICATION_ID=123456789
+      # 測試伺服器 ID，用來測試斜線指令，管理員指令只能在本伺服器使用
+      - TEST_SERVER_ID=123456789
+      # 機器人 Token，從 Discord Developer 網頁取得
+      - BOT_TOKEN=ABCD123456789
+      # ==========================
+
+      # ↓↓↓↓↓↓ 參數設定 (可選) ↓↓↓↓↓
+      # 每日 Hoyolab 自動簽到的開始時間 (單位：時)
+      - SCHEDULE_DAILY_REWARD_TIME=8
+      # 自動檢查即時便箋的間隔 (單位：分鐘)
+      - SCHEDULE_CHECK_RESIN_INTERVAL=5
+      # 排程執行時每位使用者之間的等待間隔（單位：秒）
+      - SCHEDULE_LOOP_DELAY=2.0
+      # 過期使用者天數，會刪除超過此天數未使用任何指令的使用者
+      - EXPIRED_USER_DAYS=180
+
+      # 使用者重複呼叫部分斜線指令的冷卻時間（單位：秒）
+      - SLASH_CMD_COOLDOWN=5.0
+      # Discord 長時間互動介面（例：下拉選單） 的逾時時間（單位：秒）
+      - DISCORD_VIEW_LONG_TIMEOUT=1800
+      # Discord 短時間互動介面（例：確認、選擇按鈕）的逾時時間（單位：秒）
+      - DISCORD_VIEW_SHORT_TIMEOUT=120
+      # ==========================
+
+      # ↓↓↓↓↓↓ 進階設定 (可選) ↓↓↓↓↓↓
+      # 每日簽到完成後統計訊息欲發送到的 Discord 頻道 ID
+      # - NOTIFICATION_CHANNEL_ID=[123456]
+      # 遠端簽到 API URL list
+      # - DAILY_REWARD_API_LIST=["https://xxxx.xxx"]
+      # Sentry DSN 位址設定
+      # - SENTRY_SDK_DSN=https://xxxxx@xxxx.ingest.sentry.io/xxx
+      # Prometheus server 監聽的 Port
+      # - PROMETHEUS_SERVER_PORT=9091
+      # hoyolab-geetest-webserver 網頁服務的位址，若要給別人使用，要改成自己電腦的公開 IP
+      - GEETEST_SOLVER_URL=http://127.0.0.1:8081
+      # ==========================
     volumes:
-      - ./config.json:/app/config.json
-      - ./data/bot:/app/data/bot
+      - ./data:/app/data
       - ./cogs_external:/app/cogs_external
-      # - ./data/emoji.json:/app/data/emoji.json # 可選，設置你自己的 Emoji
-      # - ./data/app_commands.json:/app/data/app_commands.json # 可選，設置你自己的 Slash Command ID
     restart: always
-  
+
+  # 用於設定使用者圖形驗證的網頁服務
+  hoyolab-geetest-webserver:
+    image: ghcr.io/kt-yeh/hoyolab-geetest-webserver:main
+    container_name: HoyolabGeetestWebserver
+    environment:
+      - TZ=Asia/Taipei
+    volumes:
+      - ./data/bot/:/app/data/
+    ports:
+      # 左邊 8081 要與上面 GEETEST_SOLVER_URL 對應
+      - "8081:8000"
+    restart: always
+
   # 若要使用 Prometheus 監控
-  # 1. config.json 檔案設定 "prometheus_server_port": 9091
-  # 2. 將 data/prometheus.yml.example 檔案改名為 data/prometheus.yml
-  # 3. 修改 data/prometheus.yml 檔案內容
+  # 1. 上面進階設定，取消註解 PROMETHEUS_SERVER_PORT=9091
+  # 2. 修改 data/prometheus.yml 檔案內容
   #   - 設定 targets: ['genshin-discord-bot:9091']
   #   - 設定 remote_write
-  # 4. 取消本檔案下方整段註解
+  # 3. 取消下方整段註解
   # prometheus:
   #   image: prom/prometheus:v2.37.6
   #   container_name: Prometheus

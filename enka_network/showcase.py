@@ -5,7 +5,7 @@ from typing import Any
 import discord
 import enkanetwork
 
-from data.database import db
+from database import Database, GenshinShowcase
 from utility import emoji
 
 from .api import EnkaAPI
@@ -48,7 +48,9 @@ class Showcase:
     async def load_data(self) -> None:
         """取得玩家的角色展示櫃資料"""
         # 從資料庫取得快取資料
-        self.raw_data = await db.showcase.get(self.uid)
+        gshowcase = await Database.select_one(GenshinShowcase, GenshinShowcase.uid.is_(self.uid))
+        if gshowcase is not None:
+            self.raw_data = gshowcase.data
 
         if self.raw_data is None:  # 新的使用者
             self.raw_data = await fetch_enka_data(self.uid)
@@ -63,8 +65,11 @@ class Showcase:
                     self.is_cached_data = True
                     self.api_error_msg = str(e)
 
+        # 當有從 API 取得資料時 (非快取)，則存入資料庫
         if self.is_cached_data is False:
-            await db.showcase.add(self.uid, self.raw_data)
+            gshowcase = GenshinShowcase(self.uid, self.raw_data)
+            await Database.insert_or_replace(gshowcase)
+
         self.data = enkanetwork.EnkaNetworkResponse.parse_obj(self.raw_data)
 
     def get_player_overview_embed(self) -> discord.Embed:
