@@ -1,5 +1,4 @@
 import asyncio
-import typing
 
 import discord
 import genshin
@@ -19,9 +18,9 @@ class UIDSettingCog(commands.Cog, name="UID 設定"):
         self.bot = bot
 
     @app_commands.command(name="uid設定", description="保存指定的原神UID")
-    @app_commands.rename(game_str="遊戲")
+    @app_commands.rename(game="遊戲")
     @app_commands.choices(
-        game_str=[
+        game=[
             Choice(name="原神", value="genshin"),
             Choice(name="崩壞3", value="honkai3rd"),
             Choice(name="星穹鐵道", value="hkrpg"),
@@ -31,10 +30,8 @@ class UIDSettingCog(commands.Cog, name="UID 設定"):
     async def slash_uid(
         self,
         interaction: discord.Interaction,
-        game_str: typing.Literal["genshin", "honkai3rd", "hkrpg"],
+        game: genshin.Game,
     ):
-        game = genshin.Game(game_str)
-
         user = await Database.select_one(User, User.discord_id.is_(interaction.user.id))
         cookie = None
         # 取得使用者對應遊戲的 cookie
