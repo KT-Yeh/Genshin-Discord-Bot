@@ -255,11 +255,15 @@ async def _claim_reward(
     except genshin.errors.InvalidCookies:
         return "Cookie已失效，請從Hoyolab重新取得新Cookie。"
     except genshin.errors.GeetestTriggered as exception:
+        # 使用者選擇設定圖形驗證，回傳網址
         if is_geetest is True and config.geetest_solver_url is not None:
             url = config.geetest_solver_url
             url += f"/geetest/{game}/{user_id}/{exception.gt}/{exception.challenge}"
             return f"請到網站上解鎖圖形驗證：[點我開啟連結]({url})\n若出現錯誤則再次使用本指令重新產生連結"
-
+        # 提示使用者可以設定圖形驗證
+        if config.geetest_solver_url is not None:
+            command_str = get_app_command_mention("daily每日簽到")
+            return f"{game_name[game]}簽到失敗：受到圖形驗證阻擋，請使用 {command_str} 指令選擇「設定圖形驗證」。"
         link: str = {
             genshin.Game.GENSHIN: "https://act.hoyolab.com/ys/event/signin-sea-v3/index.html?act_id=e202102251931481",
             genshin.Game.HONKAI: "https://act.hoyolab.com/bbs/event/signin-bh3/index.html?act_id=e202110291205111",

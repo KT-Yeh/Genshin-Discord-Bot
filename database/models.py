@@ -67,7 +67,10 @@ class ScheduleDailyCheckin(Base):
 
     def update_next_checkin_time(self) -> None:
         """將下次簽到時間更新為明日"""
-        self.next_checkin_time += datetime.timedelta(days=1)
+        dt = datetime.datetime
+        self.next_checkin_time = dt.combine(
+            dt.now().date(), self.next_checkin_time.time()
+        ) + datetime.timedelta(days=1)
 
 
 class GeetestChallenge(Base):

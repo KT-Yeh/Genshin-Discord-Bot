@@ -15,13 +15,11 @@ class Config(BaseSettings):
     enka_api_key: str | None = None
     """向 Enka Network API 發送請求的金鑰"""
 
-    schedule_daily_reward_time: int = 8
-    """每日 Hoyolab 自動簽到的開始時間 (單位：時)"""
-    notification_channel_id: list[int] = []
-    """每日簽到完成後統計訊息欲發送到的 Discord 頻道 ID"""
     daily_reward_api_list: list[str] = []
     """遠端簽到 API URL list"""
 
+    schedule_daily_checkin_interval: int = 10
+    """自動簽到的間隔 (單位：分鐘)"""
     schedule_check_resin_interval: int = 10
     """自動檢查即時便箋的間隔 (單位：分鐘)"""
     schedule_loop_delay: float = 2.0

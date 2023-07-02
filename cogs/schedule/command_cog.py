@@ -1,4 +1,4 @@
-from datetime import date, datetime, time, timedelta
+from datetime import datetime, time
 from typing import Literal
 
 import discord
@@ -10,7 +10,7 @@ from discord.ext import commands
 import database
 import genshin_py
 from database import Database, GenshinScheduleNotes, ScheduleDailyCheckin, StarrailScheduleNotes
-from utility import EmbedTemplate, config, get_app_command_mention
+from utility import EmbedTemplate, get_app_command_mention
 from utility.custom_log import SlashCommandLogger
 
 from .ui import (
@@ -23,8 +23,6 @@ from .ui import (
 class ScheduleCommandCog(commands.Cog, name="排程設定指令"):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.avg_user_daily_time = 2.8 / (1 + len(config.daily_reward_api_list)) + 0.2
-        """平均一位使用者的簽到時間(單位：秒)，預設值是根據有多少 API 服務能夠同時簽到做計算"""
 
     # 設定自動排程功能的斜線指令
     @app_commands.command(name="schedule排程", description="設定排程功能(Hoyolab每日簽到、樹脂額滿提醒)")
@@ -53,8 +51,7 @@ class ScheduleCommandCog(commands.Cog, name="排程設定指令"):
                 "· 排程會在特定時間執行功能，執行結果會在設定指令的頻道推送\n"
                 "· 設定前請先確認小幫手有在該頻道發言的權限，如果推送訊息失敗，小幫手會自動移除排程設定\n"
                 "· 若要更改推送頻道，請在新的頻道重新設定指令一次\n\n"
-                f"· 每日自動簽到：每日 {config.schedule_daily_reward_time} 點依照使用者登記順序開始自動簽到，"
-                f"現在登記預計簽到時間為 {await self.predict_daily_checkin_time()}，"
+                f"· 每日自動簽到：每天會依照你設定的時間與遊戲自動簽到，"
                 f'設定前請先使用 {get_app_command_mention("daily每日簽到")} 指令確認小幫手能幫你簽到\n'
                 f'· 即時便箋提醒：當超過設定值時會發送提醒，設定前請先用 {get_app_command_mention("notes即時便箋")} '
                 f"指令確認小幫手能讀到你的即時便箋資訊\n\n"
@@ -102,22 +99,26 @@ class ScheduleCommandCog(commands.Cog, name="排程設定指令"):
 
         if function == "DAILY":  # 每日自動簽到
             if switch == "ON":  # 開啟簽到功能
-                # 使用下拉選單讓使用者選擇要簽到的遊戲
+                # 使用下拉選單讓使用者選擇要簽到的遊戲、要簽到的時間
                 options_view = DailyRewardOptionsView(interaction.user)
                 await interaction.response.send_message(
-                    "請依序選擇：\n1. 要簽到的遊戲 (請選擇 1~3 項)\n"
-                    f"2. 簽到時希望小幫手 tag 你 ({interaction.user.mention}) 嗎？",
+                    "請依序選擇：\n"
+                    "1. 要簽到的遊戲 (請選擇 1~3 項)\n"
+                    "2. 要簽到的時間\n"
+                    f"3. 簽到時希望小幫手 tag 你 ({interaction.user.mention}) 嗎？",
                     view=options_view,
                 )
                 await options_view.wait()
-                if options_view.value is None or options_view.is_mention is None:
+                if options_view.selected_games is None or options_view.is_mention is None:
                     await interaction.edit_original_response(
                         embed=EmbedTemplate.normal("已取消"), content=None, view=None
                     )
                     return
 
                 # 新增使用者
-                checkin_time = datetime.combine(datetime.now(), time(8, 0))
+                checkin_time = datetime.combine(
+                    datetime.now().date(), time(options_view.hour, options_view.minute)
+                )
                 checkin_user = ScheduleDailyCheckin(
                     discord_id=interaction.user.id,
                     discord_channel_id=interaction.channel_id or 0,
@@ -131,9 +132,9 @@ class ScheduleCommandCog(commands.Cog, name="排程設定指令"):
 
                 await interaction.edit_original_response(
                     embed=EmbedTemplate.normal(
-                        f"{options_view.value} 每日自動簽到已開啟，"
+                        f"{options_view.selected_games} 每日自動簽到已開啟，"
                         f'簽到時小幫手{"會" if options_view.is_mention else "不會"} tag 你\n'
-                        f"今日已幫你簽到，明日預計簽到的時間為 {await self.predict_daily_checkin_time()} 左右"
+                        f"今日已幫你簽到，明日預計簽到的時間為 {options_view.hour:02d}:{options_view.minute:02d} 左右"
                     ),
                     content=None,
                     view=None,
@@ -235,15 +236,6 @@ class ScheduleCommandCog(commands.Cog, name="排程設定指令"):
             await interaction.response.send_message(
                 embed=EmbedTemplate.normal(f"{user.name}的星穹鐵道即時便箋提醒已關閉")
             )
-
-    async def predict_daily_checkin_time(self) -> str:
-        """現在登記簽到，預計的簽到時間 (%H:%M)"""
-        total_users = len(await Database.select_all(ScheduleDailyCheckin))
-        base_time = datetime.combine(
-            date.today(), time(config.schedule_daily_reward_time)
-        )  # 每日開始簽到的時間
-        elapsed_time = timedelta(seconds=(self.avg_user_daily_time * total_users))  # 簽到全部使用者需要的時間
-        return (base_time + elapsed_time).strftime("%H:%M")
 
 
 async def setup(client: commands.Bot):

@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any, ClassVar, Final
 
 import aiohttp
@@ -65,16 +65,17 @@ class DailyReward:
             for host in config.daily_reward_api_list:
                 tasks.append(asyncio.create_task(cls._claim_daily_reward_task(queue, host, bot)))
 
-            start_time = datetime.now()  # 簽到開始時間
             await queue.join()  # 等待所有使用者簽到完成
             for task in tasks:  # 關閉簽到任務
                 task.cancel()
 
-            _log_message = f"每日自動簽到結束：總共 {sum(cls._total.values())} 人簽到，其中 {sum(cls._honkai_count.values())} 人也簽到崩壞3\n"
+            _log_message = (
+                f"自動簽到結束：總共 {sum(cls._total.values())} 人簽到，"
+                + f"其中 {sum(cls._honkai_count.values())} 人簽到崩壞3、{sum(cls._starrail_count.values())} 人簽到星穹鐵道\n"
+            )
             for host in cls._total.keys():
                 _log_message += f"- {host}：{cls._total.get(host)}、{cls._honkai_count.get(host)}、{cls._starrail_count.get(host)}\n"
             LOG.System(_log_message)
-            await cls._update_statistics(bot, start_time)
         except Exception as e:
             sentry_sdk.capture_exception(e)
             LOG.Error(f"自動排程 DailyReward 發生錯誤：{e}")
@@ -89,7 +90,7 @@ class DailyReward:
 
         Parameters
         -----
-        queue: `asyncio.Queue[ScheduleDaily]`
+        queue: `asyncio.Queue[ScheduleDailyCheckin]`
             存放需要簽到的使用者的佇列
         host: `str`
             簽到的主機
@@ -132,7 +133,7 @@ class DailyReward:
                     return
             else:
                 # 簽到成功後，更新資料庫中的簽到日期、發送訊息給使用者、更新計數器
-                user.next_checkin_time += timedelta(days=1)
+                user.update_next_checkin_time()
                 await Database.insert_or_replace(user)
                 if message is not None:
                     await cls._send_message(bot, user, message)
@@ -154,7 +155,7 @@ class DailyReward:
             簽到的主機
             - 本地：固定為字串 "LOCAL"
             - 遠端：簽到 API 網址
-        user: `ScheduleDaily`
+        user: `ScheduleDailyCheckin`
             需要簽到的使用者
 
         Returns
@@ -235,33 +236,3 @@ class DailyReward:
             await Database.delete_instance(user)
         except Exception as e:
             sentry_sdk.capture_exception(e)
-
-    @classmethod
-    async def _update_statistics(cls, bot: commands.Bot, start_time: datetime):
-        """
-        計算自動簽到的統計數據，包括總簽到人數、簽到崩壞3、星穹鐵道的人數、平均簽到時間，
-        並將結果儲存到 schedule cog，同時將結果發送到通知頻道。
-        """
-        total = sum(cls._total.values())
-        honkai_count = sum(cls._honkai_count.values())
-        starrail_count = sum(cls._starrail_count.values())
-        # 計算平均簽到時間
-        end_time = datetime.now()
-        avg_user_daily_time = (end_time - start_time).total_seconds() / (total if total > 0 else 1)
-
-        # 將平均簽到時間儲存到 schedule cog
-        schedule_cog = bot.get_cog("排程設定指令")
-        if schedule_cog is not None:
-            setattr(schedule_cog, "avg_user_daily_time", avg_user_daily_time)
-
-        # 發送統計結果到通知頻道
-        for channel_id in config.notification_channel_id:
-            embed = EmbedTemplate.normal(
-                f"總共 {total} 人簽到，其中 {honkai_count} 人簽到崩壞3、{starrail_count} 人簽到星穹鐵道\n"
-                f"簽到時間：{start_time.strftime('%H:%M:%S')} ~ {end_time.strftime('%H:%M:%S')}\n"
-                f"平均時間：{avg_user_daily_time:.2f} 秒/人",
-                title="每日自動簽到結果",
-            )
-            _channel = bot.get_channel(channel_id) or await bot.fetch_channel(channel_id)
-            if isinstance(_channel, (discord.TextChannel, discord.Thread, discord.DMChannel)):
-                await _channel.send(embed=embed)

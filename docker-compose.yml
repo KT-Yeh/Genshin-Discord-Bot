@@ -16,8 +16,8 @@ services:
       # ==========================
 
       # ↓↓↓↓↓↓ 參數設定 (可選) ↓↓↓↓↓
-      # 每日 Hoyolab 自動簽到的開始時間 (單位：時)
-      - SCHEDULE_DAILY_REWARD_TIME=8
+      # Hoyolab 自動簽到的間隔 (單位：分鐘)
+      - SCHEDULE_DAILY_CHECKIN_INTERVAL=10
       # 自動檢查即時便箋的間隔 (單位：分鐘)
       - SCHEDULE_CHECK_RESIN_INTERVAL=5
       # 排程執行時每位使用者之間的等待間隔（單位：秒）
@@ -34,8 +34,6 @@ services:
       # ==========================
 
       # ↓↓↓↓↓↓ 進階設定 (可選) ↓↓↓↓↓↓
-      # 每日簽到完成後統計訊息欲發送到的 Discord 頻道 ID
-      # - NOTIFICATION_CHANNEL_ID=[123456]
       # 遠端簽到 API URL list
       # - DAILY_REWARD_API_LIST=["https://xxxx.xxx"]
       # Sentry DSN 位址設定
