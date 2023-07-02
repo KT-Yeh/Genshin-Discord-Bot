@@ -17,8 +17,7 @@ rule_files:
 scrape_configs:
   - job_name: "discord_bot"
     static_configs:
-      - targets: ["localhost:9091"] # 這邊的 port 要跟 config.json 裡面的 prometheus_server_port 值一樣
-      # - targets: ["genshin-discord-bot:9091"] # Docker 使用這行，將上面 localhost 那行註解掉
+      - targets: ["genshin-discord-bot:9091"]
 
 remote_write:
 - url: https://.... # 此行填入 Remote Write Endpoint
