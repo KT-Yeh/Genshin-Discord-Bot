@@ -32,7 +32,8 @@ async def parse_starrail_notes(
         else:
             day_msg = get_day_of_week(expedition.completion_time)
             exped_msg += f"{day_msg} {expedition.completion_time.strftime('%H:%M')}\n"
-    if short_form is True:  # 簡約格式只留最久的完成時間
+    # 簡約格式只留最久的完成時間
+    if short_form is True and len(notes.expeditions) > 0:
         longest_expedition = max(notes.expeditions, key=lambda epd: epd.remaining_time)
         if longest_expedition.finished is True:
             exped_msg = "． 完成時間：已完成\n"
@@ -54,7 +55,8 @@ async def parse_starrail_notes(
 
     embed = discord.Embed(color=color)
     embed.add_field(name=stamina_title, value=stamina_msg, inline=False)
-    embed.add_field(name=exped_title, value=exped_msg, inline=False)
+    if exped_msg != "":
+        embed.add_field(name=exped_title, value=exped_msg, inline=False)
 
     if user is not None:
         _u = await Database.select_one(User, User.discord_id.is_(user.id))
