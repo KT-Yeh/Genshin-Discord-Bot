@@ -39,24 +39,24 @@ async def get_client(
     if check is False or user is None:
         raise UserDataNotFound(msg)
 
+    client = genshin.Client(lang="zh-tw")
     match game:
         case genshin.Game.GENSHIN:
             uid = user.uid_genshin or 0
             cookie = user.cookie_genshin or user.cookie_default
+            if str(uid)[0] in ["1", "2", "5"]:
+                client = genshin.Client(region=genshin.Region.CHINESE, lang="zh-cn")
         case genshin.Game.HONKAI:
             uid = user.uid_honkai3rd or 0
             cookie = user.cookie_honkai3rd or user.cookie_default
         case genshin.Game.STARRAIL:
             uid = user.uid_starrail or 0
             cookie = user.cookie_starrail or user.cookie_default
+            if str(uid)[0] in ["1", "2", "5"]:
+                client = genshin.Client(region=genshin.Region.CHINESE, lang="zh-cn")
         case _:
             uid = 0
             cookie = user.cookie_default
-
-    if str(uid)[0] in ["1", "2", "5"]:
-        client = genshin.Client(region=genshin.Region.CHINESE, lang="zh-cn")
-    else:
-        client = genshin.Client(lang="zh-tw")
 
     client.set_cookies(cookie)
     client.default_game = game
