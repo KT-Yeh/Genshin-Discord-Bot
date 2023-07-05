@@ -8,7 +8,6 @@ from discord.app_commands import Choice
 from discord.ext import commands
 
 import database
-import genshin_py
 from database import Database, GenshinScheduleNotes, ScheduleDailyCheckin, StarrailScheduleNotes
 from utility import EmbedTemplate, get_app_command_mention
 from utility.custom_log import SlashCommandLogger
@@ -128,26 +127,19 @@ class ScheduleCommandCog(commands.Cog, name="排程設定指令"):
                     has_honkai3rd=options_view.has_honkai3rd,
                     has_starrail=options_view.has_starrail,
                 )
+                if checkin_user.next_checkin_time < datetime.now():
+                    checkin_user.update_next_checkin_time()
                 await Database.insert_or_replace(checkin_user)
 
                 await interaction.edit_original_response(
                     embed=EmbedTemplate.normal(
                         f"{options_view.selected_games} 每日自動簽到已開啟，"
-                        f'簽到時小幫手{"會" if options_view.is_mention else "不會"} tag 你\n'
-                        f"今日已幫你簽到，明日預計簽到的時間為 {options_view.hour:02d}:{options_view.minute:02d} 左右"
+                        f'簽到時小幫手{"會" if options_view.is_mention else "不會"} tag 你，'
+                        f"簽到的時間為每天 {options_view.hour:02d}:{options_view.minute:02d} 左右"
                     ),
                     content=None,
                     view=None,
                 )
-                # 設定完成後幫使用者當日簽到
-                await genshin_py.claim_daily_reward(
-                    interaction.user.id,
-                    has_genshin=options_view.has_genshin,
-                    has_honkai3rd=options_view.has_honkai3rd,
-                    has_starrail=options_view.has_starrail,
-                )
-                checkin_user.update_next_checkin_time()
-                await Database.insert_or_replace(checkin_user)
 
             elif switch == "OFF":  # 關閉簽到功能
                 await Database.delete(
