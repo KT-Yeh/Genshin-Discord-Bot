@@ -64,10 +64,10 @@ class ScheduleCommandCog(commands.Cog, name="排程設定指令"):
 
         if function == "TEST":  # 測試機器人是否能在該頻道推送訊息
             try:
-                msg_sent = await interaction.channel.send("測試推送訊息...")  # type: ignore
+                msg_sent = await interaction.channel.send(embed=EmbedTemplate.normal("測試推送訊息..."))  # type: ignore
             except Exception:
                 await interaction.response.send_message(
-                    embed=EmbedTemplate.error("小幫手無法在本頻道推送訊息，請管理員檢查身分組的權限設定")
+                    embed=EmbedTemplate.error("小幫手無法在本頻道推送訊息，請管理員檢查小幫手或此頻道有「發送訊息」與「嵌入連結」的權限")
                 )
             else:
                 await interaction.response.send_message(
