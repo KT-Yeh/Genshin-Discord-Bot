@@ -226,7 +226,7 @@ async def parse_genshin_notes(
     exped_finished = 0
     exped_msg = ""
     for expedition in notes.expeditions:
-        exped_msg += f"． {expedition.character.name}："
+        exped_msg += "． "
         if expedition.finished:
             exped_finished += 1
             exped_msg += "已完成\n"
