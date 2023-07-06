@@ -28,6 +28,8 @@ class CostElement(str, enum.Enum):
     """相同元素"""
     BLACK = "GCG_COST_DICE_VOID"
     """任意元素"""
+    LEGEND = "GCG_COST_LEGEND"
+    """秘傳"""
     CRYO = "GCG_COST_DICE_CRYO"
     HYDRO = "GCG_COST_DICE_HYDRO"
     PYRO = "GCG_COST_DICE_PYRO"
@@ -41,6 +43,7 @@ class CostElement(str, enum.Enum):
             "ENERGY": "能量",
             "WHITE": "相同元素",
             "BLACK": "任意元素",
+            "LEGEND": "秘傳",
             "CRYO": "冰元素",
             "HYDRO": "水元素",
             "PYRO": "火元素",
