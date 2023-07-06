@@ -30,8 +30,8 @@ class ScheduleLoopCog(commands.Cog, name="排程循環"):
         if config.game_maintenance_time is None or not (
             config.game_maintenance_time[0] <= now < config.game_maintenance_time[1]
         ):
-            # 每日 {config.schedule_daily_reward_time} 點開始自動簽到
-            if now.hour == config.schedule_daily_reward_time and now.minute < self.loop_interval:
+            # 每 {config.schedule_daily_checkin_interval} 分鐘啟動自動簽到
+            if now.minute % config.schedule_daily_checkin_interval < self.loop_interval:
                 asyncio.create_task(auto_task.DailyReward.execute(self.bot))
 
             # 每 {config.schedule_check_resin_interval} 分鐘檢查一次樹脂

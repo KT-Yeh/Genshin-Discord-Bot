@@ -13,21 +13,31 @@ class Dropdown(discord.ui.Select):
     def __init__(
         self,
         user: Union[discord.User, discord.Member],
-        characters: Sequence[genshin.models.Character],
+        characters: Sequence[genshin.models.Character]
+        | Sequence[genshin.models.StarRailDetailCharacter],
         index: int = 1,
     ):
-        options = [
-            discord.SelectOption(
-                label=f"★{c.rarity} C{c.constellation} Lv.{c.level} {c.name}",
-                description=(
-                    f"★{c.weapon.rarity} R{c.weapon.refinement} "
-                    f"Lv.{c.weapon.level} {c.weapon.name}"
-                ),
-                value=str(i),
-                emoji=emoji.elements.get(c.element.lower()),
-            )
-            for i, c in enumerate(characters)
-        ]
+        options: list[discord.SelectOption] = []
+        for i, c in enumerate(characters):
+            if isinstance(c, genshin.models.Character):
+                option = discord.SelectOption(
+                    label=f"★{c.rarity} C{c.constellation} Lv.{c.level} {c.name}",
+                    description=(
+                        f"★{c.weapon.rarity} R{c.weapon.refinement} "
+                        f"Lv.{c.weapon.level} {c.weapon.name}"
+                    ),
+                    value=str(i),
+                    emoji=emoji.elements.get(c.element.lower()),
+                )
+                options.append(option)
+            elif isinstance(c, genshin.models.StarRailDetailCharacter):
+                option = discord.SelectOption(
+                    label=f"★{c.rarity} E{c.rank} Lv.{c.level} {c.name}", value=str(i)
+                )
+                if c.equip is not None:
+                    option.description = f"光錐：S{c.equip.rank} Lv.{c.equip.level} {c.equip.name}"
+                options.append(option)
+
         super().__init__(
             placeholder=f"選擇角色 (第 {index}~{index + len(characters) - 1} 名)",
             min_values=1,
@@ -38,7 +48,11 @@ class Dropdown(discord.ui.Select):
         self.characters = characters
 
     async def callback(self, interaction: discord.Interaction):
-        embed = genshin_py.parse_genshin_character(self.characters[int(self.values[0])])
+        c = self.characters[int(self.values[0])]
+        if isinstance(c, genshin.models.Character):
+            embed = genshin_py.parse_genshin_character(c)
+        else:
+            embed = genshin_py.parse_starrail_character(c)
         embed.set_author(
             name=f"{self.user.display_name} 的角色一覽",
             icon_url=self.user.display_avatar.url,
@@ -52,7 +66,8 @@ class DropdownView(discord.ui.View):
     def __init__(
         self,
         user: Union[discord.User, discord.Member],
-        characters: Sequence[genshin.models.Character],
+        characters: Sequence[genshin.models.Character]
+        | Sequence[genshin.models.StarRailDetailCharacter],
     ):
         super().__init__(timeout=config.discord_view_long_timeout)
         max_row = 25

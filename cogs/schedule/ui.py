@@ -8,16 +8,26 @@ from utility import EmbedTemplate, config
 
 
 class DailyRewardOptionsView(discord.ui.View):
-    """自動簽到每日的選項，包含遊戲與是否 tag 使用者"""
+    """自動簽到每日的選項，包含遊戲、簽到時間與是否 tag 使用者"""
 
     def __init__(self, author: discord.User | discord.Member):
         super().__init__(timeout=config.discord_view_short_timeout)
-        self.value: str | None = None
+        self.selected_games: str | None = None
+        """使用者選擇的遊戲，例：原神+星穹鐵道"""
         self.has_genshin: bool = False
+        """是否有原神"""
         self.has_honkai3rd: bool = False
+        """是否有崩壞3"""
         self.has_starrail: bool = False
+        """是否有星穹鐵道"""
+        self.hour: int = 8
+        """每天簽到時間 (時：0 ~ 23)"""
+        self.minute: int = 0
+        """每天簽到時間 (分：0 ~ 59)"""
         self.is_mention: bool | None = None
+        """簽到訊息是否要 tag"""
         self.author = author
+        """使用者"""
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         return interaction.user.id == self.author.id
@@ -31,17 +41,49 @@ class DailyRewardOptionsView(discord.ui.View):
         ],
         min_values=1,
         max_values=3,
-        placeholder="請選擇要簽到的遊戲 (可多選)：",
+        placeholder="請選擇要簽到的遊戲(可多選)：",
     )
-    async def select_callback(self, interaction: discord.Interaction, select: discord.ui.Select):
+    async def select_games_callback(
+        self, interaction: discord.Interaction, select: discord.ui.Select
+    ):
         await interaction.response.defer()
-        self.value = " + ".join(select.values)
-        if "原神" in self.value:
+        self.selected_games = " + ".join(select.values)
+        if "原神" in self.selected_games:
             self.has_genshin = True
-        if "崩壞3" in self.value:
+        if "崩壞3" in self.selected_games:
             self.has_honkai3rd = True
-        if "星穹鐵道" in self.value:
+        if "星穹鐵道" in self.selected_games:
             self.has_starrail = True
+
+    @discord.ui.select(
+        cls=discord.ui.Select,
+        options=[discord.SelectOption(label=str(i).zfill(2), value=str(i)) for i in range(0, 24)],
+        min_values=0,
+        max_values=1,
+        placeholder="請選擇要簽到的時間(時)：",
+    )
+    async def select_hour_callback(
+        self, interaction: discord.Interaction, select: discord.ui.Select
+    ):
+        await interaction.response.defer()
+        if len(select.values) > 0:
+            self.hour = int(select.values[0])
+
+    @discord.ui.select(
+        cls=discord.ui.Select,
+        options=[
+            discord.SelectOption(label=str(i).zfill(2), value=str(i)) for i in range(0, 60, 5)
+        ],
+        min_values=0,
+        max_values=1,
+        placeholder="請選擇要簽到的時間(分)：",
+    )
+    async def select_minute_callback(
+        self, interaction: discord.Interaction, select: discord.ui.Select
+    ):
+        await interaction.response.defer()
+        if len(select.values) > 0:
+            self.minute = int(select.values[0])
 
     @discord.ui.button(label="要tag", style=discord.ButtonStyle.blurple)
     async def button1_callback(self, interaction: discord.Interaction, button: discord.ui.Button):

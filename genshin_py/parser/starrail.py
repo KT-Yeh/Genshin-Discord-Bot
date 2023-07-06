@@ -11,6 +11,7 @@ async def parse_starrail_notes(
     *,
     short_form: bool = False,
 ) -> discord.Embed:
+    """解析即時便箋的資料，將內容排版成 discord 嵌入格式回傳"""
     # 開拓力
     stamina_title = f"當前開拓力：{notes.current_stamina}/{notes.max_stamina}\n"
     if notes.current_stamina >= notes.max_stamina:
@@ -31,7 +32,8 @@ async def parse_starrail_notes(
         else:
             day_msg = get_day_of_week(expedition.completion_time)
             exped_msg += f"{day_msg} {expedition.completion_time.strftime('%H:%M')}\n"
-    if short_form is True:  # 簡約格式只留最久的完成時間
+    # 簡約格式只留最久的完成時間
+    if short_form is True and len(notes.expeditions) > 0:
         longest_expedition = max(notes.expeditions, key=lambda epd: epd.remaining_time)
         if longest_expedition.finished is True:
             exped_msg = "． 完成時間：已完成\n"
@@ -53,7 +55,8 @@ async def parse_starrail_notes(
 
     embed = discord.Embed(color=color)
     embed.add_field(name=stamina_title, value=stamina_msg, inline=False)
-    embed.add_field(name=exped_title, value=exped_msg, inline=False)
+    if exped_msg != "":
+        embed.add_field(name=exped_title, value=exped_msg, inline=False)
 
     if user is not None:
         _u = await Database.select_one(User, User.discord_id.is_(user.id))
@@ -70,4 +73,55 @@ def parse_starrail_diary(diary: genshin.models.StarRailDiary, month: int) -> dis
 
 
 def parse_starrail_character(character: genshin.models.StarRailDetailCharacter) -> discord.Embed:
-    ...
+    """解析角色，包含星魂、等級、光錐、遺物"""
+    color = {
+        "physical": 0xC5C5C5,
+        "fire": 0xF4634E,
+        "ice": 0x72C2E6,
+        "lightning": 0xDC7CF4,
+        "wind": 0x73D4A4,
+        "quantum": 0x9590E4,
+        "imaginary": 0xF7E54B,
+    }
+    embed = discord.Embed(color=color.get(character.element.lower()))
+    embed.set_thumbnail(url=character.icon)
+    embed.add_field(
+        name=f"★{character.rarity} {character.name}",
+        inline=True,
+        value=f"星魂：{character.rank}\n等級：Lv. {character.level}",
+    )
+    if character.equip:
+        lightcone = character.equip
+        embed.add_field(
+            name=f"光追：{lightcone.name}",
+            inline=True,
+            value=f"疊影：{lightcone.rank} 階\n等級：Lv. {lightcone.level}",
+        )
+
+    if character.rank > 0:
+        number = {1: "一", 2: "二", 3: "三", 4: "四", 5: "五", 6: "六"}
+        msg = "\n".join(
+            [f"第{number[rank.pos]}層：{rank.name}" for rank in character.ranks if rank.is_unlocked]
+        )
+        embed.add_field(name="星魂", inline=False, value=msg)
+
+    if len(character.relics) > 0:
+        pos_name = {1: "頭部", 2: "手部", 3: "軀幹", 4: "腳部"}
+        msg = "\n".join(
+            [
+                f"{pos_name.get(relic.pos)}：★{relic.rarity} {relic.name}"
+                for relic in character.relics
+            ]
+        )
+        embed.add_field(name="遺器", inline=False, value=msg)
+
+    if len(character.ornaments) > 0:
+        pos_name = {5: "次元球", 6: "連結繩"}
+        msg = "\n".join(
+            [
+                f"{pos_name.get(ornament.pos)}：★{ornament.rarity} {ornament.name}"
+                for ornament in character.ornaments
+            ]
+        )
+        embed.add_field(name="飾品", inline=False, value=msg)
+    return embed

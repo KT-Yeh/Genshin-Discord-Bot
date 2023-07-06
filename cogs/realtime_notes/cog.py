@@ -54,10 +54,10 @@ class RealtimeNotesCog(commands.Cog, name="即時便箋"):
         self.bot = bot
 
     @app_commands.command(name="notes即時便箋", description="查詢即時便箋，包含樹脂、洞天寶錢、探索派遣...等")
-    @app_commands.rename(game_str="遊戲", short_form="顯示格式", user="使用者")
+    @app_commands.rename(game="遊戲", short_form="顯示格式", user="使用者")
     @app_commands.describe(short_form="選擇顯示完整或簡約格式(省略每日、週本、探索派遣)", user="查詢其他成員的資料，不填寫則查詢自己")
     @app_commands.choices(
-        game_str=[
+        game=[
             Choice(name="原神", value="genshin"),
             Choice(name="星穹鐵道", value="hkrpg"),
         ],
@@ -67,11 +67,10 @@ class RealtimeNotesCog(commands.Cog, name="即時便箋"):
     async def slash_notes(
         self,
         interaction: discord.Interaction,
-        game_str: typing.Literal["genshin", "honkai3rd", "hkrpg"],
+        game: genshin.Game,
         short_form: typing.Literal["完整", "簡約"] = "完整",
         user: discord.User | None = None,
     ):
-        game = genshin.Game(game_str)
         await RealtimeNotes.notes(
             interaction, user or interaction.user, game, short_form=(short_form == "簡約")
         )
