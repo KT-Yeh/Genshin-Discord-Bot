@@ -18,16 +18,6 @@ class CheckResult(NamedTuple):
     embed: discord.Embed
 
 
-async def get_user(user_id: int, table: type[T_User]) -> T_User | None:
-    """取得要檢查的使用者，若檢查時間還沒到則回傳 None"""
-    user = await Database.select_one(table, table.discord_id.is_(user_id))
-    if user is None:
-        return None
-    if user.next_check_time and datetime.now() < user.next_check_time:
-        return None
-    return user
-
-
 async def get_realtime_notes(
     user: T_User,
 ) -> genshin.models.Notes | genshin.models.StarRailNote | None:
