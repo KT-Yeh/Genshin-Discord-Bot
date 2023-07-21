@@ -129,15 +129,15 @@ class GenshinNotesThresholdModal(BaseNotesThresholdModal, title="設定原神即
 
     resin: discord.ui.TextInput[discord.ui.Modal] = discord.ui.TextInput(
         label="原粹樹脂：設定樹脂額滿之前幾小時發送提醒 (不填表示不提醒)",
-        placeholder="請輸入一個介於 0 ~ 5 的整數",
+        placeholder="請輸入一個介於 0 ~ 8 的整數",
         required=False,
         max_length=1,
     )
     realm_currency: discord.ui.TextInput[discord.ui.Modal] = discord.ui.TextInput(
         label="洞天寶錢：設定寶錢額滿之前幾小時發送提醒 (不填表示不提醒)",
-        placeholder="請輸入一個介於 0 ~ 8 的整數",
+        placeholder="請輸入一個介於 0 ~ 24 的整數",
         required=False,
-        max_length=1,
+        max_length=2,
     )
     transformer: discord.ui.TextInput[discord.ui.Modal] = discord.ui.TextInput(
         label="質變儀：設定質變儀完成之前幾小時發送提醒 (不填表示不提醒)",
@@ -197,8 +197,8 @@ class GenshinNotesThresholdModal(BaseNotesThresholdModal, title="設定原神即
             ):
                 raise ValueError()
             if (
-                (isinstance(resin, int) and not (0 <= resin <= 5))
-                or (isinstance(realm_currency, int) and not (0 <= realm_currency <= 8))
+                (isinstance(resin, int) and not (0 <= resin <= 8))
+                or (isinstance(realm_currency, int) and not (0 <= realm_currency <= 24))
                 or (isinstance(transformer, int) and not (0 <= transformer <= 5))
                 or (isinstance(expedition, int) and not (0 <= expedition <= 5))
             ):
@@ -246,7 +246,7 @@ class StarrailCheckNotesThresholdModal(BaseNotesThresholdModal, title="設定星
 
     power: discord.ui.TextInput[discord.ui.Modal] = discord.ui.TextInput(
         label="開拓力：設定開拓力額滿之前幾小時發送提醒 (不填表示不提醒)",
-        placeholder="請輸入一個介於 0 ~ 5 的整數",
+        placeholder="請輸入一個介於 0 ~ 8 的整數",
         required=False,
         max_length=1,
     )
@@ -275,7 +275,7 @@ class StarrailCheckNotesThresholdModal(BaseNotesThresholdModal, title="設定星
             # 檢查數字範圍
             if power is None and expedition is None:
                 raise ValueError()
-            if (isinstance(power, int) and not (0 <= power <= 5)) or (
+            if (isinstance(power, int) and not (0 <= power <= 8)) or (
                 isinstance(expedition, int) and not (0 <= expedition <= 5)
             ):
                 raise ValueError()
