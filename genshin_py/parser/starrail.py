@@ -19,7 +19,12 @@ async def parse_starrail_notes(
     else:
         day_msg = get_day_of_week(notes.stamina_recovery_time)
         recovery_time = f"{day_msg} {notes.stamina_recovery_time.strftime('%H:%M')}"
-    stamina_msg = f"全部恢復時間：{recovery_time}"
+    stamina_msg = f"恢復時間：{recovery_time}\n"
+
+    # 每日、模擬宇宙、周本
+    stamina_msg += f"每日實訓：{notes.current_train_score} / {notes.max_train_score}\n"
+    stamina_msg += f"模擬宇宙：{notes.current_rogue_score} / {notes.max_rogue_score}\n"
+    stamina_msg += f"歷戰餘響：剩餘 {notes.remaining_weekly_discounts} 次\n"
 
     # 委託執行
     exped_finished = 0

@@ -230,6 +230,8 @@ class StarrailScheduleNotes(Base):
     """開拓力額滿之前幾小時發送提醒"""
     threshold_expedition: Mapped[int | None] = mapped_column(default=None)
     """全部委託完成之前幾小時發送提醒"""
+    check_daily_training_time: Mapped[datetime.datetime | None] = mapped_column(default=None)
+    """下次檢查今天的每日實訓還未完成的時間"""
 
 
 class StarrailShowcase(Base):

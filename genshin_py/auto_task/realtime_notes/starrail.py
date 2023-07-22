@@ -6,15 +6,11 @@ from database import Database, StarrailScheduleNotes
 from utility import EmbedTemplate
 
 from ... import parse_starrail_notes
-from .common import CheckResult, cal_next_check_time, get_realtime_notes, get_user
+from .common import CheckResult, cal_next_check_time, get_realtime_notes
 
 
-async def check_starrail_notes(user_id: int) -> CheckResult | None:
+async def check_starrail_notes(user: StarrailScheduleNotes) -> CheckResult | None:
     """依據每位使用者的設定檢查即時便箋，若超出設定值時則回傳提醒訊息；若跳過此使用者，回傳 None"""
-    user = await get_user(user_id, StarrailScheduleNotes)
-    if user is None:
-        return None
-
     try:
         notes = await get_realtime_notes(user)
     except Exception as e:
@@ -53,6 +49,16 @@ async def check_threshold(user: StarrailScheduleNotes, notes: genshin.models.Sta
             if longest_expedition.finished is True
             else cal_next_check_time(longest_expedition.remaining_time, user.threshold_expedition)
         )
+    # 檢查每日實訓
+    if isinstance(user.check_daily_training_time, datetime):
+        # 當現在時間已超過設定的檢查時間
+        if datetime.now() >= user.check_daily_training_time:
+            if notes.current_train_score < notes.max_train_score:
+                msg += "今日的每日實訓還未完成！"
+            # 下次檢查時間為今天+1天，並更新至資料庫
+            user.check_daily_training_time += timedelta(days=1)
+        next_check_time.append(user.check_daily_training_time)
+
     # 設定下次檢查時間，從上面設定的時間中取最小的值
     check_time = min(next_check_time)
     # 若此次需要發送訊息，則將下次檢查時間設為至少1小時

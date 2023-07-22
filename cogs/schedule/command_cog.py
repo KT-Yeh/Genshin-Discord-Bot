@@ -3,6 +3,7 @@ from typing import Literal
 
 import discord
 import genshin
+import sqlalchemy
 from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands
@@ -182,7 +183,7 @@ class ScheduleCommandCog(commands.Cog, name="排程設定指令"):
                 )
 
     # 具有頻道管理訊息權限的人可使用本指令，移除指定使用者的頻道排程設定
-    @app_commands.command(name="移除排程使用者", description="擁有管理此頻道訊息權限的人可使用本指令，移除指定使用者的排程設定")
+    @app_commands.command(name="排程管理-移除使用者", description="管理者專用，移除指定使用者的排程設定")
     @app_commands.rename(function="功能", user="使用者")
     @app_commands.describe(function="選擇要移除的功能")
     @app_commands.choices(
@@ -228,6 +229,61 @@ class ScheduleCommandCog(commands.Cog, name="排程設定指令"):
             await interaction.response.send_message(
                 embed=EmbedTemplate.normal(f"{user.name}的星穹鐵道即時便箋提醒已關閉")
             )
+
+    # 具有頻道管理訊息權限的人可使用本指令，將頻道內所有排程使用者的訊息移動到另一個頻道
+    @app_commands.command(name="排程管理-更改使用者頻道", description="管理者專用，將此頻道內所有排程使用者的訊息移動到另一個頻道")
+    @app_commands.rename(function="功能", dest_channel="目的地頻道")
+    @app_commands.describe(function="選擇要移除的功能", dest_channel="選擇要將使用者的訊息通知移動到哪個頻道")
+    @app_commands.choices(
+        function=[
+            Choice(name="全部", value="全部"),
+            Choice(name="每日自動簽到", value="每日自動簽到"),
+            Choice(name="即時便箋提醒(原神)", value="即時便箋提醒(原神)"),
+            Choice(name="即時便箋提醒(星穹鐵道)", value="即時便箋提醒(星穹鐵道)"),
+        ]
+    )
+    @app_commands.default_permissions(manage_messages=True)
+    @SlashCommandLogger
+    async def slash_move_users(
+        self,
+        interaction: discord.Interaction,
+        function: Literal["全部", "每日自動簽到", "即時便箋提醒(原神)", "即時便箋提醒(星穹鐵道)"],
+        dest_channel: discord.TextChannel | discord.Thread,
+    ):
+        src_channel = interaction.channel
+        if src_channel is None:
+            await interaction.response.send_message(embed=EmbedTemplate.error("頻道不存在"))
+            return
+
+        stmt_daily = (
+            sqlalchemy.update(ScheduleDailyCheckin)
+            .where(ScheduleDailyCheckin.discord_channel_id.is_(src_channel.id))
+            .values({ScheduleDailyCheckin.discord_channel_id: dest_channel.id})
+        )
+        stmt_gs_notes = (
+            sqlalchemy.update(GenshinScheduleNotes)
+            .where(GenshinScheduleNotes.discord_channel_id.is_(src_channel.id))
+            .values({GenshinScheduleNotes.discord_channel_id: dest_channel.id})
+        )
+        stmt_st_notes = (
+            sqlalchemy.update(StarrailScheduleNotes)
+            .where(StarrailScheduleNotes.discord_channel_id.is_(src_channel.id))
+            .values({StarrailScheduleNotes.discord_channel_id: dest_channel.id})
+        )
+        async with Database.sessionmaker() as session:
+            if function == "全部" or function == "每日自動簽到":
+                await session.execute(stmt_daily)
+            if function == "全部" or function == "即時便箋提醒(原神)":
+                await session.execute(stmt_gs_notes)
+            if function == "全部" or function == "即時便箋提醒(星穹鐵道)":
+                await session.execute(stmt_st_notes)
+            await session.commit()
+
+        await interaction.response.send_message(
+            embed=EmbedTemplate.normal(
+                f"已成功將此頻道所有使用者的{function}通知訊息通知移動到 {dest_channel.mention} 頻道"
+            )
+        )
 
 
 async def setup(client: commands.Bot):

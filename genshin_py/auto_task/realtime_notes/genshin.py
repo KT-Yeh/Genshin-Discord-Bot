@@ -6,15 +6,11 @@ from database import Database, GenshinScheduleNotes
 from utility import EmbedTemplate
 
 from ... import parse_genshin_notes
-from .common import CheckResult, cal_next_check_time, get_realtime_notes, get_user
+from .common import CheckResult, cal_next_check_time, get_realtime_notes
 
 
-async def check_genshin_notes(user_id: int) -> CheckResult | None:
+async def check_genshin_notes(user: GenshinScheduleNotes) -> CheckResult | None:
     """依據每位使用者的設定檢查即時便箋，若超出設定值時則回傳提醒訊息；若跳過此使用者，回傳 None"""
-    user = await get_user(user_id, GenshinScheduleNotes)
-    if user is None:
-        return None
-
     try:
         notes = await get_realtime_notes(user)
     except Exception as e:
