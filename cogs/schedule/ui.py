@@ -256,29 +256,51 @@ class StarrailCheckNotesThresholdModal(BaseNotesThresholdModal, title="設定星
         required=False,
         max_length=1,
     )
+    dailytraining: discord.ui.TextInput[discord.ui.Modal] = discord.ui.TextInput(
+        label="每日實訓：設定每天幾點提醒今天的每日實訓還未完成 (不填表示不提醒)",
+        placeholder="請輸入一個介於 0000~2359 的數，例如 0200、2135",
+        required=False,
+        max_length=4,
+        min_length=4,
+    )
 
     def __init__(self, user_setting: StarrailScheduleNotes | None = None):
         """設定表單預設值；若使用者在資料庫已有設定值，則帶入表單預設值"""
         self.power.default = "1"
         self.expedition.default = None
+        self.dailytraining.default = None
 
         if user_setting:
             self.power.default = self._int_to_str(user_setting.threshold_power)
             self.expedition.default = self._int_to_str(user_setting.threshold_expedition)
+            self.dailytraining.default = (
+                user_setting.check_daily_training_time.strftime("%H%M")
+                if user_setting.check_daily_training_time
+                else None
+            )
         super().__init__()
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
         try:
             power = self._str_to_int(self.power.value)
             expedition = self._str_to_int(self.expedition.value)
+            dailytraining = self._str_to_int(self.dailytraining.value)
 
             # 檢查數字範圍
-            if power is None and expedition is None:
+            if power is None and expedition is None and dailytraining is None:
                 raise ValueError()
             if (isinstance(power, int) and not (0 <= power <= 8)) or (
                 isinstance(expedition, int) and not (0 <= expedition <= 5)
             ):
                 raise ValueError()
+            dailytraining_time: datetime | None = None
+            if isinstance(dailytraining, int):
+                _time = time(dailytraining // 100, dailytraining % 100)
+                _date = date.today()
+                dailytraining_time = datetime.combine(_date, _time)
+                # 當今天已經超過設定的時間，則將檢查時間設為明日
+                if dailytraining_time < datetime.now():
+                    dailytraining_time += timedelta(days=1)
         except Exception:
             await interaction.response.send_message(
                 embed=EmbedTemplate.error("輸入數值有誤，請確認輸入的數值為整數且在規定範圍內"),
@@ -292,6 +314,7 @@ class StarrailCheckNotesThresholdModal(BaseNotesThresholdModal, title="設定星
                     discord_channel_id=interaction.channel_id or 0,
                     threshold_power=power,
                     threshold_expedition=expedition,
+                    check_daily_training_time=dailytraining_time,
                 )
             )
             await interaction.response.send_message(
@@ -299,5 +322,6 @@ class StarrailCheckNotesThresholdModal(BaseNotesThresholdModal, title="設定星
                     f"星穹鐵道設定完成，當達到以下設定值時會發送提醒訊息：\n"
                     f"{self._to_msg('開拓力　', power)}"
                     f"{self._to_msg('委託執行', expedition)}"
+                    f"{self._to_msg('每日實訓', dailytraining_time)}"
                 )
             )

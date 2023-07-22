@@ -49,6 +49,16 @@ async def check_threshold(user: StarrailScheduleNotes, notes: genshin.models.Sta
             if longest_expedition.finished is True
             else cal_next_check_time(longest_expedition.remaining_time, user.threshold_expedition)
         )
+    # 檢查每日實訓
+    if isinstance(user.check_daily_training_time, datetime):
+        # 當現在時間已超過設定的檢查時間
+        if datetime.now() >= user.check_daily_training_time:
+            if notes.current_train_score < notes.max_train_score:
+                msg += "今日的每日實訓還未完成！"
+            # 下次檢查時間為今天+1天，並更新至資料庫
+            user.check_daily_training_time += timedelta(days=1)
+        next_check_time.append(user.check_daily_training_time)
+
     # 設定下次檢查時間，從上面設定的時間中取最小的值
     check_time = min(next_check_time)
     # 若此次需要發送訊息，則將下次檢查時間設為至少1小時
