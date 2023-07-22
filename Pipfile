@@ -17,6 +17,7 @@ psutil = "~=5.9"
 mihomo = {git = "https://github.com/KT-Yeh/mihomo"}
 sqlalchemy = {version = "~=2.0.16", extras = ["asyncio"]}
 python-dotenv = "~=1.0.0"
+alembic = "~=1.11.1"
 
 [dev-packages]
 black = "*"

@@ -1,6 +1,9 @@
+import pathlib
 from typing import Sequence, TypeVar
 
 import sqlalchemy
+from alembic import command as alembic_cmd
+from alembic.config import Config as alembic_config
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.sql._typing import ColumnExpressionArgument
 
@@ -31,8 +34,15 @@ class Database:
     @classmethod
     async def init(cls) -> None:
         """初始化資料庫，在 bot 最初運行時需要呼叫一次"""
-        async with cls.engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
+        alembic_cfg = alembic_config("database/alembic/alembic.ini")
+        if pathlib.Path("data/bot/bot.db").exists():
+            # 如果資料庫檔案存在，運行 Alembic 的 upgrade 命令
+            alembic_cmd.upgrade(alembic_cfg, "head")
+        else:
+            # 如果資料庫檔案不存在，創建所有表並設置版本為 "head"
+            async with cls.engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+            alembic_cmd.stamp(alembic_cfg, "head")
 
     @classmethod
     async def close(cls) -> None:
