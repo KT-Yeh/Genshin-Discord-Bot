@@ -64,8 +64,9 @@ def cal_next_check_time(remaining: timedelta, user_threshold: int) -> datetime:
     else:  # remaining <= user_threshold
         # 當剩餘時間較短時，我們取 3 次間隔作為提醒時間
         # 例如使用者設定 24 小時前提醒，則下次提醒的時間點為 16、8、0 小時前
-        interval: float = user_threshold / 3
+        interval: float = float(user_threshold / 3)
         user_threshold_f: float = float(user_threshold)
-        while remaining_hours <= user_threshold_f:
-            user_threshold_f -= interval
+        if interval > 0.0:
+            while remaining_hours <= user_threshold_f:
+                user_threshold_f -= interval
         return datetime.now() + remaining - timedelta(hours=user_threshold_f)
