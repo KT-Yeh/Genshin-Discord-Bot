@@ -107,13 +107,14 @@ class AbyssFloorDropdown(discord.ui.Select):
                     embed=EmbedTemplate.error("僅限本人才能操作"), ephemeral=True
                 )
         else:  # 繪製樓層圖片
+            await interaction.response.defer()
             fp = await genshin_py.draw_abyss_card(
                 self.abyss_data.abyss.floors[int(self.values[0])],
                 self.abyss_data.characters,
             )
             fp.seek(0)
             self.embed.set_image(url="attachment://image.jpeg")
-            await interaction.response.edit_message(
+            await interaction.edit_original_response(
                 embed=self.embed, attachments=[discord.File(fp, "image.jpeg")]
             )
 
