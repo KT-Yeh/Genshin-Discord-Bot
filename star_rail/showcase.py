@@ -137,6 +137,98 @@ class Showcase:
 
         return embed
 
+    def get_relic_score_embed(self, index: int) -> discord.Embed:
+        """取得角色遺器詞條數的嵌入訊息"""
+
+        embed = self.get_default_embed(index)
+        embed.title = (embed.title + "詞條數") if embed.title is not None else "詞條數"
+
+        character = self.data.characters[index]
+        relics = character.relics
+        if relics is None:
+            return embed
+
+        substat_sum: dict[str, float] = {  # 副詞條數量統計
+            "攻擊力": 0.0,
+            "生命值": 0.0,
+            "防禦力": 0.0,
+            "速度": 0.0,
+            "暴擊率": 0.0,
+            "暴擊傷害": 0.0,
+            "效果命中": 0.0,
+            "效果抗性": 0.0,
+            "擊破特攻": 0.0,
+        }
+        crit_value: float = 0.0  # 雙爆分
+
+        base_hp = float(next(s for s in character.stats if s.name == "生命值").base)  # 生命白值
+        base_atk = float(next(s for s in character.stats if s.name == "攻擊力").base)  # 攻擊白值
+        base_def = float(next(s for s in character.stats if s.name == "防禦力").base)  # 防禦白值
+
+        for relic in relics:
+            main = relic.main_property
+            if main.name == "暴擊率":
+                crit_value += float(main.value.removesuffix("%")) * 2
+            if main.name == "暴擊傷害":
+                crit_value += float(main.value.removesuffix("%"))
+            for prop in relic.sub_property:
+                v = prop.value
+                match prop.name:
+                    case "生命值":
+                        p = float(v.removesuffix("%")) if v.endswith("%") else float(v) / base_hp
+                        substat_sum["生命值"] += p / 3.89
+                    case "攻擊力":
+                        p = float(v.removesuffix("%")) if v.endswith("%") else float(v) / base_atk
+                        substat_sum["攻擊力"] += p / 3.89
+                    case "防禦力":
+                        p = float(v.removesuffix("%")) if v.endswith("%") else float(v) / base_def
+                        substat_sum["防禦力"] += p / 4.86
+                    case "速度":
+                        substat_sum["速度"] += float(v) / 2.3
+                    case "暴擊率":
+                        p = float(v.removesuffix("%"))
+                        crit_value += p * 2.0
+                        substat_sum["暴擊率"] += p / 2.92
+                    case "暴擊傷害":
+                        p = float(v.removesuffix("%"))
+                        crit_value += p
+                        substat_sum["暴擊傷害"] += p / 5.83
+                    case "效果命中":
+                        substat_sum["效果命中"] += float(v.removesuffix("%")) / 3.89
+                    case "效果抗性":
+                        substat_sum["效果抗性"] += float(v.removesuffix("%")) / 3.89
+                    case "擊破特攻":
+                        substat_sum["擊破特攻"] += float(v.removesuffix("%")) / 5.83
+        embed.add_field(
+            name="詞條數",
+            value="\n".join(
+                [f"{k.ljust(4, '　')}：{round(v, 1)}" for k, v in substat_sum.items() if v > 0]
+            ),
+        )
+
+        # 詞條組合統計
+        def sum_substat(name: str, *args: str) -> str:
+            total = 0.0
+            for arg in args:
+                total += substat_sum[arg]
+            # 要超過 (4 * 詞條種類數量) 條以上才會顯示
+            return f"{name.ljust(4, '　')}：{round(total, 1)}\n" if total > 4 * len(args) else ""
+
+        embed_value = f"雙暴 {round(crit_value)} 分\n"
+        embed_value += sum_substat("攻雙暴", "攻擊力", "暴擊率", "暴擊傷害")
+        embed_value += sum_substat("攻速雙暴", "攻擊力", "速度", "暴擊率", "暴擊傷害")
+        embed_value += sum_substat("攻命雙暴", "攻擊力", "效果命中", "暴擊率", "暴擊傷害")
+        embed_value += sum_substat("生速雙暴", "生命值", "速度", "暴擊率", "暴擊傷害")
+        embed_value += sum_substat("生攻速暴", "生命值", "攻擊力", "速度", "暴擊率", "暴擊傷害")
+        embed_value += sum_substat("生速抗", "生命值", "速度", "效果抗性")
+        embed_value += sum_substat("生防速", "生命值", "防禦力", "速度")
+        embed_value += sum_substat("防速抗", "防禦力", "速度", "效果抗性")
+        embed_value += sum_substat("防速命抗", "防禦力", "速度", "效果命中", "效果抗性")
+
+        embed.add_field(name="總詞條統計", value=embed_value)
+
+        return embed
+
     def get_default_embed(self, index: int) -> discord.Embed:
         """取得角色的基本嵌入訊息"""
 

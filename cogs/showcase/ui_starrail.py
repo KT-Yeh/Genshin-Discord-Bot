@@ -85,6 +85,7 @@ class ShowcaseView(discord.ui.View):
         if character_index is not None:
             self.add_item(ShowcaseButton("面板", showcase.get_character_stat_embed, character_index))
             self.add_item(ShowcaseButton("遺器", showcase.get_relic_stat_embed, character_index))
+            self.add_item(ShowcaseButton("詞條", showcase.get_relic_score_embed, character_index))
 
         if len(showcase.data.characters) > 0:
             self.add_item(ShowcaseCharactersDropdown(showcase))
