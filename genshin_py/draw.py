@@ -55,7 +55,7 @@ def draw_basic_card(
     draw_avatar(img, avatar, (70, 210))
 
     draw_rounded_rect(img, (340, 270, 990, 460), radius=30, fill=(0, 0, 0, 120))
-    draw_rounded_rect(img, (90, 520, 990, 1730), radius=30, fill=(0, 0, 0, 120))
+    draw_rounded_rect(img, (90, 520, 990, 1810), radius=30, fill=(0, 0, 0, 120))
 
     info = user_stats.info
     draw_text(
@@ -102,6 +102,7 @@ def draw_record_card(
         (s.geoculi, "岩神瞳"),
         (s.electroculi, "雷神瞳"),
         (s.dendroculi, "草神瞳"),
+        (s.hydroculi, "水神瞳"),
         (s.unlocked_waypoints, "解鎖傳送點"),
         (s.unlocked_domains, "解鎖秘境"),
         (s.spiral_abyss, "深境螺旋"),
@@ -117,7 +118,7 @@ def draw_record_card(
         row = int(n / 3)
         draw_text(
             img,
-            (245 + column * 295, 630 + row * 230),
+            (245 + column * 295, 630 + row * 200),
             str(stat[0]),
             "SourceHanSansTC-Bold.otf",
             80,
@@ -126,7 +127,7 @@ def draw_record_card(
         )
         draw_text(
             img,
-            (245 + column * 295, 700 + row * 230),
+            (245 + column * 295, 700 + row * 200),
             str(stat[1]),
             "SourceHanSansTC-Regular.otf",
             40,
@@ -168,9 +169,12 @@ def draw_exploration_card(
         ["層岩·表", 0],
         ["層岩·底", 0],
         ["須彌", 0],
+        ["楓丹", 0],
     ]
-    offering_list = [["忍冬之樹", 0], ["神櫻眷顧", 0], ["流明石", 0], ["夢之樹", 0]]
+    offering_list = [["忍冬之樹", 0], ["神櫻眷顧", 0], ["流明石", 0], ["夢之樹", 0], ["露景泉", 0]]
     for e in user_stats.explorations:
+        if e.id > len(explored_list):
+            continue
         explored_list[e.id - 1][1] = e.explored
 
         if e.id == 3 and len(e.offerings) >= 1:
@@ -181,6 +185,8 @@ def draw_exploration_card(
             offering_list[2][1] = e.offerings[0].level
         if e.id == 8 and len(e.offerings) >= 2:
             offering_list[3][1] = e.offerings[0].level
+        if e.id == 9 and len(e.offerings) >= 2:
+            offering_list[4][1] = e.offerings[0].level
 
     stat_list: List[Tuple[str, float, str]] = []
     for e in explored_list:
@@ -193,7 +199,7 @@ def draw_exploration_card(
         row = int(n / 3)
         draw_text(
             img,
-            (245 + column * 295, 620 + row * 270),
+            (245 + column * 295, 590 + row * 250),
             stat[0],
             "SourceHanSansTC-Regular.otf",
             41,
@@ -202,7 +208,7 @@ def draw_exploration_card(
         )
         draw_text(
             img,
-            (245 + column * 295, 691 + row * 270),
+            (245 + column * 295, 661 + row * 250),
             f"{stat[1]:g}",
             "SourceHanSansTC-Bold.otf",
             82,
@@ -211,7 +217,7 @@ def draw_exploration_card(
         )
         draw_text(
             img,
-            (245 + column * 295, 770 + row * 270),
+            (245 + column * 295, 740 + row * 250),
             stat[2],
             "SourceHanSansTC-Regular.otf",
             45,
