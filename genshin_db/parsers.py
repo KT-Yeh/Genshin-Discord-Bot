@@ -161,9 +161,10 @@ class CharacterParser:
         embed = EmbedTemplate.normal(
             character.description, title=f"★{character.rarity} {character.name}"
         )
-        embed.set_thumbnail(url=character.images.icon_url)
-        if character.images.cover1_url is not None:
-            embed.set_image(url=character.images.cover1_url)
+        if character.images is not None:
+            embed.set_thumbnail(url=character.images.icon_url)
+            if character.images.cover1_url is not None:
+                embed.set_image(url=character.images.cover1_url)
 
         embed.add_field(
             name="屬性",
