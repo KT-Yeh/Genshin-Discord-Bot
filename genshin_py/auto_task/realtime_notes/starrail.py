@@ -58,6 +58,24 @@ async def check_threshold(user: StarrailScheduleNotes, notes: genshin.models.Sta
             # 下次檢查時間為今天+1天，並更新至資料庫
             user.check_daily_training_time += timedelta(days=1)
         next_check_time.append(user.check_daily_training_time)
+    # 檢查模擬宇宙
+    if isinstance(user.check_universe_time, datetime):
+        # 當現在時間已超過設定的檢查時間
+        if datetime.now() >= user.check_universe_time:
+            if notes.current_rogue_score < notes.max_rogue_score:
+                msg += "本周的模擬宇宙還未完成！"
+            # 下次檢查時間為下一周，並更新至資料庫
+            user.check_universe_time += timedelta(weeks=1)
+        next_check_time.append(user.check_universe_time)
+    # 檢查歷戰餘響
+    if isinstance(user.check_echoofwar_time, datetime):
+        # 當現在時間已超過設定的檢查時間
+        if datetime.now() >= user.check_echoofwar_time:
+            if notes.remaining_weekly_discounts > 0:
+                msg += "本周的歷戰餘響還未完成！"
+            # 下次檢查時間為下一周，並更新至資料庫
+            user.check_echoofwar_time += timedelta(weeks=1)
+        next_check_time.append(user.check_echoofwar_time)
 
     # 設定下次檢查時間，從上面設定的時間中取最小的值
     check_time = min(next_check_time)
