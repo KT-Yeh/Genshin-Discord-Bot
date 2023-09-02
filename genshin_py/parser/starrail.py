@@ -99,7 +99,7 @@ def parse_starrail_character(character: genshin.models.StarRailDetailCharacter) 
     if character.equip:
         lightcone = character.equip
         embed.add_field(
-            name=f"光追：{lightcone.name}",
+            name=f"光錐：{lightcone.name}",
             inline=True,
             value=f"疊影：{lightcone.rank} 階\n等級：Lv. {lightcone.level}",
         )
