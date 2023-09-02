@@ -47,6 +47,9 @@ class DailyCheckinCog(commands.Cog, name="每日簽到"):
         }
 
         _user = user or interaction.user
+        if _user.id == self.bot.application_id:
+            _user = interaction.user
+
         defer, result = await asyncio.gather(
             interaction.response.defer(ephemeral=(is_geetest == "是")),
             genshin_py.claim_daily_reward(_user.id, **choice),
