@@ -31,7 +31,7 @@ class CookieSettingCog(commands.Cog, name="Cookie 設定"):
                 "**3.** 如下圖，在網址列輸入 `java`，然後貼上程式碼\n"
                 "**4.** 按 Enter，網頁會變成顯示你的 Cookie，全選然後複製\n"
                 f"**5.** 在這裡使用指令 {get_app_command_mention('cookie設定')} 提交已取得的Cookie\n"
-                "． 遇到問題嗎？點 [教學連結](https://bit.ly/3LgQkg0) 查看其他方法\n",
+                "． 遇到登入問題嗎？點 [教學連結](https://hackmd.io/66fq-6NsT1Kqxqbpkj1xTA) 查看解決方法\n",
                 title="原神小幫手 | 取得Cookie說明",
             )
             embed.set_image(url="https://i.imgur.com/OQ8arx0.gif")

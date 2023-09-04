@@ -232,6 +232,10 @@ class StarrailScheduleNotes(Base):
     """全部委託完成之前幾小時發送提醒"""
     check_daily_training_time: Mapped[datetime.datetime | None] = mapped_column(default=None)
     """下次檢查今天的每日實訓還未完成的時間"""
+    check_universe_time: Mapped[datetime.datetime | None] = mapped_column(default=None)
+    """下次檢查本周的模擬宇宙還未完成的時間"""
+    check_echoofwar_time: Mapped[datetime.datetime | None] = mapped_column(default=None)
+    """下次檢查本周的歷戰餘響還未完成的時間"""
 
 
 class StarrailShowcase(Base):

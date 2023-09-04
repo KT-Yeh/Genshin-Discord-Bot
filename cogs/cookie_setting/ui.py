@@ -34,9 +34,27 @@ class CookieModal(discord.ui.Modal, title="提交Cookie"):
         label="Cookie",
         placeholder='請貼上從網頁上取得的Cookie，取得方式請使用指令 "/cookie設定 顯示說明如何取得Cookie"',
         style=discord.TextStyle.long,
-        required=True,
+        required=False,
         min_length=50,
         max_length=2000,
+    )
+
+    ltuid_v2: discord.ui.TextInput[discord.ui.Modal] = discord.ui.TextInput(
+        label="ltuid_v2",
+        placeholder="請貼上取得的 ltuid_v2",
+        style=discord.TextStyle.short,
+        required=False,
+        min_length=5,
+        max_length=20,
+    )
+
+    ltoken_v2: discord.ui.TextInput[discord.ui.Modal] = discord.ui.TextInput(
+        label="ltoken_v2",
+        placeholder="請貼上取得的 ltoken_v2",
+        style=discord.TextStyle.short,
+        required=False,
+        min_length=30,
+        max_length=150,
     )
 
     def __init__(self, games: list[genshin.Game]):
@@ -47,16 +65,36 @@ class CookieModal(discord.ui.Modal, title="提交Cookie"):
         await interaction.response.send_message(
             embed=EmbedTemplate.normal("設定中，請稍後..."), ephemeral=True
         )
+
+        # 將 ltuid_v2 和 ltoken_v2 附加到 cookie 中
+        v2_str = ""
+        cookie = self.cookie.value
+        if len(self.ltoken_v2.value) > 0:
+            # 檢測 cookie 是否為 v2 版本
+            if self.ltoken_v2.value.startswith("v2"):
+                v2_str = "_v2"
+            cookie += f" ltoken{v2_str}={self.ltoken_v2.value};"
+        if len(self.ltuid_v2.value) > 0:
+            if self.ltuid_v2.value.isdigit() is True:
+                cookie += f" ltuid{v2_str}={self.ltuid_v2.value};"
+            else:  # ltuid_v2 不是數字，可能是 ltmid_v2
+                cookie += f" ltmid_v2={self.ltuid_v2.value};"
+
         LOG.Info(f"設定 {LOG.User(interaction.user)} 的Cookie：{self.cookie.value}")
         try:
-            cookie = await self._trim_cookies(self.cookie.value)
-            if cookie is None:
+            trimmed_cookie = await self._trim_cookies(cookie)
+            if trimmed_cookie is None:
                 raise Exception(
                     f"錯誤或無效的Cookie，請重新輸入(使用 {get_app_command_mention('cookie設定')} 顯示說明)"
                 )
-            msg = await genshin_py.set_cookie(interaction.user.id, cookie, self.games)
+            msg = await genshin_py.set_cookie(interaction.user.id, trimmed_cookie, self.games)
         except Exception as e:
-            await interaction.edit_original_response(embed=EmbedTemplate.error(e))
+            embed = EmbedTemplate.error(e)
+            if embed.description is not None:
+                embed.description += (
+                    "點 [>>教學連結<<](https://hackmd.io/66fq-6NsT1Kqxqbpkj1xTA) 查看解決方法\n"
+                )
+            await interaction.edit_original_response(embed=embed)
         else:
             await interaction.edit_original_response(embed=EmbedTemplate.normal(msg))
 

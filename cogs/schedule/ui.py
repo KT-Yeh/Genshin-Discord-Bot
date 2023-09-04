@@ -106,18 +106,18 @@ class BaseNotesThresholdModal(discord.ui.Modal):
         return int(value) if len(value) > 0 else None
 
     @overload
-    def _to_msg(self, title: str, value: int | None) -> str:
+    def _to_msg(self, title: str, value: int | None, date_frequency: str = "每天") -> str:
         ...
 
     @overload
-    def _to_msg(self, title: str, value: datetime | None) -> str:
+    def _to_msg(self, title: str, value: datetime | None, date_frequency: str = "每天") -> str:
         ...
 
-    def _to_msg(self, title: str, value: int | datetime | None) -> str:
+    def _to_msg(self, title: str, value: int | datetime | None, date_frequency: str = "每天") -> str:
         if value is None:
             return ""
         if isinstance(value, datetime):
-            return f"． {title}：每天 {value.strftime('%H:%M')} 檢查\n"
+            return f"． {title}：{date_frequency} {value.strftime('%H:%M')} 檢查\n"
         if value == 0:
             return f"． {title}：當完成時提醒\n"
         else:
@@ -263,6 +263,20 @@ class StarrailCheckNotesThresholdModal(BaseNotesThresholdModal, title="設定星
         max_length=4,
         min_length=4,
     )
+    universe: discord.ui.TextInput[discord.ui.Modal] = discord.ui.TextInput(
+        label="模擬宇宙：設定每周日幾點提醒本周的模擬宇宙還未完成 (不填表示不提醒)",
+        placeholder="請輸入一個介於 0000~2359 的數，例如 0200、2135",
+        required=False,
+        max_length=4,
+        min_length=4,
+    )
+    echoofwar: discord.ui.TextInput[discord.ui.Modal] = discord.ui.TextInput(
+        label="歷戰餘響：設定每周日幾點提醒本周的歷戰餘響還未完成 (不填表示不提醒)",
+        placeholder="請輸入一個介於 0000~2359 的數，例如 0200、2135",
+        required=False,
+        max_length=4,
+        min_length=4,
+    )
 
     def __init__(self, user_setting: StarrailScheduleNotes | None = None):
         """設定表單預設值；若使用者在資料庫已有設定值，則帶入表單預設值"""
@@ -278,6 +292,16 @@ class StarrailCheckNotesThresholdModal(BaseNotesThresholdModal, title="設定星
                 if user_setting.check_daily_training_time
                 else None
             )
+            self.universe.default = (
+                user_setting.check_universe_time.strftime("%H%M")
+                if user_setting.check_universe_time
+                else None
+            )
+            self.echoofwar.default = (
+                user_setting.check_echoofwar_time.strftime("%H%M")
+                if user_setting.check_echoofwar_time
+                else None
+            )
         super().__init__()
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
@@ -285,14 +309,23 @@ class StarrailCheckNotesThresholdModal(BaseNotesThresholdModal, title="設定星
             power = self._str_to_int(self.power.value)
             expedition = self._str_to_int(self.expedition.value)
             dailytraining = self._str_to_int(self.dailytraining.value)
+            universe = self._str_to_int(self.universe.value)
+            echoofwar = self._str_to_int(self.echoofwar.value)
 
             # 檢查數字範圍
-            if power is None and expedition is None and dailytraining is None:
+            if (
+                power is None
+                and expedition is None
+                and dailytraining is None
+                and universe is None
+                and echoofwar is None
+            ):
                 raise ValueError()
             if (isinstance(power, int) and not (0 <= power <= 8)) or (
                 isinstance(expedition, int) and not (0 <= expedition <= 5)
             ):
                 raise ValueError()
+
             dailytraining_time: datetime | None = None
             if isinstance(dailytraining, int):
                 _time = time(dailytraining // 100, dailytraining % 100)
@@ -301,6 +334,25 @@ class StarrailCheckNotesThresholdModal(BaseNotesThresholdModal, title="設定星
                 # 當今天已經超過設定的時間，則將檢查時間設為明日
                 if dailytraining_time < datetime.now():
                     dailytraining_time += timedelta(days=1)
+
+            universe_time: datetime | None = None
+            echoofwar_time: datetime | None = None
+            if isinstance(universe, int) or isinstance(echoofwar, int):
+                # 取得本周日的日期
+                _date = date.today() + timedelta(days=6 - date.today().weekday())
+                if isinstance(universe, int):
+                    universe_time = datetime.combine(_date, time(universe // 100, universe % 100))
+                    # 當今天已經超過設定的時間，則將檢查時間設為下周日
+                    if universe_time < datetime.now():
+                        universe_time += timedelta(days=7)
+                if isinstance(echoofwar, int):
+                    echoofwar_time = datetime.combine(
+                        _date, time(echoofwar // 100, echoofwar % 100)
+                    )
+                    # 當今天已經超過設定的時間，則將檢查時間設為下周日
+                    if echoofwar_time < datetime.now():
+                        echoofwar_time += timedelta(days=7)
+
         except Exception:
             await interaction.response.send_message(
                 embed=EmbedTemplate.error("輸入數值有誤，請確認輸入的數值為整數且在規定範圍內"),
@@ -315,6 +367,8 @@ class StarrailCheckNotesThresholdModal(BaseNotesThresholdModal, title="設定星
                     threshold_power=power,
                     threshold_expedition=expedition,
                     check_daily_training_time=dailytraining_time,
+                    check_universe_time=universe_time,
+                    check_echoofwar_time=echoofwar_time,
                 )
             )
             await interaction.response.send_message(
@@ -323,5 +377,7 @@ class StarrailCheckNotesThresholdModal(BaseNotesThresholdModal, title="設定星
                     f"{self._to_msg('開拓力　', power)}"
                     f"{self._to_msg('委託執行', expedition)}"
                     f"{self._to_msg('每日實訓', dailytraining_time)}"
+                    f"{self._to_msg('模擬宇宙', universe_time, '周日')}"
+                    f"{self._to_msg('歷戰餘響', echoofwar_time, '周日')}"
                 )
             )

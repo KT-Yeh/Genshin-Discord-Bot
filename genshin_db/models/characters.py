@@ -63,7 +63,7 @@ class Character(GenshinDbBase):
     character_voice: CharacterVoice = Field(alias="cv")
     ascend_costs: AscendCosts = Field(alias="costs")
     """突破所需素材"""
-    images: Images
+    images: Optional[Images] = None
     version: str
     """新增至遊戲當時的版本號碼"""
 

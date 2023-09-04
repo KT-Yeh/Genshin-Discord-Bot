@@ -50,12 +50,13 @@ async def parse_starrail_notes(
 
     exped_title = f"委託執行：{exped_finished}/{len(notes.expeditions)}"
 
-    # 根據開拓力數量，以 90 作分界，embed 顏色從綠色 (0x28c828) 漸變到黃色 (0xc8c828)，再漸變到紅色 (0xc82828)
+    # 根據開拓力數量，以一半作分界，embed 顏色從綠色 (0x28c828) 漸變到黃色 (0xc8c828)，再漸變到紅色 (0xc82828)
     stamina = notes.current_stamina
+    max_half = notes.max_stamina / 2
     color = (
-        0x28C828 + 0x010000 * int(0xA0 * stamina / 90)
-        if stamina < 90
-        else 0xC8C828 - 0x000100 * int(0xA0 * (stamina - 90) / 90)
+        0x28C828 + 0x010000 * int(0xA0 * stamina / max_half)
+        if stamina < max_half
+        else 0xC8C828 - 0x000100 * int(0xA0 * (stamina - max_half) / max_half)
     )
 
     embed = discord.Embed(color=color)
@@ -98,7 +99,7 @@ def parse_starrail_character(character: genshin.models.StarRailDetailCharacter) 
     if character.equip:
         lightcone = character.equip
         embed.add_field(
-            name=f"光追：{lightcone.name}",
+            name=f"光錐：{lightcone.name}",
             inline=True,
             value=f"疊影：{lightcone.rank} 階\n等級：Lv. {lightcone.level}",
         )
