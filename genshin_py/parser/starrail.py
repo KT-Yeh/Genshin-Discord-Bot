@@ -13,7 +13,9 @@ async def parse_starrail_notes(
 ) -> discord.Embed:
     """解析即時便箋的資料，將內容排版成 discord 嵌入格式回傳"""
     # 開拓力
-    stamina_title = f"當前開拓力：{notes.current_stamina}/{notes.max_stamina}\n"
+    stamina_title = f"當前開拓力：{notes.current_stamina}/{notes.max_stamina}"
+    if notes.current_reserve_stamina > 0:
+        stamina_title += f" + {notes.current_reserve_stamina}"
     if notes.current_stamina >= notes.max_stamina:
         recovery_time = "已額滿！"
     else:
