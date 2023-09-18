@@ -133,3 +133,13 @@ def parse_starrail_character(character: genshin.models.StarRailDetailCharacter) 
         )
         embed.add_field(name="飾品", inline=False, value=msg)
     return embed
+
+
+def parse_starrail_hall_overview(hall: genshin.models.StarRailChallenge) -> discord.Embed:
+    """解析星穹鐵道忘卻之庭概述資料，包含關卡進度、戰鬥次數、獲得星數、期數"""
+    has_crown: bool = hall.total_battles == 10 and hall.total_stars == 30
+    desc: str = f"{hall.begin_time.datetime.strftime('%Y.%m.%d')} ~ {hall.end_time.datetime.strftime('%Y.%m.%d')}\n"
+    desc += f"關卡進度：{hall.max_floor}\n"
+    desc += f"戰鬥次數：{'👑 (10)' if has_crown else hall.total_battles}　★：{hall.total_stars}\n"
+    embed = discord.Embed(description=desc, color=0x934151)
+    return embed

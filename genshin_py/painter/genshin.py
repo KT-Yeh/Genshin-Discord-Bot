@@ -1,48 +1,27 @@
 import random
 from io import BytesIO
 from pathlib import Path
-from typing import List, Optional, Sequence, Tuple
+from typing import Sequence
 
 import aiohttp
 import enkanetwork
 import genshin
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 
 from database.dataclass import spiral_abyss
 from utility import get_server_name
 
+from .common import draw_avatar, draw_text
+
 __all__ = ["draw_abyss_card", "draw_exploration_card", "draw_record_card"]
 
 
-def draw_avatar(img: Image.Image, avatar: Image.Image, pos: Tuple[int, int]):
-    """以圓形畫個人頭像"""
-    mask = Image.new("L", avatar.size, 0)
-    draw = ImageDraw.Draw(mask)
-    draw.ellipse(((0, 0), avatar.size), fill=255)
-    img.paste(avatar, pos, mask=mask)
-
-
-def draw_rounded_rect(img: Image.Image, pos: Tuple[float, float, float, float], **kwargs):
+def draw_rounded_rect(img: Image.Image, pos: tuple[float, float, float, float], **kwargs):
     """畫半透明圓角矩形"""
     transparent = Image.new("RGBA", img.size, 0)
     draw = ImageDraw.Draw(transparent, "RGBA")
     draw.rounded_rectangle(pos, **kwargs)
     img.paste(Image.alpha_composite(img, transparent))
-
-
-def draw_text(
-    img: Image.Image,
-    pos: Tuple[float, float],
-    text: str,
-    font_name: str,
-    size: int,
-    fill,
-    anchor=None,
-):
-    """在圖片上印文字"""
-    draw = ImageDraw.Draw(img)
-    font = ImageFont.truetype(f"data/font/{font_name}", size)  # type: ignore
-    draw.text(pos, text, fill, font, anchor=anchor)
 
 
 def draw_basic_card(
@@ -188,7 +167,7 @@ def draw_exploration_card(
         if e.id == 9 and len(e.offerings) >= 2:
             offering_list[4][1] = e.offerings[0].level
 
-    stat_list: List[Tuple[str, float, str]] = []
+    stat_list: list[tuple[str, float, str]] = []
     for e in explored_list:
         stat_list.append(("探索", e[1], e[0]))
     for o in offering_list:
@@ -234,8 +213,8 @@ def draw_exploration_card(
 async def draw_character(
     img: Image.Image,
     character: genshin.models.AbyssCharacter,
-    size: Tuple[int, int],
-    pos: Tuple[int, int],
+    size: tuple[int, int],
+    pos: tuple[int, int],
 ):
     """畫角色頭像，包含背景框
 
@@ -275,7 +254,7 @@ async def draw_character(
 
 
 def draw_abyss_star(
-    img: Image.Image, number: int, size: Tuple[int, int], pos: Tuple[float, float]
+    img: Image.Image, number: int, size: tuple[int, int], pos: tuple[float, float]
 ):
     """畫深淵星星數量
 
@@ -294,7 +273,7 @@ def draw_abyss_star(
 
 async def draw_abyss_card(
     abyss_floor: genshin.models.Floor,
-    characters: Optional[Sequence[spiral_abyss.CharacterData]] = None,
+    characters: Sequence[spiral_abyss.CharacterData] | None = None,
 ) -> BytesIO:
     """繪製深淵樓層紀錄圖，包含每一間星數以及上下半所使用的角色和等級
 

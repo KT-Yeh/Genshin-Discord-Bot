@@ -1,13 +1,15 @@
 from typing import Literal, Optional
 
 import discord
+import genshin
 from discord import app_commands
 from discord.app_commands import Choice
 from discord.ext import commands
 
 from utility import EmbedTemplate, config, custom_log
 
-from .ui import SpiralAbyssUI
+from .ui_genshin import SpiralAbyssUI
+from .ui_starrail import ForgottenHallUI
 
 
 class SpiralAbyssCog(commands.Cog, name="深境螺旋"):
@@ -16,23 +18,34 @@ class SpiralAbyssCog(commands.Cog, name="深境螺旋"):
 
     @app_commands.command(name="abyss深淵紀錄", description="查詢深境螺旋紀錄")
     @app_commands.checks.cooldown(1, config.slash_cmd_cooldown)
-    @app_commands.rename(season="時間", user="使用者")
+    @app_commands.rename(game="遊戲", season="時間", user="使用者")
     @app_commands.describe(season="選擇本期、上期或是歷史紀錄", user="查詢其他成員的資料，不填寫則查詢自己")
     @app_commands.choices(
+        game=[
+            Choice(name="原神", value="genshin"),
+            Choice(name="星穹鐵道", value="hkrpg"),
+        ],
         season=[
             Choice(name="本期紀錄", value="THIS_SEASON"),
             Choice(name="上期紀錄", value="PREVIOUS_SEASON"),
             Choice(name="歷史紀錄", value="HISTORICAL_RECORD"),
-        ]
+        ],
     )
     @custom_log.SlashCommandLogger
     async def slash_abyss(
         self,
         interaction: discord.Interaction,
+        game: genshin.Game,
         season: Literal["THIS_SEASON", "PREVIOUS_SEASON", "HISTORICAL_RECORD"],
         user: Optional[discord.User] = None,
     ):
-        await SpiralAbyssUI.abyss(interaction, user or interaction.user, season)
+        match game:
+            case genshin.Game.GENSHIN:
+                await SpiralAbyssUI.abyss(interaction, user or interaction.user, season)
+            case genshin.Game.STARRAIL:
+                await ForgottenHallUI.launch(interaction, user or interaction.user, season)
+            case _:
+                return
 
     @slash_abyss.error
     async def on_slash_abyss_error(
