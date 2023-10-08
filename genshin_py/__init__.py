@@ -1,4 +1,4 @@
 from .client import *
-from .draw import *
 from .errors import *
+from .painter import *
 from .parser import *

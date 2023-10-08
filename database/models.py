@@ -238,6 +238,42 @@ class StarrailScheduleNotes(Base):
     """下次檢查本周的歷戰餘響還未完成的時間"""
 
 
+class StarrailForgottenHall(Base):
+    """星穹鐵道忘卻之庭資料庫 Table"""
+
+    __tablename__ = "starrail_forgotten_hall"
+
+    discord_id: Mapped[int] = mapped_column(primary_key=True)
+    """使用者 Discord ID"""
+    season: Mapped[int] = mapped_column(primary_key=True)
+    """忘卻之庭期數"""
+    _raw_data: Mapped[bytes] = mapped_column()
+    """忘卻之庭 bytes 資料"""
+
+    def __init__(self, discord_id: int, season: int, data: genshin.models.StarRailChallenge):
+        """初始化星穹鐵道忘卻之庭資料表的物件。
+
+        Parameters:
+        ------
+        discord_id: `int`
+            使用者 Discord ID。
+        season: `int`
+            忘卻之庭期數。
+        data: `genshin.models.StarRailChallenge`
+            genshin.py 忘卻之庭資料。
+        """
+        json_str = data.json(by_alias=True, ensure_ascii=False)
+        self.discord_id = discord_id
+        self.season = season
+        self._raw_data = zlib.compress(json_str.encode("utf-8"), level=5)
+
+    @property
+    def data(self) -> genshin.models.StarRailChallenge:
+        """genshin.py 忘卻之庭資料"""
+        data = zlib.decompress(self._raw_data).decode("utf-8")
+        return genshin.models.StarRailChallenge.parse_raw(data)
+
+
 class StarrailShowcase(Base):
     """星穹鐵道展示櫃資料庫 Table"""
 
