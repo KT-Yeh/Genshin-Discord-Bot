@@ -32,7 +32,6 @@ class AbyssRecordDropdown(discord.ui.Select):
                     return "(單通)"
             return ""
 
-        abyss_data_list = sorted(abyss_data_list, key=lambda x: x.season, reverse=True)
         options = [
             discord.SelectOption(
                 label=f"[第 {abyss.season} 期] ★ {abyss.abyss.total_stars} {honor(abyss.abyss)}",
@@ -159,8 +158,11 @@ class SpiralAbyssUI:
                     embed=EmbedTemplate.normal("此使用者沒有保存任何歷史紀錄")
                 )
             else:
+                abyss_data_list = sorted(abyss_data_list, key=lambda x: x.season, reverse=True)
                 view = discord.ui.View(timeout=config.discord_view_short_timeout)
-                view.add_item(AbyssRecordDropdown(user, abyss_data_list))
+                # 一次最多顯示 25 筆資料，所以要分批顯示
+                for i in range(0, len(abyss_data_list), 25):
+                    view.add_item(AbyssRecordDropdown(user, abyss_data_list[i : i + 25]))
                 await interaction.response.send_message(view=view)
         else:  # 查詢 Hoyolab 紀錄 (THIS_SEASON、PREVIOUS_SEASON)
             try:
