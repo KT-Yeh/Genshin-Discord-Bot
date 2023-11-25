@@ -52,9 +52,6 @@ class Showcase:
             f"達成成就：{player_details.achievements}\n"
             f"模擬宇宙：第 {player_details.simulated_universes} 世界通過\n"
         )
-        if (hall := player_details.forgotten_hall) is not None:
-            if hall.memory_of_chaos_id is not None:
-                description += f"忘卻之庭：{hall.memory_of_chaos} / 10 混沌回憶\n"
 
         if self.is_cached_data is True:
             description += "(目前無法連接 API，顯示的為快取資料)\n"
