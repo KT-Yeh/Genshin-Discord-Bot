@@ -1,7 +1,9 @@
 import psutil
 from discord import AutoShardedClient, Interaction, InteractionType
 from discord.ext import commands, tasks
+from sqlalchemy import func, select
 
+from database import Database, User
 from utility.prometheus import Metrics
 
 
@@ -9,9 +11,11 @@ class PrometheusCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.set_metrics_loop.start()
+        self.set_metrics_loop_users.start()
 
     async def cog_unload(self) -> None:
         self.set_metrics_loop.cancel()
+        self.set_metrics_loop_users.cancel()
 
     @tasks.loop(seconds=5)
     async def set_metrics_loop(self):
@@ -27,16 +31,30 @@ class PrometheusCog(commands.Cog):
         if isinstance(memory_percent := psutil.Process().memory_percent(), float):
             Metrics.MEMORY_USAGE.set(memory_percent)
 
+    @set_metrics_loop.before_loop
+    async def before_set_metrics_loop(self):
+        await self.bot.wait_until_ready()
+
+    @tasks.loop(seconds=300)
+    async def set_metrics_loop_users(self):
+        """循環更新使用者總數量"""
+        stmt = select(func.count()).select_from(User)
+        async with Database.sessionmaker() as session:
+            num_of_users = (await session.execute(stmt)).scalar()
+            if num_of_users is not None:
+                Metrics.USERS.set(num_of_users)
+
+    @set_metrics_loop_users.before_loop
+    async def before_set_metrics_loop_users(self):
+        await self.bot.wait_until_ready()
+
     def set_guild_gauges(self):
-        """更新伺服器、頻道、使用者總數量"""
+        """更新伺服器、頻道總數量"""
         num_of_guilds = len(self.bot.guilds)
         Metrics.GUILDS.set(num_of_guilds)
 
         num_of_channels = len(set(self.bot.get_all_channels()))
         Metrics.CHANNELS.set(num_of_channels)
-
-        num_of_users = len(set(self.bot.get_all_members()))
-        Metrics.USERS.set(num_of_users)
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -119,14 +137,6 @@ class PrometheusCog(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, _):
         Metrics.CHANNELS.dec()
-
-    @commands.Cog.listener()
-    async def on_member_join(self, _):
-        Metrics.USERS.inc()
-
-    @commands.Cog.listener()
-    async def on_member_remove(self, _):
-        Metrics.USERS.dec()
 
 
 async def setup(client: commands.Bot):
