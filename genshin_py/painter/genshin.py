@@ -234,13 +234,20 @@ async def draw_character(
     if avatar_file.exists() is False:
         avatar_img: bytes | None = None
         async with aiohttp.ClientSession() as session:
-            async with session.get(character.icon) as resp:
-                if resp.status == 200:
-                    avatar_img = await resp.read()
-            # 當從 hoyolab 取得圖片失敗時改用 Enkanetwork CDN
-            if avatar_img is None:
+            # 嘗試從 Enkanetwork CDN 取得圖片
+            try:
                 enka_cdn = enkanetwork.Assets.character(character.id).images.icon.url  # type: ignore
+            except Exception:
+                pass
+            else:
                 async with session.get(enka_cdn) as resp:
+                    if resp.status == 200:
+                        avatar_img = await resp.read()
+            # 當從 Enkanetwork CDN 取得圖片失敗時改用 Ambr
+            if avatar_img is None:
+                icon_name = character.icon.split("/")[-1]  # UI_AvatarIcon_XXXX.png
+                ambr_url = "https://api.ambr.top/assets/UI/" + icon_name
+                async with session.get(ambr_url) as resp:
                     if resp.status == 200:
                         avatar_img = await resp.read()
         if avatar_img is None:
@@ -248,7 +255,7 @@ async def draw_character(
         else:
             with open(avatar_file, "wb") as fp:
                 fp.write(avatar_img)
-    avatar = Image.open(avatar_file).resize((size[0], size[0]))
+    avatar = Image.open(avatar_file).convert("RGBA").resize((size[0], size[0]))
     img.paste(background, pos, background)
     img.paste(avatar, pos, avatar)
 
