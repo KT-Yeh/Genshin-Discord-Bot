@@ -21,8 +21,8 @@ class Metrics:
     CHANNELS: Final[Gauge] = Gauge(PREFIX + "channels_total", "機器人所在的頻道總數量")
     """機器人所在的頻道總數量"""
 
-    USERS: Final[Gauge] = Gauge(PREFIX + "users_total", "機器人能看到的使用者總數量")
-    """機器人能看到的使用者總數量"""
+    USERS: Final[Gauge] = Gauge(PREFIX + "users_total", "機器人已註冊的使用者總數量")
+    """機器人已註冊的使用者總數量"""
 
     COMMANDS: Final[Gauge] = Gauge(PREFIX + "commands_total", "機器人能使用的指令的總數量")
     """機器人能使用的指令的總數量"""

@@ -23,17 +23,18 @@ class StageDetail(BaseModel):
 
 
 class Achievement(GenshinDbBase):
+    id: list[int]
     name: str
-    group: str = Field(alias="achievementgroup")
+    group: str = Field(alias="achievementGroupName")
     """此成就在哪個類別"""
-    sortorder: int
+    sort_order: int = Field(alias="sortOrder")
     """排序 ID"""
     stages: int
     """此成就總共幾階段"""
     stage_details: List[StageDetail]
     """此成就每階段的細節"""
 
-    ishidden: bool = False
+    ishidden: bool = Field(False, alias="isHidden")
     version: str
     """新增至遊戲當時的版本號碼"""
 
