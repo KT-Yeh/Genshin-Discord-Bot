@@ -1,3 +1,4 @@
+import re
 from typing import List, Optional
 
 from pydantic import BaseModel, Field
@@ -19,34 +20,42 @@ class AscendCosts(BaseModel):
     ascend6: Optional[List[AscendItem]] = None
 
 
+class Refine(BaseModel):
+    description: str
+    values: List[str]
+
+
 class Images(BaseModel):
     icon_url: Optional[str] = Field(None, alias="icon")
     awaken_icon_url: Optional[str] = Field(None, alias="awakenicon")
 
-    icon: str = Field(alias="nameicon")
-    gacha: str = Field(alias="namegacha")
-    awakenicon: str = Field(alias="nameawakenicon")
+    icon: str = Field(alias="filename_icon")
+    gacha: str = Field(alias="filename_gacha")
+    awakenicon: str = Field(alias="filename_awakenIcon")
 
 
 class Weapon(GenshinDbBase):
     name: str
     description: str
-    weapontype: str
+    weapontype: str = Field(alias="weaponText")
     rarity: int
     story: str
-    base_atk: int = Field(alias="baseatk")
+
+    base_atk: int = Field(alias="baseAtkValue")
     """初始基礎攻擊力"""
-    substat: str
-    subvalue: str
-    effect_name: str = Field(alias="effectname")
+    mainstat: Optional[str] = Field(None, alias="mainStatText")
+    mainvalue: Optional[str] = Field(None, alias="baseStatText")
+
+    effect_name: Optional[str] = Field(None, alias="effectName")
     """武器特效名稱(標題)"""
-    effect: str
+    effect_template: Optional[str] = Field(None, alias="effectTemplateRaw")
     """武器特效敘述，需搭配 r1, r2, ..., r5 數值使用"""
-    r1: List[str]
-    r2: List[str]
-    r3: List[str]
-    r4: List[str]
-    r5: List[str]
+    r1: Optional[Refine] = None
+    r2: Optional[Refine] = None
+    r3: Optional[Refine] = None
+    r4: Optional[Refine] = None
+    r5: Optional[Refine] = None
+
     ascend_costs: AscendCosts = Field(alias="costs")
     """突破所需素材"""
     images: Images
@@ -56,8 +65,19 @@ class Weapon(GenshinDbBase):
     @property
     def effect_desciption(self) -> str:
         """取得包含精煉數值的武器特效敘述"""
-        refines = [self.r1, self.r2, self.r3, self.r4, self.r5]
-        nums = len(self.r1)  # 要填的數值數量
+        if self.r1 is None or self.effect_template is None:
+            return ""
+        refines = [self.r1.values, [], [], [], []]
+        if self.r2:
+            refines[1] = self.r2.values
+        if self.r3:
+            refines[2] = self.r3.values
+        if self.r4:
+            refines[3] = self.r4.values
+        if self.r5:
+            refines[4] = self.r5.values
+
+        nums = len(self.r1.values)  # 要填的數值數量
         refine_values: List[str] = []
         # 將 r1~r5 數值合併成一個 str，然後放入 refine_values
         for i in range(nums):
@@ -67,7 +87,7 @@ class Weapon(GenshinDbBase):
                 if i < len(refines[j]):
                     refine_values[i] += f"/{refines[j][i]}"
 
-        result = self.effect
+        result = re.sub(r"<[^>]+>", "", self.effect_template)  # 移除 html tag
         for i in range(nums):
             # 將 {0}, {1}... 替換成對應數值
             result = result.replace(f"{{{i}}}", refine_values[i])

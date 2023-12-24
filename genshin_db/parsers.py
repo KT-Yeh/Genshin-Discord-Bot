@@ -135,10 +135,7 @@ class EquipmentParser:
     @classmethod
     def parse_weapon(cls, weapon: Weapon) -> discord.Embed:
         """解析武器內容，傳回 discord.Embed"""
-        description = (
-            f"基礎攻擊力：{weapon.base_atk}\n"
-            f"主屬性：{weapon.substat}+{weapon.subvalue}{'%' if weapon.subvalue != '元素精通' else ''}\n"
-        )
+        description = f"基礎攻擊力：{weapon.base_atk}\n主屬性：{weapon.mainstat}+{weapon.mainvalue}\n"
         embed = EmbedTemplate.normal(description, title=f"★{weapon.rarity} {weapon.name}")
         embed.add_field(name=weapon.effect_name, value=weapon.effect_desciption)
         embed.set_thumbnail(
@@ -196,13 +193,13 @@ class CharacterParser:
     def parse_talent(cls, talent: Talent) -> discord.Embed:
         """解析角色天賦內容，傳回 discord.Embed"""
         embed = EmbedTemplate.normal("", title=talent.name)
-        embed.add_field(name=talent.combat1.name, value=talent.combat1.info)
-        embed.add_field(name="E：" + talent.combat2.name, value=talent.combat2.info)
-        embed.add_field(name="Q：" + talent.combat3.name, value=talent.combat3.info)
-        embed.add_field(name="固有：" + talent.passive1.name, value=talent.passive1.info)
-        embed.add_field(name="固有：" + talent.passive2.name, value=talent.passive2.info)
+        embed.add_field(name=talent.combat1.name, value=talent.combat1.description)
+        embed.add_field(name="E：" + talent.combat2.name, value=talent.combat2.description)
+        embed.add_field(name="Q：" + talent.combat3.name, value=talent.combat3.description)
+        embed.add_field(name="固有：" + talent.passive1.name, value=talent.passive1.description)
+        embed.add_field(name="固有：" + talent.passive2.name, value=talent.passive2.description)
         if talent.passive3 is not None:
-            embed.add_field(name="固有：" + talent.passive3.name, value=talent.passive3.info)
+            embed.add_field(name="固有：" + talent.passive3.name, value=talent.passive3.description)
         return embed
 
     @classmethod
@@ -212,7 +209,7 @@ class CharacterParser:
         embed = EmbedTemplate.normal("", title=cst.name)
         csts = [cst.c1, cst.c2, cst.c3, cst.c4, cst.c5, cst.c6]
         for i, _cst in enumerate(csts):
-            embed.add_field(name=f"{i+1}命：{_cst.name}", value=_cst.effect)
+            embed.add_field(name=f"{i+1}命：{_cst.name}", value=_cst.description)
         return embed
 
 
@@ -251,7 +248,7 @@ class MaterialParser:
             name="屬性",
             value=f"類型：{material.material_type}\n"
             + (f"稀有度：{material.rarity}\n" if material.rarity else "")
-            + f"獲取來源：{'、'.join([s for s in material.source])}\n",
+            + f"獲取來源：{'、'.join([s for s in material.sources])}\n",
         )
 
         if material.drop_domain is not None and material.days_of_week is not None:

@@ -16,13 +16,13 @@ class Ingredient(BaseModel):
 
 
 class Images(BaseModel):
-    icon: str = Field(alias="nameicon")
+    icon: str = Field(alias="filename_icon")
 
 
 class Food(GenshinDbBase):
     name: str
     rarity: int
-    food_type: str = Field(alias="foodfilter")
+    food_type: str = Field(alias="filterText")
     """冒險類、恢復類、攻擊類、防禦類料理"""
     description: str
 

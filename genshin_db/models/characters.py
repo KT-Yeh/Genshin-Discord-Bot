@@ -2,6 +2,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field, validator
 
+from ..api import API
 from .base import GenshinDbBase, GenshinDbListBase
 from .enums import Element
 
@@ -28,16 +29,18 @@ class AscendCosts(BaseModel):
 
 
 class Images(BaseModel):
-    icon_url: str = Field(alias="icon")
-    sideicon_url: str = Field(alias="sideicon")
-    cover1_url: Optional[str] = Field(None, alias="cover1")
-    cover2_url: Optional[str] = Field(None, alias="cover2")
+    filename_icon: str
+    filename_gachaSplash: Optional[str] = None
 
-    icon: str = Field(alias="nameicon")
-    iconcard: str = Field(alias="nameiconcard")
-    sideicon: str = Field(alias="namesideicon")
-    gachasplash: Optional[str] = Field(None, alias="namegachasplash")
-    gachaslice: Optional[str] = Field(None, alias="namegachaslice")
+    @property
+    def icon_url(self) -> str:
+        return API.get_image_url(self.filename_icon)
+
+    @property
+    def cover1_url(self) -> str | None:
+        if self.filename_gachaSplash is None:
+            return None
+        return API.get_image_url(self.filename_gachaSplash)
 
 
 class Character(GenshinDbBase):
@@ -46,13 +49,12 @@ class Character(GenshinDbBase):
     """卡池稱號"""
     description: str
     rarity: int
-    element: Element
-    weapontype: str
-    substat: str
+    element: Element = Field(alias="elementText")
+    weapontype: str = Field(alias="weaponText")
+    substat: str = Field(alias="substatText")
     """突破加成屬性"""
 
     gender: str
-    body: str
     region: Optional[str] = None
     affiliation: Optional[str] = None
     birthdaymmdd: Optional[str] = None

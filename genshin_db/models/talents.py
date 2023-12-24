@@ -32,17 +32,15 @@ class Attributes(BaseModel):
 
 class Combat(BaseModel):
     name: str
-    info: str
+    description: str
     """天賦作用說明"""
-    description: Optional[str] = None
-    """故事描述"""
     attributes: Attributes
     """天賦詳細屬性、數值"""
 
 
 class Passive(BaseModel):
     name: str
-    info: str
+    description: str
 
 
 class CostItem(BaseModel):
@@ -62,16 +60,6 @@ class Costs(BaseModel):
     lvl10: List[CostItem]
 
 
-class Images(BaseModel):
-    combat1: str
-    combat2: str
-    combat3: str
-    combatsp: Optional[str] = None
-    passive1: str
-    passive2: str
-    passive3: Optional[str] = None
-
-
 class Talent(GenshinDbBase):
     name: str
     """角色名字"""
@@ -89,7 +77,6 @@ class Talent(GenshinDbBase):
     """生活被動天賦 (旅行者沒有此項目)"""
     costs: Costs
     """升級天賦花費素材"""
-    images: Images
     version: str
 
 

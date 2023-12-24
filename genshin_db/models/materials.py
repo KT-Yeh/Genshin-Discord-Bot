@@ -6,18 +6,16 @@ from .base import GenshinDbBase, GenshinDbListBase
 
 
 class Images(BaseModel):
-    icon: str = Field(alias="nameicon")
+    icon: str = Field(alias="filename_icon")
 
 
 class Material(GenshinDbBase):
     name: str
     description: str
-    sortorder: int
-    """排序 ID"""
     rarity: Optional[int] = None
     category: str
-    material_type: str = Field(alias="materialtype")
-    source: List[str]
+    material_type: str = Field(alias="typeText")
+    sources: List[str]
     """獲取來源"""
     images: Images
 
