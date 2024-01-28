@@ -9,7 +9,7 @@ from discord.ext import commands
 from utility import EmbedTemplate, config, custom_log
 
 from .ui_genshin import SpiralAbyssUI
-from .ui_starrail import ForgottenHallUI
+from .ui_starrail import ChooseAbyssModeButton, ForgottenHallUI
 
 
 class SpiralAbyssCog(commands.Cog, name="深境螺旋"):
@@ -43,7 +43,15 @@ class SpiralAbyssCog(commands.Cog, name="深境螺旋"):
             case genshin.Game.GENSHIN:
                 await SpiralAbyssUI.abyss(interaction, user or interaction.user, season)
             case genshin.Game.STARRAIL:
-                await ForgottenHallUI.launch(interaction, user or interaction.user, season)
+                # 選擇忘卻之庭、虛構敘事
+                view = ChooseAbyssModeButton()
+                await interaction.response.send_message(view=view)
+                await view.wait()
+
+                if view.value is None:
+                    return
+                mode = view.value
+                await ForgottenHallUI.launch(interaction, user or interaction.user, mode, season)
             case _:
                 return
 
