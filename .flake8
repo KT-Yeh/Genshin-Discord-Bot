@@ -1,10 +1,9 @@
 [flake8]
 
 # E203: Whitespace before ':'
+# E704: Multiple statements on one line
 # W503: Line break before binary operator
-ignore =
-    E203,
-    W503,
+extend-ignore = E203, E704, W503
 
 # F401: Module imported but unused
 # F403: Unable to detect undefined names
