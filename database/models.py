@@ -274,6 +274,42 @@ class StarrailForgottenHall(Base):
         return genshin.models.StarRailChallenge.parse_raw(data)
 
 
+class StarrailPureFiction(Base):
+    """星穹鐵道虛構敘事資料庫 Table"""
+
+    __tablename__ = "starrail_pure_fiction"
+
+    discord_id: Mapped[int] = mapped_column(primary_key=True)
+    """使用者 Discord ID"""
+    season: Mapped[int] = mapped_column(primary_key=True)
+    """虛構敘事期數"""
+    _raw_data: Mapped[bytes] = mapped_column()
+    """虛構敘事 bytes 資料"""
+
+    def __init__(self, discord_id: int, season: int, data: genshin.models.StarRailPureFiction):
+        """初始化星穹鐵道虛構敘事資料表的物件。
+
+        Parameters:
+        ------
+        discord_id: `int`
+            使用者 Discord ID。
+        season: `int`
+            虛構敘事期數。
+        data: `genshin.models.StarRailPureFiction`
+            genshin.py 虛構敘事資料。
+        """
+        json_str = data.json(by_alias=True, ensure_ascii=False)
+        self.discord_id = discord_id
+        self.season = season
+        self._raw_data = zlib.compress(json_str.encode("utf-8"), level=5)
+
+    @property
+    def data(self) -> genshin.models.StarRailPureFiction:
+        """genshin.py 虛構敘事資料"""
+        data = zlib.decompress(self._raw_data).decode("utf-8")
+        return genshin.models.StarRailPureFiction.parse_raw(data)
+
+
 class StarrailShowcase(Base):
     """星穹鐵道展示櫃資料庫 Table"""
 

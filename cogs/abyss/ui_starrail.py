@@ -1,24 +1,55 @@
-import asyncio
+import enum
 import typing
 
 import discord
 
 import genshin_py
-from database import Database, StarrailForgottenHall, User
+from database import Database, StarrailForgottenHall, StarrailPureFiction, User
 from utility import EmbedTemplate, config
 
 
+class AbyssMode(str, enum.Enum):
+    """星穹鐵道深淵模式"""
+
+    FORGOTTEN_HALL = "forgotten_hall"
+    """忘卻之庭"""
+    PURE_FICTION = "pure_fiction"
+    """虛構敘事"""
+
+
+# Make a discord button to choose which mode
+class ChooseAbyssModeButton(discord.ui.View):
+    """選擇星穹鐵道深淵模式的按鈕"""
+
+    def __init__(self):
+        super().__init__(timeout=config.discord_view_short_timeout)
+        self.value = None
+
+    @discord.ui.button(label="忘卻之庭", style=discord.ButtonStyle.blurple)
+    async def forgotten_hall(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        self.value = AbyssMode.FORGOTTEN_HALL
+        self.stop()
+
+    @discord.ui.button(label="虛構敘事", style=discord.ButtonStyle.blurple)
+    async def pure_fiction(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        self.value = AbyssMode.PURE_FICTION
+        self.stop()
+
+
 class HallRecordDropdown(discord.ui.Select):
-    """選擇忘卻之庭歷史紀錄的下拉選單"""
+    """選擇忘卻之庭、虛構敘事歷史紀錄的下拉選單"""
 
     def __init__(
         self,
         user: discord.User | discord.Member,
         nickname: str,
         uid: int,
-        hall_data_list: typing.Sequence[StarrailForgottenHall],
+        hall_data_list: typing.Sequence[StarrailForgottenHall]
+        | typing.Sequence[StarrailPureFiction],
     ):
-        hall_data_list = sorted(
+        sorted_hall_data_list = sorted(
             hall_data_list, key=lambda x: x.data.begin_time.datetime, reverse=True
         )
         options = [
@@ -27,13 +58,13 @@ class HallRecordDropdown(discord.ui.Select):
                 f"{hall.data.end_time.datetime.strftime('%Y.%m.%d')}] ★ {hall.data.total_stars}",
                 value=str(i),
             )
-            for i, hall in enumerate(hall_data_list)
+            for i, hall in enumerate(sorted_hall_data_list)
         ]
         super().__init__(placeholder="選擇期數：", options=options)
         self.user = user
         self.nickname = nickname
         self.uid = uid
-        self.hall_data_list = hall_data_list
+        self.hall_data_list = sorted_hall_data_list
 
     async def callback(self, interaction: discord.Interaction):
         await interaction.response.defer()
@@ -49,7 +80,7 @@ class HallRecordDropdown(discord.ui.Select):
 
 
 class HallFloorDropdown(discord.ui.Select):
-    """選擇忘卻之庭樓層的下拉選單"""
+    """選擇忘卻之庭、虛構敘事樓層的下拉選單"""
 
     def __init__(
         self,
@@ -57,7 +88,7 @@ class HallFloorDropdown(discord.ui.Select):
         avatar: bytes,
         nickname: str,
         uid: int,
-        hall_data: StarrailForgottenHall,
+        hall_data: StarrailForgottenHall | StarrailPureFiction,
         save_or_remove: typing.Literal["SAVE", "REMOVE"],
     ):
         # 第一個選項依據參數顯示為保存或是刪除紀錄
@@ -97,12 +128,12 @@ class HallFloorDropdown(discord.ui.Select):
                 if self.save_or_remove == "SAVE":
                     await Database.insert_or_replace(self.hall_data)
                     await interaction.response.send_message(
-                        embed=EmbedTemplate.normal("已儲存本次忘卻之庭紀錄"), ephemeral=True
+                        embed=EmbedTemplate.normal("已儲存本次挑戰紀錄"), ephemeral=True
                     )
                 else:  # self.save_or_remove == 'REMOVE'
                     await Database.delete_instance(self.hall_data)
                     await interaction.response.send_message(
-                        embed=EmbedTemplate.normal("已刪除本次忘卻之庭紀錄"), ephemeral=True
+                        embed=EmbedTemplate.normal("已刪除本次挑戰紀錄"), ephemeral=True
                     )
             else:
                 await interaction.response.send_message(
@@ -129,13 +160,17 @@ class ForgottenHallUI:
         user: discord.User | discord.Member,
         nickname: str,
         uid: int,
-        hall_data: StarrailForgottenHall,
+        hall_data: StarrailForgottenHall | StarrailPureFiction,
         *,
         view_item: discord.ui.Item | None = None,
     ):
+        if isinstance(hall_data, StarrailForgottenHall):
+            title = "忘卻之庭"
+        else:  # isinstance(hall_data, StarrailPureFiction)
+            title = "虛構敘事"
         hall = hall_data.data
         embed = genshin_py.parse_starrail_hall_overview(hall)
-        embed.title = f"{user.display_name} 的忘卻之庭戰績"
+        embed.title = f"{user.display_name} 的{title}戰績"
         embed.set_thumbnail(url=user.display_avatar.url)
         view = None
         if len(hall.floors) > 0:
@@ -152,15 +187,13 @@ class ForgottenHallUI:
     async def launch(
         interaction: discord.Interaction,
         user: discord.User | discord.Member,
+        mode: AbyssMode,
         season_choice: typing.Literal["THIS_SEASON", "PREVIOUS_SEASON", "HISTORICAL_RECORD"],
     ):
         try:
-            defer, userstats = await asyncio.gather(
-                interaction.response.defer(),
-                genshin_py.get_starrail_userstats(user.id),
-            )
+            userstats = await genshin_py.get_starrail_userstats(user.id)
         except Exception as e:
-            await interaction.edit_original_response(embed=EmbedTemplate.error(e))
+            await interaction.edit_original_response(embed=EmbedTemplate.error(e), view=None)
             return
 
         nickname = userstats.info.nickname
@@ -169,13 +202,20 @@ class ForgottenHallUI:
         uid = uid or 0
 
         if season_choice == "HISTORICAL_RECORD":  # 查詢歷史紀錄
-            hall_data_list = await Database.select_all(
-                StarrailForgottenHall,
-                StarrailForgottenHall.discord_id.is_(user.id),
-            )
+            if mode == AbyssMode.FORGOTTEN_HALL:
+                hall_data_list = await Database.select_all(
+                    StarrailForgottenHall,
+                    StarrailForgottenHall.discord_id.is_(user.id),
+                )
+            else:  # mode == AbyssMode.PURE_FICTION
+                hall_data_list = await Database.select_all(
+                    StarrailPureFiction,
+                    StarrailPureFiction.discord_id.is_(user.id),
+                )
             if len(hall_data_list) == 0:
                 await interaction.edit_original_response(
-                    embed=EmbedTemplate.normal("此使用者沒有保存任何歷史紀錄")
+                    embed=EmbedTemplate.normal("此使用者沒有保存任何歷史紀錄"),
+                    view=None,
                 )
             else:
                 view = discord.ui.View(timeout=config.discord_view_short_timeout)
@@ -183,11 +223,17 @@ class ForgottenHallUI:
                 await interaction.edit_original_response(view=view)
         else:  # 查詢 Hoyolab 紀錄 (THIS_SEASON、PREVIOUS_SEASON)
             try:
-                hall = await genshin_py.get_starrail_forgottenhall(
-                    user.id, (season_choice == "PREVIOUS_SEASON")
-                )
+                if mode == AbyssMode.FORGOTTEN_HALL:
+                    hall = await genshin_py.get_starrail_forgottenhall(
+                        user.id, (season_choice == "PREVIOUS_SEASON")
+                    )
+                    hall_data = StarrailForgottenHall(user.id, hall.season, hall)
+                else:  # mode == AbyssMode.PURE_FICTION
+                    hall = await genshin_py.get_starrail_pure_fiction(
+                        user.id, (season_choice == "PREVIOUS_SEASON")
+                    )
+                    hall_data = StarrailPureFiction(user.id, hall.season_id, hall)
             except Exception as e:
-                await interaction.edit_original_response(embed=EmbedTemplate.error(e))
+                await interaction.edit_original_response(embed=EmbedTemplate.error(e), view=None)
             else:
-                hall_data = StarrailForgottenHall(user.id, hall.season, hall)
                 await ForgottenHallUI.present(interaction, user, nickname, uid, hall_data)

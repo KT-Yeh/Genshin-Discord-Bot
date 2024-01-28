@@ -32,6 +32,14 @@ async def get_starrail_forgottenhall(
 
 
 @generalErrorHandler
+async def get_starrail_pure_fiction(
+    user_id: int, previous_season: bool = False
+) -> genshin.models.StarRailPureFiction:
+    client = await get_client(user_id, game=genshin.Game.STARRAIL)
+    return await client.get_starrail_pure_fiction(client.uid, previous=previous_season)
+
+
+@generalErrorHandler
 async def get_starrail_userstats(user_id: int) -> genshin.models.StarRailUserStats:
     client = await get_client(user_id, game=genshin.Game.STARRAIL)
     return await client.get_starrail_user(client.uid)
