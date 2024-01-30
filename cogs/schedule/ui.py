@@ -20,6 +20,10 @@ class DailyRewardOptionsView(discord.ui.View):
         """是否有崩壞3"""
         self.has_starrail: bool = False
         """是否有星穹鐵道"""
+        self.has_themis: bool = False
+        """是否有未定事件簿(國際服)"""
+        self.has_themis_tw: bool = False
+        """是否有未定事件簿(台服)"""
         self.hour: int = 8
         """每天簽到時間 (時：0 ~ 23)"""
         self.minute: int = 0
@@ -38,9 +42,11 @@ class DailyRewardOptionsView(discord.ui.View):
             discord.SelectOption(label="原神", value="原神"),
             discord.SelectOption(label="崩壞3", value="崩壞3"),
             discord.SelectOption(label="星穹鐵道", value="星穹鐵道"),
+            discord.SelectOption(label="未定事件簿(國際服)", value="未定事件簿(國際服)"),
+            discord.SelectOption(label="未定事件簿(台服)", value="未定事件簿(台服)"),
         ],
         min_values=1,
-        max_values=3,
+        max_values=5,
         placeholder="請選擇要簽到的遊戲(可多選)：",
     )
     async def select_games_callback(
@@ -54,6 +60,10 @@ class DailyRewardOptionsView(discord.ui.View):
             self.has_honkai3rd = True
         if "星穹鐵道" in self.selected_games:
             self.has_starrail = True
+        if "未定事件簿(國際服)" in self.selected_games:
+            self.has_themis = True
+        if "未定事件簿(台服)" in self.selected_games:
+            self.has_themis_tw = True
 
     @discord.ui.select(
         cls=discord.ui.Select,
