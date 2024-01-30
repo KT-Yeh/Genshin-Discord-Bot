@@ -103,7 +103,7 @@ class ScheduleCommandCog(commands.Cog, name="排程設定指令"):
                 options_view = DailyRewardOptionsView(interaction.user)
                 await interaction.response.send_message(
                     "請依序選擇：\n"
-                    "1. 要簽到的遊戲 (請選擇 1~3 項)\n"
+                    "1. 要簽到的遊戲 (可同時多選)\n"
                     "2. 要簽到的時間\n"
                     f"3. 簽到時希望小幫手 tag 你 ({interaction.user.mention}) 嗎？",
                     view=options_view,
@@ -127,6 +127,8 @@ class ScheduleCommandCog(commands.Cog, name="排程設定指令"):
                     has_genshin=options_view.has_genshin,
                     has_honkai3rd=options_view.has_honkai3rd,
                     has_starrail=options_view.has_starrail,
+                    has_themis=options_view.has_themis,
+                    has_themis_tw=options_view.has_themis_tw,
                 )
                 if checkin_user.next_checkin_time < datetime.now():
                     checkin_user.update_next_checkin_time()
