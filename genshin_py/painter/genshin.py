@@ -139,36 +139,39 @@ def draw_exploration_card(
     white = (255, 255, 255, 255)
     grey = (230, 230, 230, 255)
 
-    explored_list = [
-        ["蒙德", 0],
-        ["璃月", 0],
-        ["雪山", 0],
-        ["稻妻", 0],
-        ["淵下宮", 0],
-        ["層岩·表", 0],
-        ["層岩·底", 0],
-        ["須彌", 0],
-        ["楓丹", 0],
-    ]
+    explored_list = {  # {id: [地名, 探索度]}
+        1: ["蒙德", 0],
+        2: ["璃月", 0],
+        3: ["雪山", 0],
+        4: ["稻妻", 0],
+        5: ["淵下宮", 0],
+        6: ["層岩·表", 0],
+        7: ["層岩·底", 0],
+        8: ["須彌", 0],
+        9: ["楓丹", 0],
+        12: ["沉玉谷·南陵", 0],
+        13: ["沉玉谷·上谷", 0],
+    }
     offering_list = [["忍冬之樹", 0], ["神櫻眷顧", 0], ["流明石", 0], ["夢之樹", 0], ["露景泉", 0]]
-    for e in user_stats.explorations:
-        if e.id > len(explored_list):
-            continue
-        explored_list[e.id - 1][1] = e.explored
 
-        if e.id == 3 and len(e.offerings) >= 1:
+    for e in user_stats.explorations:
+        if e.id not in explored_list:
+            continue
+        explored_list[e.id][1] = e.explored
+
+        if e.id == 3 and len(e.offerings) >= 1:  # 3: 雪山
             offering_list[0][1] = e.offerings[0].level
-        if e.id == 4 and len(e.offerings) >= 2:
+        if e.id == 4 and len(e.offerings) >= 2:  # 4: 稻妻
             offering_list[1][1] = e.offerings[0].level
-        if e.id == 6 and len(e.offerings) >= 1:
+        if e.id == 6 and len(e.offerings) >= 1:  # 6: 層岩·表
             offering_list[2][1] = e.offerings[0].level
-        if e.id == 8 and len(e.offerings) >= 2:
+        if e.id == 8 and len(e.offerings) >= 2:  # 8: 須彌
             offering_list[3][1] = e.offerings[0].level
-        if e.id == 9 and len(e.offerings) >= 2:
+        if e.id == 9 and len(e.offerings) >= 2:  # 9: 楓丹
             offering_list[4][1] = e.offerings[0].level
 
-    stat_list: list[tuple[str, float, str]] = []
-    for e in explored_list:
+    stat_list: list[tuple[str, float, str]] = []  # (探索/等級, 數值, 地名)
+    for id, e in explored_list.items():
         stat_list.append(("探索", e[1], e[0]))
     for o in offering_list:
         stat_list.append(("等級", o[1], o[0]))
@@ -178,16 +181,16 @@ def draw_exploration_card(
         row = int(n / 3)
         draw_text(
             img,
-            (245 + column * 295, 590 + row * 250),
+            (245 + column * 295, 590 + row * 205),
             stat[0],
             "SourceHanSansTC-Regular.otf",
-            41,
+            30,
             grey,
             "mm",
         )
         draw_text(
             img,
-            (245 + column * 295, 661 + row * 250),
+            (245 + column * 295, 643 + row * 205),
             f"{stat[1]:g}",
             "SourceHanSansTC-Bold.otf",
             82,
@@ -196,7 +199,7 @@ def draw_exploration_card(
         )
         draw_text(
             img,
-            (245 + column * 295, 740 + row * 250),
+            (245 + column * 295, 710 + row * 205),
             stat[2],
             "SourceHanSansTC-Regular.otf",
             45,
