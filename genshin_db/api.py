@@ -7,10 +7,10 @@ import aiohttp
 class API:
     """genshin-db api，能夠取得遊戲內容 json 格式資料"""
 
-    GENSHIN_DB_URL: ClassVar[str] = "https://genshin-db-api.vercel.app/api/{folder}"
-    IMAGE_URL: ClassVar[
-        str
-    ] = "https://res.cloudinary.com/genshin/image/upload/sprites/{image}.png"
+    GENSHIN_DB_URL: ClassVar[str] = "https://genshin-db-api.vercel.app/api/v5/{folder}"
+    IMAGE_URL: ClassVar[str] = (
+        "https://res.cloudinary.com/genshin/image/upload/sprites/{image}.png"
+    )
 
     class GenshinDBLang(enum.Enum):
         """genshin-db api 支援的語言: https://genshin-db-api.vercel.app/api/languages"""
@@ -83,7 +83,9 @@ class API:
         async with aiohttp.ClientSession() as session:
             async with session.get(url, params=params) as response:
                 if response.status != 200:
-                    raise Exception(f"無法取得 genshin-db api 內容: url={url} params={str(params)}")
+                    raise Exception(
+                        f"無法取得 genshin-db api 內容: url={url} params={str(params)}"
+                    )
                 data = await response.json(encoding="utf-8")
                 return data
 

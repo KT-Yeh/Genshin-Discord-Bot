@@ -41,9 +41,9 @@ class CharacterCard(GenshinDbBase):
     max_energy: int = Field(alias="maxenergy")
     tags: list[str] = Field(alias="tagstext")
     """含有元素屬性、武器、陣營"""
-    story_title: str = Field(alias="storytitle")
-    story_text: str = Field(alias="storytext")
-    source: str
+    story_title: str | None = Field(alias="storytitle")
+    story_text: str | None = Field(alias="storytext")
+    source: str | None
     """獲取此卡牌的來源方式"""
     talents: list[Talent] = Field(alias="skills")
     images: Images

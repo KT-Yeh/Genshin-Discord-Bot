@@ -2,6 +2,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
+from ..api import API
 from .base import GenshinDbBase, GenshinDbListBase
 
 
@@ -13,11 +14,31 @@ class PartDetail(BaseModel):
 
 
 class Images(BaseModel):
-    flower_url: Optional[str] = Field(None, alias="flower")
-    plume_url: Optional[str] = Field(None, alias="plume")
-    sands_url: Optional[str] = Field(None, alias="sands")
-    goblet_url: Optional[str] = Field(None, alias="goblet")
-    circlet_url: str = Field(alias="circlet")
+    filename_flower: Optional[str]
+    filename_plume: Optional[str]
+    filename_sands: Optional[str]
+    filename_goblet: Optional[str]
+    filename_circlet: str
+
+    @property
+    def flower_url(self) -> Optional[str]:
+        return None if self.filename_flower is None else API.get_image_url(self.filename_flower)
+
+    @property
+    def plume_url(self) -> Optional[str]:
+        return None if self.filename_plume is None else API.get_image_url(self.filename_plume)
+
+    @property
+    def sands_url(self) -> Optional[str]:
+        return None if self.filename_sands is None else API.get_image_url(self.filename_sands)
+
+    @property
+    def goblet_url(self) -> Optional[str]:
+        return None if self.filename_goblet is None else API.get_image_url(self.filename_goblet)
+
+    @property
+    def circlet_url(self) -> str:
+        return API.get_image_url(self.filename_circlet)
 
 
 class Artifact(GenshinDbBase):
