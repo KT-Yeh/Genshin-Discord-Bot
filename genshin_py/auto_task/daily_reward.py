@@ -231,10 +231,10 @@ class DailyReward:
             _id = user.discord_channel_id
             channel = bot.get_channel(_id) or await bot.fetch_channel(_id)
             # 若不用@提及使用者，則先取得此使用者的名稱然後發送訊息
-            if user.is_mention is False:
+            if user.is_mention is False and "Cookie已失效" not in message:
                 _user = await bot.fetch_user(user.discord_id)
                 await channel.send(embed=EmbedTemplate.normal(f"[自動簽到] {_user.name}：{message}"))  # type: ignore
-            else:
+            else:  # 若需要@提及使用者或是 Cookie 已失效
                 await channel.send(f"<@{user.discord_id}>", embed=EmbedTemplate.normal(f"[自動簽到] {message}"))  # type: ignore
         except (
             discord.Forbidden,
