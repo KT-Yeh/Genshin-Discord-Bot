@@ -31,6 +31,8 @@ class DailyReward:
     """簽到崩壞3的人數 dict[host, count]"""
     _starrail_count: ClassVar[dict[str, int]] = {}
     """簽到星穹鐵道的人數 dict[host, count]"""
+    _themis_count: ClassVar[dict[str, int]] = {}
+    """簽到未定事件簿的人數 dict[host, count]"""
 
     @classmethod
     async def execute(cls, bot: commands.Bot):
@@ -116,6 +118,7 @@ class DailyReward:
         cls._total[host] = 0  # 初始化簽到人數
         cls._honkai_count[host] = 0  # 初始化簽到崩壞3的人數
         cls._starrail_count[host] = 0  # 初始化簽到星穹鐵道的人數
+        cls._themis_count[host] = 0  # 初始化簽到未定事件簿的人數
         MAX_API_ERROR_COUNT: Final[int] = 20  # 遠端 API 發生錯誤的最大次數
         api_error_count = 0  # 遠端 API 發生錯誤的次數
 
@@ -140,6 +143,7 @@ class DailyReward:
                     cls._total[host] += 1
                     cls._honkai_count[host] += int(user.has_honkai3rd)
                     cls._starrail_count[host] += int(user.has_starrail)
+                    cls._themis_count[host] += int(user.has_themis) + int(user.has_themis_tw)
                     await asyncio.sleep(config.schedule_loop_delay)
             finally:
                 queue.task_done()
@@ -174,6 +178,8 @@ class DailyReward:
                 has_genshin=user.has_genshin,
                 has_honkai3rd=user.has_honkai3rd,
                 has_starrail=user.has_starrail,
+                has_themis=user.has_themis,
+                has_themis_tw=user.has_themis_tw,
             )
             return message
         else:  # 遠端 API 簽到
@@ -194,9 +200,12 @@ class DailyReward:
                 "cookie_genshin": user_data.cookie_genshin,
                 "cookie_honkai3rd": user_data.cookie_honkai3rd,
                 "cookie_starrail": user_data.cookie_starrail,
+                "cookie_themis": user_data.cookie_themis,
                 "has_genshin": "true" if user.has_genshin else "false",
                 "has_honkai": "true" if user.has_honkai3rd else "false",
                 "has_starrail": "true" if user.has_starrail else "false",
+                "has_themis": "true" if user.has_themis else "false",
+                "has_themis_tw": "true" if user.has_themis_tw else "false",
             }
             if gt_challenge is not None:
                 payload.update(
@@ -222,10 +231,10 @@ class DailyReward:
             _id = user.discord_channel_id
             channel = bot.get_channel(_id) or await bot.fetch_channel(_id)
             # 若不用@提及使用者，則先取得此使用者的名稱然後發送訊息
-            if user.is_mention is False:
+            if user.is_mention is False and "Cookie已失效" not in message:
                 _user = await bot.fetch_user(user.discord_id)
                 await channel.send(embed=EmbedTemplate.normal(f"[自動簽到] {_user.name}：{message}"))  # type: ignore
-            else:
+            else:  # 若需要@提及使用者或是 Cookie 已失效
                 await channel.send(f"<@{user.discord_id}>", embed=EmbedTemplate.normal(f"[自動簽到] {message}"))  # type: ignore
         except (
             discord.Forbidden,

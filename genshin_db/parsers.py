@@ -54,7 +54,7 @@ class TCGCardParser:
     @classmethod
     def parse_character_card(cls, card: CharacterCard) -> discord.Embed:
         """解析角色牌內容，傳回 discord.Embed"""
-        embed = EmbedTemplate.normal(card.story_text, title=card.name)
+        embed = EmbedTemplate.normal(card.story_text or " ", title=card.name)
         embed.set_image(url=card.image_url)
         for talent in card.talents:
             _value = "花費：" + cls._parse_costs(talent.costs) + "\n"
@@ -135,7 +135,9 @@ class EquipmentParser:
     @classmethod
     def parse_weapon(cls, weapon: Weapon) -> discord.Embed:
         """解析武器內容，傳回 discord.Embed"""
-        description = f"基礎攻擊力：{weapon.base_atk}\n主屬性：{weapon.mainstat}+{weapon.mainvalue}\n"
+        description = (
+            f"基礎攻擊力：{weapon.base_atk}\n主屬性：{weapon.mainstat}+{weapon.mainvalue}\n"
+        )
         embed = EmbedTemplate.normal(description, title=f"★{weapon.rarity} {weapon.name}")
         embed.add_field(name=weapon.effect_name, value=weapon.effect_desciption)
         embed.set_thumbnail(
@@ -199,7 +201,9 @@ class CharacterParser:
         embed.add_field(name="固有：" + talent.passive1.name, value=talent.passive1.description)
         embed.add_field(name="固有：" + talent.passive2.name, value=talent.passive2.description)
         if talent.passive3 is not None:
-            embed.add_field(name="固有：" + talent.passive3.name, value=talent.passive3.description)
+            embed.add_field(
+                name="固有：" + talent.passive3.name, value=talent.passive3.description
+            )
         return embed
 
     @classmethod
@@ -229,7 +233,9 @@ class MaterialParser:
             embed.add_field(name="完美料理", value=food.delicious.effect)
         embed.add_field(
             name="屬性",
-            value=f"稀有度：{food.rarity}\n" + f"類型：{food.food_type}\n" + f"效果：{food.effect}\n",
+            value=f"稀有度：{food.rarity}\n"
+            + f"類型：{food.food_type}\n"
+            + f"效果：{food.effect}\n",
         )
         embed.add_field(
             name="材料",

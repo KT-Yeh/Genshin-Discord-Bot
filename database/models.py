@@ -35,6 +35,8 @@ class User(Base):
     """用來給崩壞3指令使用的 Hoyolab 或米游社網頁的 Cookie"""
     cookie_starrail: Mapped[str | None] = mapped_column(default=None)
     """用來給星穹鐵道指令使用的 Hoyolab 或米游社網頁的 Cookie"""
+    cookie_themis: Mapped[str | None] = mapped_column(default=None)
+    """用來給未定事件簿指令使用的 Hoyolab 或米游社網頁的 Cookie"""
 
     uid_genshin: Mapped[int | None] = mapped_column(default=None)
     """原神角色的 UID"""
@@ -64,6 +66,10 @@ class ScheduleDailyCheckin(Base):
     """是否要簽到崩壞3"""
     has_starrail: Mapped[bool] = mapped_column(default=False)
     """是否要簽到星穹鐵道"""
+    has_themis: Mapped[bool] = mapped_column(default=False)
+    """是否要簽到未定事件簿(國際服)"""
+    has_themis_tw: Mapped[bool] = mapped_column(default=False)
+    """是否要簽到未定事件簿(台服)"""
 
     def update_next_checkin_time(self) -> None:
         """將下次簽到時間更新為明日"""
@@ -272,6 +278,42 @@ class StarrailForgottenHall(Base):
         """genshin.py 忘卻之庭資料"""
         data = zlib.decompress(self._raw_data).decode("utf-8")
         return genshin.models.StarRailChallenge.parse_raw(data)
+
+
+class StarrailPureFiction(Base):
+    """星穹鐵道虛構敘事資料庫 Table"""
+
+    __tablename__ = "starrail_pure_fiction"
+
+    discord_id: Mapped[int] = mapped_column(primary_key=True)
+    """使用者 Discord ID"""
+    season: Mapped[int] = mapped_column(primary_key=True)
+    """虛構敘事期數"""
+    _raw_data: Mapped[bytes] = mapped_column()
+    """虛構敘事 bytes 資料"""
+
+    def __init__(self, discord_id: int, season: int, data: genshin.models.StarRailPureFiction):
+        """初始化星穹鐵道虛構敘事資料表的物件。
+
+        Parameters:
+        ------
+        discord_id: `int`
+            使用者 Discord ID。
+        season: `int`
+            虛構敘事期數。
+        data: `genshin.models.StarRailPureFiction`
+            genshin.py 虛構敘事資料。
+        """
+        json_str = data.json(by_alias=True, ensure_ascii=False)
+        self.discord_id = discord_id
+        self.season = season
+        self._raw_data = zlib.compress(json_str.encode("utf-8"), level=5)
+
+    @property
+    def data(self) -> genshin.models.StarRailPureFiction:
+        """genshin.py 虛構敘事資料"""
+        data = zlib.decompress(self._raw_data).decode("utf-8")
+        return genshin.models.StarRailPureFiction.parse_raw(data)
 
 
 class StarrailShowcase(Base):

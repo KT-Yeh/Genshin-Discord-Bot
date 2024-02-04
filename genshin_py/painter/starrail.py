@@ -37,8 +37,10 @@ async def draw_character(character: genshin.models.FloorCharacter) -> Image.Imag
     return background
 
 
-async def draw_floor(floor: genshin.models.StarRailFloor) -> Image.Image:
-    """畫忘卻之庭樓層"""
+async def draw_floor(
+    floor: genshin.models.StarRailFloor | genshin.models.FictionFloor,
+) -> Image.Image:
+    """畫忘卻之庭、虛構敘事樓層"""
     # Create a transparent image
     img = Image.new("RGBA", (1714, 270), (0, 0, 0, 0))
 
@@ -53,6 +55,17 @@ async def draw_floor(floor: genshin.models.StarRailFloor) -> Image.Image:
         (200, 200, 200),
         "rt",
     )
+    # 虛構敘事多了上下半分數
+    if isinstance(floor, genshin.models.FictionFloor):
+        draw_text(
+            img,
+            (1000, 5),
+            f"總分：{floor.score} ({floor.node_1.score} + {floor.node_2.score})",
+            "SourceHanSansTC-Regular.otf",
+            32,
+            (200, 200, 200),
+            "lt",
+        )
 
     # Draw floor characters
     character_width = 156
@@ -84,13 +97,21 @@ async def draw_starrail_forgottenhall_card(
     avatar_bytes: bytes,
     nickname: str,
     uid: int,
-    hall: genshin.models.StarRailChallenge,
-    floors: list[genshin.models.StarRailFloor],
+    hall: genshin.models.StarRailChallenge | genshin.models.StarRailPureFiction,
+    floors: list[genshin.models.StarRailFloor] | list[genshin.models.FictionFloor],
 ) -> BytesIO:
-    """畫忘卻之庭卡片"""
+    """畫忘卻之庭、虛構敘事卡片"""
     MAX_FLOOR_NUM = 3
     floors = floors[:MAX_FLOOR_NUM]
-    img = Image.open("data/image/forgotten_hall/bg.png").convert("RGBA")
+
+    if isinstance(hall, genshin.models.StarRailChallenge):
+        background_img_path = "data/image/forgotten_hall/bg.png"
+        title = "忘卻之庭"
+    elif isinstance(hall, genshin.models.StarRailPureFiction):
+        background_img_path = "data/image/forgotten_hall/bg_blue.png"
+        title = "虛構敘事"
+
+    img = Image.open(background_img_path).convert("RGBA")
 
     avatar: Image.Image = Image.open(BytesIO(avatar_bytes)).resize((160, 160), Image.LANCZOS)
     draw_avatar(img, avatar, (230, 55))
@@ -98,7 +119,7 @@ async def draw_starrail_forgottenhall_card(
     draw_text(
         img,
         (img.width / 2, 80),
-        f"{nickname} 忘卻之庭",
+        f"{nickname} {title}",
         "SourceHanSansTC-Bold.otf",
         38,
         (255, 198, 118),

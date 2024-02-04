@@ -14,10 +14,11 @@ beautifulsoup4 = "~=4.11"
 prometheus-client = "~=0.16"
 psutil = "~=5.9"
 "enkanetwork.py" = {git = "https://github.com/KT-Yeh/EnkaNetwork.py"}
-mihomo = {git = "https://github.com/KT-Yeh/mihomo"}
+mihomo = {git = "https://github.com/KT-Yeh/mihomo", ref = "v1.1.7"}
 sqlalchemy = {version = "~=2.0.16", extras = ["asyncio"]}
 python-dotenv = "~=1.0.0"
 alembic = "~=1.11.1"
+genshinpyrail = {ref = "gdb", git = "https://github.com/KT-Yeh/GenshinPyRail.git"}
 
 [dev-packages]
 black = "*"

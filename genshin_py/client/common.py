@@ -54,6 +54,12 @@ async def get_client(
             cookie = user.cookie_starrail or user.cookie_default
             if str(uid)[0] in ["1", "2", "5"]:
                 client = genshin.Client(region=genshin.Region.CHINESE, lang="zh-cn")
+        case genshin.Game.THEMIS:
+            uid = 0
+            cookie = user.cookie_themis or user.cookie_default
+        case genshin.Game.THEMIS_TW:
+            uid = 0
+            cookie = user.cookie_themis or user.cookie_default
         case _:
             uid = 0
             cookie = user.cookie_default
@@ -148,6 +154,9 @@ async def set_cookie(user_id: int, cookie: str, games: Sequence[genshin.Game]) -
         if len(sr_accounts) > 1:
             character_list.append(f"{len(sr_accounts)}名星穹鐵道角色")
 
+    if genshin.Game.THEMIS in games:
+        user.cookie_themis = cookie
+
     await Database.insert_or_replace(user)
     LOG.Info(f"{LOG.User(user_id)} Cookie設置成功")
 
@@ -167,6 +176,8 @@ async def claim_daily_reward(
     has_genshin: bool = False,
     has_honkai3rd: bool = False,
     has_starrail: bool = False,
+    has_themis: bool = False,
+    has_themis_tw: bool = False,
     is_geetest: bool = False,
 ) -> str:
     """為使用者在 Hoyolab 簽到
@@ -181,6 +192,10 @@ async def claim_daily_reward(
         是否簽到崩壞3
     has_starrail: `bool`
         是否簽到星穹鐵道
+    has_themis: `bool`
+        是否簽到未定事件簿(國際服)
+    has_themis_tw: `bool`
+        是否簽到未定事件簿(台服)
     is_geetest: `bool`
         是否要設定 Geetest 驗證，若 True 的話返回設定網頁連結
 
@@ -204,7 +219,7 @@ async def claim_daily_reward(
         LOG.FuncExceptionLog(user_id, "claimDailyReward: Hoyolab", e)
 
     # 遊戲簽到
-    if any([has_genshin, has_honkai3rd, has_starrail]) is False:
+    if any([has_genshin, has_honkai3rd, has_starrail, has_themis, has_themis_tw]) is False:
         return "未選擇任何遊戲簽到"
 
     # 使用者保存的 geetest 驗證資料
@@ -229,6 +244,12 @@ async def claim_daily_reward(
         result += await _claim_reward(
             user_id, client, genshin.Game.STARRAIL, is_geetest, challenge
         )
+    if has_themis:
+        client = await get_client(user_id, game=genshin.Game.THEMIS, check_uid=False)
+        result += await _claim_reward(user_id, client, genshin.Game.THEMIS)
+    if has_themis_tw:
+        client = await get_client(user_id, game=genshin.Game.THEMIS_TW, check_uid=False)
+        result += await _claim_reward(user_id, client, genshin.Game.THEMIS_TW)
 
     return result
 
@@ -246,6 +267,8 @@ async def _claim_reward(
         genshin.Game.GENSHIN: "原神",
         genshin.Game.HONKAI: "崩壞3",
         genshin.Game.STARRAIL: "星穹鐵道",
+        genshin.Game.THEMIS: "未定事件簿(國)",
+        genshin.Game.THEMIS_TW: "未定事件簿(台)",
     }
 
     try:

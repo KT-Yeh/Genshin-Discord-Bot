@@ -17,9 +17,10 @@ class GameSelectionView(discord.ui.View):
             discord.SelectOption(label="原神", value="genshin"),
             discord.SelectOption(label="崩壞3", value="honkai3rd"),
             discord.SelectOption(label="星穹鐵道", value="hkrpg"),
+            discord.SelectOption(label="未定事件簿", value="tot"),
         ],
         min_values=1,
-        max_values=3,
+        max_values=4,
         placeholder="請選擇遊戲 (可多選)：",
     )
     async def select_callback(self, interaction: discord.Interaction, select: discord.ui.Select):
@@ -57,6 +58,15 @@ class CookieModal(discord.ui.Modal, title="提交Cookie"):
         max_length=150,
     )
 
+    ltmid_v2: discord.ui.TextInput[discord.ui.Modal] = discord.ui.TextInput(
+        label="ltmid_v2",
+        placeholder="請貼上取得的 ltmid_v2",
+        style=discord.TextStyle.short,
+        required=False,
+        min_length=5,
+        max_length=20,
+    )
+
     def __init__(self, games: list[genshin.Game]):
         self.games: list[genshin.Game] = games
         super().__init__()
@@ -79,6 +89,8 @@ class CookieModal(discord.ui.Modal, title="提交Cookie"):
                 cookie += f" ltuid{v2_str}={self.ltuid_v2.value};"
             else:  # ltuid_v2 不是數字，可能是 ltmid_v2
                 cookie += f" ltmid_v2={self.ltuid_v2.value};"
+        if len(self.ltmid_v2.value) > 0:
+            cookie += f" ltmid_v2={self.ltmid_v2.value};"
 
         LOG.Info(f"設定 {LOG.User(interaction.user)} 的Cookie：{self.cookie.value}")
         try:

@@ -23,6 +23,8 @@ class DailyCheckinCog(commands.Cog, name="每日簽到"):
             Choice(name="原神", value="原神"),
             Choice(name="崩壞3", value="崩壞3"),
             Choice(name="星穹鐵道", value="星穹鐵道"),
+            Choice(name="未定事件簿(台服)", value="未定事件簿(台服)"),
+            Choice(name="未定事件簿(國際服)", value="未定事件簿(國際服)"),
         ]
     )
     @app_commands.choices(
@@ -35,7 +37,7 @@ class DailyCheckinCog(commands.Cog, name="每日簽到"):
     async def slash_daily(
         self,
         interaction: discord.Interaction,
-        game: Literal["原神", "崩壞3", "星穹鐵道"],
+        game: Literal["原神", "崩壞3", "星穹鐵道", "未定事件簿(台服)", "未定事件簿(國際服)"],
         is_geetest: Literal["是", "否"] = "否",
         user: Optional[discord.User] = None,
     ):
@@ -43,6 +45,8 @@ class DailyCheckinCog(commands.Cog, name="每日簽到"):
             "has_genshin": True if game == "原神" else False,
             "has_honkai3rd": True if game == "崩壞3" else False,
             "has_starrail": True if game == "星穹鐵道" else False,
+            "has_themis": True if game == "未定事件簿(國際服)" else False,
+            "has_themis_tw": True if game == "未定事件簿(台服)" else False,
             "is_geetest": True if is_geetest == "是" else False,
         }
 

@@ -1,9 +1,12 @@
 import asyncio
+import io
 
 import discord
 import genshin
 from discord import app_commands
 from discord.ext import commands
+from genshinpyrail.genshinpyrail import genshin_character_list, honkai_character_list
+from genshinpyrail.src.tools.model import GenshinCharterList, StarRaillCharterList
 
 import genshin_py
 from utility import EmbedTemplate
@@ -44,9 +47,35 @@ class CharactersCog(commands.Cog, name="角色一覽"):
                     return
         except Exception as e:
             await interaction.edit_original_response(embed=EmbedTemplate.error(e))
-        else:
+            return
+
+        try:
+            # 使用 genshinpyrail 產生圖片
+            match game:
+                case genshin.Game.GENSHIN:
+                    data = await genshin_character_list.Creat(characters).start()
+                    image = GenshinCharterList(**data).card
+                case genshin.Game.STARRAIL:
+                    data = await honkai_character_list.Creat(characters).start()
+                    image = StarRaillCharterList(**data).card
+            if image is None:
+                raise ValueError("沒有圖片")
+        except Exception:
+            # 文字呈現
             view = DropdownView(interaction.user, characters)
             await interaction.edit_original_response(content="請選擇角色：", view=view)
+            return
+        else:
+            # 圖片呈現
+            fp = io.BytesIO()
+            image = image.convert("RGB")
+            image.save(fp, "jpeg", optimize=True, quality=90)
+            fp.seek(0)
+            embed = EmbedTemplate.normal(f"{interaction.user.display_name} 的角色一覽")
+            embed.set_image(url="attachment://image.jpeg")
+            await interaction.edit_original_response(
+                embed=embed, attachments=[discord.File(fp, "image.jpeg")]
+            )
 
 
 async def setup(client: commands.Bot):

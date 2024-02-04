@@ -9,6 +9,7 @@ from .models import (
     GenshinSpiralAbyss,
     ScheduleDailyCheckin,
     StarrailForgottenHall,
+    StarrailPureFiction,
     StarrailScheduleNotes,
     StarrailShowcase,
     User,
