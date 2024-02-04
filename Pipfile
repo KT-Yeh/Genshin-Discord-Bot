@@ -18,6 +18,7 @@ mihomo = {git = "https://github.com/KT-Yeh/mihomo", ref = "v1.1.7"}
 sqlalchemy = {version = "~=2.0.16", extras = ["asyncio"]}
 python-dotenv = "~=1.0.0"
 alembic = "~=1.11.1"
+genshinpyrail = {ref = "gdb", git = "https://github.com/KT-Yeh/GenshinPyRail.git"}
 
 [dev-packages]
 black = "*"
