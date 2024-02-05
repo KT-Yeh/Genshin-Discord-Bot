@@ -22,7 +22,8 @@ class CharactersCog(commands.Cog, name="角色一覽"):
         self.bot = bot
 
     @app_commands.command(name="character角色一覽", description="公開展示我的所有角色")
-    @app_commands.rename(game="遊戲")
+    @app_commands.rename(game="遊戲", user="使用者")
+    @app_commands.describe(game="選擇遊戲", user="查詢其他成員的資料，不填寫則查詢自己")
     @app_commands.choices(
         game=[
             app_commands.Choice(name="原神", value="genshin"),
@@ -30,18 +31,24 @@ class CharactersCog(commands.Cog, name="角色一覽"):
         ],
     )
     @SlashCommandLogger
-    async def slash_characters(self, interaction: discord.Interaction, game: genshin.Game):
+    async def slash_characters(
+        self,
+        interaction: discord.Interaction,
+        game: genshin.Game,
+        user: discord.User | discord.Member | None = None,
+    ):
+        user = user or interaction.user
         try:
             match game:
                 case genshin.Game.GENSHIN:
                     defer, characters = await asyncio.gather(
                         interaction.response.defer(),
-                        genshin_py.get_genshin_characters(interaction.user.id),
+                        genshin_py.get_genshin_characters(user.id),
                     )
                 case genshin.Game.STARRAIL:
                     defer, characters = await asyncio.gather(
                         interaction.response.defer(),
-                        genshin_py.get_starrail_characters(interaction.user.id),
+                        genshin_py.get_starrail_characters(user.id),
                     )
                 case _:
                     return
@@ -62,7 +69,7 @@ class CharactersCog(commands.Cog, name="角色一覽"):
                 raise ValueError("沒有圖片")
         except Exception:
             # 文字呈現
-            view = DropdownView(interaction.user, characters)
+            view = DropdownView(user, characters)
             await interaction.edit_original_response(content="請選擇角色：", view=view)
             return
         else:
@@ -71,7 +78,7 @@ class CharactersCog(commands.Cog, name="角色一覽"):
             image = image.convert("RGB")
             image.save(fp, "jpeg", optimize=True, quality=90)
             fp.seek(0)
-            embed = EmbedTemplate.normal(f"{interaction.user.display_name} 的角色一覽")
+            embed = EmbedTemplate.normal(f"{user.display_name} 的角色一覽")
             embed.set_image(url="attachment://image.jpeg")
             await interaction.edit_original_response(
                 embed=embed, attachments=[discord.File(fp, "image.jpeg")]
