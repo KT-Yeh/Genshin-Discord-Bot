@@ -31,15 +31,6 @@ class GameSelectionView(discord.ui.View):
 class CookieModal(discord.ui.Modal, title="提交Cookie"):
     """提交 Cookie 的表單"""
 
-    cookie: discord.ui.TextInput[discord.ui.Modal] = discord.ui.TextInput(
-        label="Cookie",
-        placeholder='請貼上從網頁上取得的Cookie，取得方式請使用指令 "/cookie設定 顯示說明如何取得Cookie"',
-        style=discord.TextStyle.long,
-        required=False,
-        min_length=50,
-        max_length=2000,
-    )
-
     ltuid_v2: discord.ui.TextInput[discord.ui.Modal] = discord.ui.TextInput(
         label="ltuid_v2",
         placeholder="請貼上取得的 ltuid_v2",
@@ -65,6 +56,15 @@ class CookieModal(discord.ui.Modal, title="提交Cookie"):
         required=False,
         min_length=5,
         max_length=20,
+    )
+
+    cookie: discord.ui.TextInput[discord.ui.Modal] = discord.ui.TextInput(
+        label="Cookie",
+        placeholder="非特殊需求本欄請保持空白，此處用來貼完整的 Cookie 字串",
+        style=discord.TextStyle.long,
+        required=False,
+        min_length=50,
+        max_length=2000,
     )
 
     def __init__(self, games: list[genshin.Game]):

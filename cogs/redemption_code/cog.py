@@ -19,14 +19,16 @@ async def redeem(
     # 匹配多組兌換碼並存成list
     codes = re.findall(r"[A-Za-z0-9]{5,30}", code)
     if len(codes) == 0:
-        await interaction.response.send_message(embed=EmbedTemplate.error("沒有偵測到兌換碼，請重新輸入"))
+        await interaction.response.send_message(
+            embed=EmbedTemplate.error("沒有偵測到兌換碼，請重新輸入")
+        )
         return
 
     codes = codes[:5] if len(codes) > 5 else codes  # 避免使用者輸入過多內容
-    msg = "請點下列連結兌換：\n> "
+    msg = "請點下列連結兌換：\n"
     for i, code in enumerate(codes):
         game_host = {genshin.Game.GENSHIN: "genshin", genshin.Game.STARRAIL: "hsr"}
-        msg += f"{i+1}. [{code}](https://{game_host.get(game)}.hoyoverse.com/gift?code={code})\n"
+        msg += f"> {i+1}. [{code}](https://{game_host.get(game)}.hoyoverse.com/gift?code={code})\n"
 
     embed = discord.Embed(color=0x8FCE00, description=msg)
     await interaction.response.send_message(embed=embed)

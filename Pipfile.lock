@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "46f38ab79e80f1f7827b8f7529f8c13afc05ae78436031905d9c8c7c374a38a3"
+            "sha256": "547f42a8f6569591590a6dcebbf1171d17eff3be25a1b90a7783ecde68cd9025"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -287,12 +287,12 @@
         "genshin": {
             "git": "https://github.com/KT-Yeh/genshin.py",
             "markers": "python_version >= '3.8'",
-            "ref": "9a5762d8dbbeb8cbb893a6542a173ef220452a87"
+            "ref": "e1e68d3620f5159be587e22acc423cabe1573ceb"
         },
         "genshinpyrail": {
             "git": "https://github.com/KT-Yeh/GenshinPyRail.git",
             "markers": "python_version >= '3.7' and python_version < '4.0'",
-            "ref": "583928eb7b395e9f4d64202dd31ced4b654b69d0"
+            "ref": "92404351659a8c50f6aa23e5768106790ad7bf43"
         },
         "greenlet": {
             "hashes": [
