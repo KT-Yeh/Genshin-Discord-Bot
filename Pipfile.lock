@@ -287,7 +287,7 @@
         "genshin": {
             "git": "https://github.com/KT-Yeh/genshin.py",
             "markers": "python_version >= '3.8'",
-            "ref": "e1e68d3620f5159be587e22acc423cabe1573ceb"
+            "ref": "454ac3400aaa5cbde2fd381cae9c348356a72762"
         },
         "genshinpyrail": {
             "git": "https://github.com/KT-Yeh/GenshinPyRail.git",
@@ -715,11 +715,11 @@
         },
         "sentry-sdk": {
             "hashes": [
-                "sha256:34ad8cfc9b877aaa2a8eb86bfe5296a467fffe0619b931a05b181c45f6da59bf",
-                "sha256:78575620331186d32f34b7ece6edea97ce751f58df822547d3ab85517881a27a"
+                "sha256:696ef61a323a207e6a20b018ddc6591adb81c671434c88d1a4f2e95ffa75556c",
+                "sha256:c98c8e9bb4dc8ff1e67473caf6467acfccf915dadcc26d0efb0d6791a8652610"
             ],
             "index": "pypi",
-            "version": "==1.40.0"
+            "version": "==1.40.2"
         },
         "six": {
             "hashes": [
@@ -1028,12 +1028,12 @@
         },
         "ipykernel": {
             "hashes": [
-                "sha256:076663ca68492576f051e4af7720d33f34383e655f2be0d544c8b1c9de915b2f",
-                "sha256:b5dd3013cab7b330df712891c96cd1ab868c27a7159e606f762015e9bf8ceb3f"
+                "sha256:1547352b32da95a2761011a8dac2af930c26a0703dfa07690d16b7d74dac0ba1",
+                "sha256:e5dfba210fc9da74a5dae8fa6c41f816e11bd18d10381b2517d9a0d57cc987c4"
             ],
             "index": "pypi",
             "markers": "python_version >= '3.8'",
-            "version": "==6.29.0"
+            "version": "==6.29.1"
         },
         "ipython": {
             "hashes": [
