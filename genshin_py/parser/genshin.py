@@ -1,4 +1,4 @@
-from typing import Sequence, Union
+from typing import Sequence, Union, List, Tuple
 
 import discord
 import genshin
@@ -164,10 +164,9 @@ def parse_genshin_diary(diary: genshin.models.Diary, month: int) -> discord.Embe
 
 async def parse_genshin_notes(
     notes: genshin.models.Notes,
-    *,
     user: Union[discord.User, discord.Member, None] = None,
     short_form: bool = False,
-) -> discord.Embed:
+) -> Tuple[discord.Embed, List[discord.Embed]]:
     """解析即時便箋的資料，將內容排版成discord嵌入格式回傳
 
     ------
@@ -179,6 +178,8 @@ async def parse_genshin_notes(
     Returns
     `discord.Embed`: discord嵌入格式
     """
+    main_embed = None
+    expedition_embeds = []
     # 原粹樹脂
     resin_title = f"{emoji.notes.resin}當前原粹樹脂：{notes.current_resin}/{notes.max_resin}\n"
     if notes.current_resin >= notes.max_resin:
@@ -223,18 +224,27 @@ async def parse_genshin_notes(
             recover_time = "可使用"
         resin_msg += f"{emoji.notes.transformer}參數質變儀　：{recover_time}\n"
     # 探索派遣剩餘時間
-    exped_finished = 0
-    exped_msg = ""
+    
+    exped_finished=0
+    expedition_embed = discord.Embed(color=0x28C828)
     for expedition in notes.expeditions:
-        exped_msg += "． "
+        exped_finished += 1
         if expedition.finished:
-            exped_finished += 1
-            exped_msg += "已完成\n"
+            expedition_embed.add_field(
+                name=f"{emoji.notes.expedition}探險已完成：{exped_finished}/{len(notes.expeditions)}\n",
+                value=f"在遊戲中收集獎勵。",
+                inline=False,
+            )
         else:
-            day_msg = get_day_of_week(expedition.completion_time)
-            exped_msg += f'{day_msg} {expedition.completion_time.strftime("%H:%M")}\n'
-
-    exped_title = f"{emoji.notes.expedition}探索派遣結果：{exped_finished}/{len(notes.expeditions)}\n"
+            character_icon_url = expedition.character_icon
+            expedition_embed = discord.Embed(color=0xFF0000)
+            expedition_embed.add_field(
+                name=f"{emoji.notes.expedition} 探險剩餘時間",
+                value=f"完成時間: {expedition.completion_time.strftime('%A %H:%M')}",
+                inline=False,
+            )
+            expedition_embed.set_thumbnail(url=character_icon_url)
+            expedition_embeds.append(expedition_embed)
 
     # 根據樹脂數量，以80作分界，embed顏色從綠色(0x28c828)漸變到黃色(0xc8c828)，再漸變到紅色(0xc82828)
     r = notes.current_resin
@@ -243,19 +253,15 @@ async def parse_genshin_notes(
         if r < 80
         else 0xC8C828 - 0x000100 * int(0xA0 * (r - 80) / 80)
     )
-    embed = discord.Embed(color=color)
+    main_embed = discord.Embed(color=color)
 
-    if (not short_form) and (exped_msg != ""):
-        embed.add_field(name=resin_title, value=resin_msg)
-        embed.add_field(name=exped_title, value=exped_msg)
-    else:
-        embed.add_field(name=resin_title, value=(resin_msg + exped_title))
+    main_embed.add_field(name=resin_title, value=(resin_msg))
 
     if user is not None:
         _u = await Database.select_one(User, User.discord_id.is_(user.id))
         uid = str(_u.uid_genshin if _u else "")
-        embed.set_author(
-            name=f"原神 {get_server_name(uid[0])} {uid}",
+        main_embed.set_author(
+            name=f"{get_server_name(uid[0])} {uid}",
             icon_url=user.display_avatar.url,
         )
-    return embed
+    return main_embed, expedition_embeds
