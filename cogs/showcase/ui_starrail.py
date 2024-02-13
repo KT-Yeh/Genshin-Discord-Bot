@@ -1,4 +1,4 @@
-from typing import Any, Callable
+from typing import Any
 
 import discord
 import sentry_sdk
