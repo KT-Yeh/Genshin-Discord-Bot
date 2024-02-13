@@ -3,10 +3,12 @@ import json
 from typing import Tuple
 
 import discord
+from cachetools import LRUCache
 from honkairail.src.tools.modalV2 import StarRailApiDataV2
 from hsrcard.hsr import HonkaiCard
 from mihomo import MihomoAPI, StarrailInfoParsed
 from mihomo import tools as mihomo_tools
+from PIL.Image import Image
 
 from database import Database, StarrailShowcase
 
@@ -18,6 +20,7 @@ class Showcase:
         self.uid = uid
         self.client = MihomoAPI()
         self.data: StarrailInfoParsed
+        self.image_cache: LRUCache[int, Image] = LRUCache(maxsize=10)
         self.is_cached_data: bool = False
 
     async def load_data(self) -> None:
@@ -79,13 +82,17 @@ class Showcase:
         embed = self.get_default_embed(index)
         embed.set_thumbnail(url=None)
 
-        data_dict = self.data.dict(by_alias=True)
-        data_dict["player"]["space_info"] = {}
-        data_hsrcard = StarRailApiDataV2.parse_raw(json.dumps(data_dict, ensure_ascii=False))
+        if self.image_cache.get(index) is not None:
+            image = self.image_cache.get(index)
+        else:
+            data_dict = self.data.dict(by_alias=True)
+            data_dict["player"]["space_info"] = {}
+            data_hsrcard = StarRailApiDataV2.parse_raw(json.dumps(data_dict, ensure_ascii=False))
 
-        async with HonkaiCard(lang="cht") as card_creater:
-            result = await card_creater.creat(self.uid, data_hsrcard, index)
-            image = result.card[0].card
+            async with HonkaiCard(lang="cht") as card_creater:
+                result = await card_creater.creat(self.uid, data_hsrcard, index)
+                image = result.card[0].card
+            self.image_cache[index] = image
 
         fp = io.BytesIO()
         image = image.convert("RGB")
