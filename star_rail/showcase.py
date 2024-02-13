@@ -3,7 +3,7 @@ import json
 from typing import Tuple
 
 import discord
-from cachetools import LRUCache, cached
+from cachetools import LRUCache
 from honkairail.src.tools.modalV2 import StarRailApiDataV2
 from hsrcard.hsr import HonkaiCard
 from mihomo import MihomoAPI, StarrailInfoParsed
