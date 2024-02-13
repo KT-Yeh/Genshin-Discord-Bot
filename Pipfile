@@ -19,6 +19,8 @@ sqlalchemy = {version = "~=2.0.16", extras = ["asyncio"]}
 python-dotenv = "~=1.0.0"
 alembic = "~=1.11.1"
 genshinpyrail = {ref = "gdb", git = "https://github.com/KT-Yeh/GenshinPyRail.git"}
+honkairail = "~=1.1"
+hsrcard = {ref = "gdb", git = "https://github.com/KT-Yeh/HSRCard.git"}
 
 [dev-packages]
 black = "*"

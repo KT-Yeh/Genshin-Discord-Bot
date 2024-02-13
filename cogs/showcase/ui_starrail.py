@@ -24,7 +24,7 @@ class ShowcaseCharactersDropdown(discord.ui.Select):
                 discord.SelectOption(
                     label=f"★{character.rarity} Lv.{character.level} {character.name}",
                     value=str(i),
-                    emoji=emoji.starrail_elements.get(character.element),
+                    emoji=emoji.starrail_elements.get(character.element.name),
                 )
             )
         options.append(discord.SelectOption(label="刪除角色快取資料", value="-2", emoji="❌"))
@@ -33,9 +33,10 @@ class ShowcaseCharactersDropdown(discord.ui.Select):
     async def callback(self, interaction: discord.Interaction) -> None:
         index = int(self.values[0])
         if index >= 0:  # 角色資料
-            embed = self.showcase.get_character_stat_embed(index)
-            await interaction.response.edit_message(
-                embed=embed, view=ShowcaseView(self.showcase, index)
+            await interaction.response.defer()
+            embed, file = await self.showcase.get_character_card_embed_file(index)
+            await interaction.edit_original_response(
+                embed=embed, view=ShowcaseView(self.showcase, index), attachments=[file]
             )
         elif index == -1:  # 玩家資料一覽
             embed = self.showcase.get_player_overview_embed()
@@ -66,15 +67,34 @@ class ShowcaseCharactersDropdown(discord.ui.Select):
 class ShowcaseButton(discord.ui.Button):
     """角色展示櫃按鈕"""
 
-    def __init__(self, label: str, function: Callable[..., discord.Embed], *args, **kwargs):
+    def __init__(self, label: str, showcase: Showcase, chatacter_index: int):
         super().__init__(style=discord.ButtonStyle.primary, label=label)
-        self.callback_func = function
-        self.callback_args = args
-        self.callback_kwargs = kwargs
+        self.label = label
+        self.showcase = showcase
+        self.character_index = chatacter_index
 
     async def callback(self, interaction: discord.Interaction) -> Any:
-        embed = self.callback_func(*self.callback_args, **self.callback_kwargs)
-        await interaction.response.edit_message(embed=embed, attachments=[])
+        match self.label:
+            case "圖片":
+                await interaction.response.defer()
+                try:
+                    embed, file = await self.showcase.get_character_card_embed_file(
+                        self.character_index
+                    )
+                except Exception:
+                    embed = self.showcase.get_character_stat_embed(self.character_index)
+                    await interaction.edit_original_response(embed=embed, attachments=[])
+                else:
+                    await interaction.edit_original_response(embed=embed, attachments=[file])
+            case "面板":
+                embed = self.showcase.get_character_stat_embed(self.character_index)
+                await interaction.response.edit_message(embed=embed, attachments=[])
+            case "遺器":
+                embed = self.showcase.get_relic_stat_embed(self.character_index)
+                await interaction.response.edit_message(embed=embed, attachments=[])
+            case "詞條":
+                embed = self.showcase.get_relic_score_embed(self.character_index)
+                await interaction.response.edit_message(embed=embed, attachments=[])
 
 
 class ShowcaseView(discord.ui.View):
@@ -83,9 +103,10 @@ class ShowcaseView(discord.ui.View):
     def __init__(self, showcase: Showcase, character_index: int | None = None):
         super().__init__(timeout=config.discord_view_long_timeout)
         if character_index is not None:
-            self.add_item(ShowcaseButton("面板", showcase.get_character_stat_embed, character_index))
-            self.add_item(ShowcaseButton("遺器", showcase.get_relic_stat_embed, character_index))
-            self.add_item(ShowcaseButton("詞條", showcase.get_relic_score_embed, character_index))
+            self.add_item(ShowcaseButton("圖片", showcase, character_index))
+            self.add_item(ShowcaseButton("面板", showcase, character_index))
+            self.add_item(ShowcaseButton("遺器", showcase, character_index))
+            self.add_item(ShowcaseButton("詞條", showcase, character_index))
 
         if len(showcase.data.characters) > 0:
             self.add_item(ShowcaseCharactersDropdown(showcase))
