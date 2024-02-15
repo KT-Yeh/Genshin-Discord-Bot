@@ -76,7 +76,8 @@ async def parse_starrail_notes(
     return embed
 
 
-def parse_starrail_diary(diary: genshin.models.StarRailDiary, month: int) -> discord.Embed: ...
+def parse_starrail_diary(diary: genshin.models.StarRailDiary, month: int) -> discord.Embed:
+    ...
 
 
 def parse_starrail_character(character: genshin.models.StarRailDetailCharacter) -> discord.Embed:
@@ -108,11 +109,7 @@ def parse_starrail_character(character: genshin.models.StarRailDetailCharacter) 
     if character.rank > 0:
         number = {1: "一", 2: "二", 3: "三", 4: "四", 5: "五", 6: "六"}
         msg = "\n".join(
-            [
-                f"第{number[rank.pos]}層：{rank.name}"
-                for rank in character.ranks
-                if rank.is_unlocked
-            ]
+            [f"第{number[rank.pos]}層：{rank.name}" for rank in character.ranks if rank.is_unlocked]
         )
         embed.add_field(name="星魂", inline=False, value=msg)
 
