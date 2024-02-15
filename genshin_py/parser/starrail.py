@@ -135,11 +135,26 @@ def parse_starrail_character(character: genshin.models.StarRailDetailCharacter) 
     return embed
 
 
-def parse_starrail_hall_overview(hall: genshin.models.StarRailChallenge) -> discord.Embed:
+def parse_starrail_hall_overview(
+    hall: genshin.models.StarRailChallenge | genshin.models.StarRailPureFiction,
+) -> discord.Embed:
     """解析星穹鐵道忘卻之庭概述資料，包含關卡進度、戰鬥次數、獲得星數、期數"""
-    has_crown: bool = hall.total_battles == 10 and hall.total_stars == 30
-    desc: str = f"{hall.begin_time.datetime.strftime('%Y.%m.%d')} ~ {hall.end_time.datetime.strftime('%Y.%m.%d')}\n"
+    # 檢查皇冠資格
+    has_crown: bool = False
+    if isinstance(hall, genshin.models.StarRailChallenge):
+        if hall.total_stars == 36:
+            non_skip_battles = [floor.is_fast for floor in hall.floors].count(False)
+            has_crown = hall.total_battles == non_skip_battles
+    else:  # isinstance(hall, genshin.models.StarRailPureFiction)
+        if hall.total_stars == 12:
+            non_skip_battles = [floor.is_fast for floor in hall.floors].count(False)
+            has_crown = hall.total_battles == non_skip_battles
+    battle_nums = f"👑 ({hall.total_battles})" if has_crown else hall.total_battles
+
+    desc: str = (
+        f"{hall.begin_time.datetime.strftime('%Y.%m.%d')} ~ {hall.end_time.datetime.strftime('%Y.%m.%d')}\n"
+    )
     desc += f"關卡進度：{hall.max_floor}\n"
-    desc += f"戰鬥次數：{'👑 (10)' if has_crown else hall.total_battles}　★：{hall.total_stars}\n"
+    desc += f"戰鬥次數：{battle_nums}　★：{hall.total_stars}\n"
     embed = discord.Embed(description=desc, color=0x934151)
     return embed
