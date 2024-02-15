@@ -5,7 +5,7 @@ import zlib
 
 import genshin
 import sqlalchemy
-from mihomo import StarrailInfoParsedV1
+from mihomo import StarrailInfoParsed
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 
 from .dataclass import spiral_abyss
@@ -326,14 +326,14 @@ class StarrailShowcase(Base):
     _raw_data: Mapped[bytes]
     """展示櫃 bytes 資料"""
 
-    def __init__(self, uid: int, data: StarrailInfoParsedV1):
+    def __init__(self, uid: int, data: StarrailInfoParsed):
         """初始化星穹鐵道展示櫃資料表的物件。
 
         Parameters:
         ------
         uid: `int`
             星穹鐵道 UID。
-        data: `StarrailInfoParsedV1`
+        data: `StarrailInfoParsed`
             Mihomo API 資料。
         """
         json_str = data.json(by_alias=True)
@@ -341,7 +341,7 @@ class StarrailShowcase(Base):
         self._raw_data = zlib.compress(json_str.encode("utf-8"), level=5)
 
     @property
-    def data(self) -> StarrailInfoParsedV1:
+    def data(self) -> StarrailInfoParsed:
         """Mihomo API 資料"""
         data = zlib.decompress(self._raw_data).decode("utf-8")
-        return StarrailInfoParsedV1.parse_raw(data)
+        return StarrailInfoParsed.parse_raw(data)

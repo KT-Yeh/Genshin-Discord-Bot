@@ -11,23 +11,28 @@ Discord 支援伺服器：https://discord.gg/myugWxgRjd
 
 ## 簡介
 使用機器人直接在 Discord 聊天頻道內查看原神、星穹鐵道內各項資訊，包含：
-- 查詢**即時便箋**
-    - 原神：包含樹脂、洞天寶錢、參數質變儀、探索派遣完成時間...等
-    - 星穹鐵道：包含開拓力、委託執行
-- 每日早上 8 點開始 Hoyolab **自動簽到** (包含簽到**崩壞3**、**星穹鐵道**)
-- **自動檢查即時便箋 (原神、星鐵)**、樹脂 (開拓力)、寶錢、質變儀、探索派遣，當快額滿時發送提醒
-- 查詢深境螺旋紀錄
-- 查詢旅行者札記
-- 個人紀錄卡片（遊戲天數、成就、神瞳、世界探索度...等等）
-- 查詢任意玩家的原神/星穹鐵道**角色展示櫃**，顯示展示櫃內角色的面板、聖遺物詳情
-- 查看原神遊戲內公告，包含活動、卡池資訊
-- 採用新的斜線指令，輸入 / 自動彈出指令提示，不需要記憶任何指令的使用方式
 
+- 原神、崩壞3、星穹鐵道、未定事件簿：
+    - **自動簽到**：設定時間每天自動幫你簽到 Hoyolab 領獎
+
+- 原神、星穹鐵道：
+    - 查詢**即時便箋**
+        - 原神：包含樹脂、每日委託、洞天寶錢、參數質變儀、探索派遣
+        - 星穹鐵道：包含開拓力、每日實訓、模擬宇宙、歷戰餘響、委託執行
+    - **自動檢查即時便箋**：樹脂 (開拓力)、每日、寶錢、質變儀、探索派遣，當快額滿時發送提醒
+    - 查詢深境螺旋、忘卻之庭、虛構敘事紀錄，並可以保存每一期紀錄
+    - 查詢任意玩家的**角色展示櫃**，顯示展示櫃內角色的面板、聖遺物詳情
+
+- 原神： 
+    - 個人紀錄卡片，包含遊戲天數、成就、神瞳、世界探索度...等等
+    - 查詢旅行者札記
+    - 查看遊戲內公告，包含活動、卡池資訊
+    - 搜尋資料庫，包含角色、武器、各項物品、成就、七聖卡牌資料
 
 ## 使用方式
 - 邀請到自己伺服器後，輸入斜線 `/` 查看各項指令
 - 第一次請先使用指令 `/cookie設定`，Cookie 取得方式：https://bit.ly/3LgQkg0
-- 設定自動簽到與樹脂提醒，使用指令 `/schedule排程`
+- 設定自動簽到與即時便箋提醒，使用指令 `/schedule排程`
 
 ## 展示
 更多展示圖片、GIF 請參考巴哈介紹文章：https://forum.gamer.com.tw/Co.php?bsn=36730&sn=162433
@@ -47,6 +52,7 @@ Genshin-Discord-Bot
 ├── cogs_external= 存放自訂的 discord.py cog 資料夾，你可以將自己指令的檔案放在這裡
 ├── configs      = 存放設定檔的資料夾
 ├── database     = SQLAlchemy ORM、資料庫操作相關的程式碼
+|   ├── alembic  =   = 資料庫結構變動版本控制
 |   ├── dataclass    = 自定義的 data class
 |   └── legacy       = 以前的資料庫程式碼，用來遷移舊資料之外沒有用
 ├── enka_network = 與 Enka Network API 相關的程式碼
@@ -114,14 +120,14 @@ Genshin-Discord-Bot
 
 接下來沒特別說明都以 Windows、使用 Powershell 來說明
 
-2. 找到你想放資料的地方，建立機器人資料夾 `Genshin-Discord-Bot`，然後進入
+2. 找到你想放資料的地方，建立新資料夾 `Genshin-Discord-Bot`，然後進入
 
 3. 下載 [docker-compose.yml](https://github.com/KT-Yeh/Genshin-Discord-Bot/blob/master/docker-compose.yml) 檔案，放在資料夾內
 
 4. 文字編輯器開啟 `docker-compose.yml` 檔案，基本上都不用動，只要把你剛剛在 [#網頁端](#網頁端) 拿到的三個資料填入底下三個欄位即可，其他設定可根據自己的需求再改，完成後保存
-    - APPLICATION_ID=123456789
-    - TEST_SERVER_ID=123456789
-    - BOT_TOKEN=ABCD123456789
+    - APPLICATION_ID=`123456789`
+    - TEST_SERVER_ID=`123456789`
+    - BOT_TOKEN=`ABCD123456789`
 
 5. 在此資料夾開啟 Powershell，輸入底下命令即可運行
 ```
@@ -140,7 +146,9 @@ Windows 右下角的鯨魚圖示打開 Docker Desktop 可以隨時管理機器�
 註3：若要在多個伺服器間使用，請在你機器人的私訊頻道內輸入 `$jsk sync`，並等待（約幾分鐘）Discord 將指令推送，稱為「全域同步」。
 
 
-#### 從 v1.2.1 版升級上來
+#### 從舊版 v1.2.1 版升級上來 (新安裝者不用看)
+
+<details><summary>>>> 點此查看完整內容 <<<</summary>
 
 1. 建立新的資料夾 `Genshin-Discord-Bot`，一樣先照上面做到第 4 步驟
 2. 將舊版的 `data` 資料夾內的資料：`bot.db` (`emoji.json`)，複製到新資料夾對應位置
@@ -159,6 +167,10 @@ Genshin-Discord-Bot/
     - Linux：`sudo docker run -v $(pwd)/data:/app/data ghcr.io/kt-yeh/genshin-discord-bot:latest python main.py --migrate_database`
 5. 完成變更資料庫後，執行 `docker-compose up` 即可開始運行機器人
 
+</details>
+
+---
+
 ### 檔案說明 & 資料備份
 成功運行機器人後，你的資料夾結構應該是這樣：
 ```
@@ -175,7 +187,7 @@ Genshin-Discord-Bot/
         ├── grafana_dashboard.json = grafana 面板設定檔案 
         └── prometheus.yml         = prometheus 伺服器設定擋
 ```
-資料都放在 `data` 資料夾內，備份整個資料夾即可
+資料都放在 `data` 資料夾內，備份整個資料夾即可；還原的時候將備份的資料覆蓋回 `data` 資料夾即可
 
 ### 如何更新
 當專案有更新時，到 `Genshin-Discord-Bot` 目錄開啟 Powershell
@@ -293,8 +305,17 @@ remote_write:
 </details>
 
 ## 致謝
-- 原神 API 使用自: https://github.com/thesadru/genshin.py
-- Discord API 使用自: https://github.com/Rapptz/discord.py
-- Enka Network API 使用自: https://github.com/EnkaNetwork/API-docs
-- Genshin-DB API 使用自: https://github.com/theBowja/genshin-db
-- d.py-ext-prometheus: https://github.com/Apollo-Roboto/discord.py-ext-prometheus
+API：
+- Hoyolab: https://github.com/thesadru/genshin.py
+- Discord: https://github.com/Rapptz/discord.py
+- Enka Network: https://github.com/EnkaNetwork/API-docs
+- Mihomo: https://march7th.xiaohei.moe/en/resource/mihomo_api.html
+- Genshin-DB: https://github.com/theBowja/genshin-db
+
+Card：
+- [hattvr/enka-card](https://github.com/hattvr/enka-card)
+- [DEViantUA/HSRCard](https://github.com/DEViantUA/HSRCard)
+- [DEViantUA/GenshinPyRail](https://github.com/DEViantUA/GenshinPyRail)
+
+Misc：
+- [Apollo-Roboto/discord.py-ext-prometheus](https://github.com/Apollo-Roboto/discord.py-ext-prometheus)

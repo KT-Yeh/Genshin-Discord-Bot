@@ -6,7 +6,7 @@ name = "pypi"
 [packages]
 genshin = {ref = "gdb", git = "https://github.com/KT-Yeh/genshin.py"}
 "discord.py" = "~=2.2"
-pillow = "~=9.4"
+pillow = "~=10.2.0"
 sentry-sdk = "~=1.16"
 jishaku = "~=2.5"
 aiosqlite = "~=0.18"
@@ -14,11 +14,13 @@ beautifulsoup4 = "~=4.11"
 prometheus-client = "~=0.16"
 psutil = "~=5.9"
 "enkanetwork.py" = {git = "https://github.com/KT-Yeh/EnkaNetwork.py"}
-mihomo = {git = "https://github.com/KT-Yeh/mihomo", ref = "v1.1.7"}
+mihomo = {git = "https://github.com/KT-Yeh/mihomo", ref = "pydantic-v1"}
 sqlalchemy = {version = "~=2.0.16", extras = ["asyncio"]}
 python-dotenv = "~=1.0.0"
 alembic = "~=1.11.1"
 genshinpyrail = {ref = "gdb", git = "https://github.com/KT-Yeh/GenshinPyRail.git"}
+honkairail = "~=1.1"
+hsrcard = {ref = "gdb", git = "https://github.com/KT-Yeh/HSRCard.git"}
 
 [dev-packages]
 black = "*"

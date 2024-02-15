@@ -1,6 +1,14 @@
+import io
+import json
+from typing import Tuple
+
 import discord
-from mihomo import MihomoAPI, StarrailInfoParsedV1
+from cachetools import LRUCache
+from honkairail.src.tools.modalV2 import StarRailApiDataV2
+from hsrcard.hsr import HonkaiCard
+from mihomo import MihomoAPI, StarrailInfoParsed
 from mihomo import tools as mihomo_tools
+from PIL.Image import Image
 
 from database import Database, StarrailShowcase
 
@@ -11,7 +19,8 @@ class Showcase:
     def __init__(self, uid: int) -> None:
         self.uid = uid
         self.client = MihomoAPI()
-        self.data: StarrailInfoParsedV1
+        self.data: StarrailInfoParsed
+        self.image_cache: LRUCache[int, Image] = LRUCache(maxsize=10)
         self.is_cached_data: bool = False
 
     async def load_data(self) -> None:
@@ -21,11 +30,11 @@ class Showcase:
         srshowcase = await Database.select_one(
             StarrailShowcase, StarrailShowcase.uid.is_(self.uid)
         )
-        cached_data: StarrailInfoParsedV1 | None = None
+        cached_data: StarrailInfoParsed | None = None
         if srshowcase:
             cached_data = srshowcase.data
         try:
-            new_data = await self.client.fetch_user_v1(self.uid)
+            new_data = await self.client.fetch_user(self.uid)
         except Exception as e:
             # 無法從 API 取得時，改用資料庫資料，若兩者都沒有則拋出錯誤
             if cached_data is None:
@@ -43,21 +52,19 @@ class Showcase:
         """取得玩家基本資料的嵌入訊息"""
 
         player = self.data.player
-        player_details = self.data.player_details
 
         description = (
             f"「{player.signature}」\n"
             f"開拓等級：{player.level}\n"
-            f"邂逅角色：{player_details.characters}\n"
-            f"達成成就：{player_details.achievements}\n"
-            f"模擬宇宙：第 {player_details.simulated_universes} 世界通過\n"
+            f"邂逅角色：{player.characters}\n"
+            f"達成成就：{player.achievements}\n"
         )
 
         if self.is_cached_data is True:
             description += "(目前無法連接 API，顯示的為快取資料)\n"
 
         embed = discord.Embed(title=player.name, description=description)
-        embed.set_thumbnail(url=self.client.get_icon_url(player.icon))
+        embed.set_thumbnail(url=self.client.get_icon_url(player.avatar.icon))
 
         if len(self.data.characters) > 0:
             icon = self.data.characters[0].portrait
@@ -66,6 +73,35 @@ class Showcase:
         embed.set_footer(text=f"UID：{player.uid}")
 
         return embed
+
+    async def get_character_card_embed_file(
+        self, index: int
+    ) -> Tuple[discord.Embed, discord.File]:
+        """取得角色的卡片資料"""
+
+        embed = self.get_default_embed(index)
+        embed.set_thumbnail(url=None)
+
+        if self.image_cache.get(index) is not None:
+            image = self.image_cache.get(index)
+        else:
+            data_dict = self.data.dict(by_alias=True)
+            data_dict["player"]["space_info"] = {}
+            data_hsrcard = StarRailApiDataV2.parse_raw(json.dumps(data_dict, ensure_ascii=False))
+
+            async with HonkaiCard(lang="cht") as card_creater:
+                result = await card_creater.creat(self.uid, data_hsrcard, index)
+                image = result.card[0].card
+            self.image_cache[index] = image
+
+        fp = io.BytesIO()
+        image = image.convert("RGB")
+        image.save(fp, "jpeg", optimize=True, quality=90)
+        fp.seek(0)
+
+        embed.set_image(url="attachment://image.jpeg")
+        file = discord.File(fp, "image.jpeg")
+        return (embed, file)
 
     def get_character_stat_embed(self, index: int) -> discord.Embed:
         """取得角色屬性資料的嵌入訊息"""
@@ -91,20 +127,43 @@ class Showcase:
         embed.add_field(
             name="技能",
             value="\n".join(
-                f"{trace.type}：Lv. {trace.level}"
+                f"{trace.type_text}：Lv. {trace.level}"
                 for trace in character.traces
-                if trace.type != "秘技"
+                if trace.type_text != "" and trace.type_text != "秘技"
             ),
             inline=False,
         )
         # 人物屬性
+        attr_dict = {
+            "生命值": [0.0, 0.0],
+            "攻擊力": [0.0, 0.0],
+            "防禦力": [0.0, 0.0],
+            "速度": [0.0, 0.0],
+            "暴擊率": [5.0, 0.0],
+            "暴擊傷害": [50.0, 0.0],
+            "能量恢復效率": [100.0, 0.0],
+        }
+        for stat in character.attributes:
+            if stat.name not in attr_dict:
+                attr_dict[stat.name] = [0.0, 0.0]
+            attr_dict[stat.name][0] += stat.value * 100 if stat.is_percent else stat.value
+
+        for stat in character.additions:
+            if stat.name not in attr_dict:
+                attr_dict[stat.name] = [0.0, 0.0]
+            attr_dict[stat.name][1] += stat.value * 100 if stat.is_percent else stat.value
+
+        # 將傷害提高應用到所有屬性的傷害提高
+        if "傷害提高" in attr_dict:
+            v = attr_dict["傷害提高"][0] + attr_dict["傷害提高"][1]
+            del attr_dict["傷害提高"]
+            for key in attr_dict:
+                if "傷害提高" in key:
+                    attr_dict[key][1] += v
+
         value = ""
-        for stat in character.stats:
-            if stat.addition is not None:
-                total = int(stat.base) + int(stat.addition)
-                value += f"{stat.name}：{total} ({stat.base} +{stat.addition})\n"
-            else:
-                value += f"{stat.name}：{stat.base}\n"
+        for k, v in attr_dict.items():
+            value += f"{k}：{round(v[0] + v[1], 1)}\n"
         embed.add_field(name="屬性面板", value=value, inline=False)
 
         return embed
@@ -122,11 +181,13 @@ class Showcase:
         for relic in character.relics:
             # 主詞條
             name = (
-                relic.main_property.name.removesuffix("傷害提高").removesuffix("效率").removesuffix("加成")
+                relic.main_affix.name.removesuffix("傷害提高")
+                .removesuffix("效率")
+                .removesuffix("加成")
             )
-            value = f"★{relic.rarity}{name}+{relic.main_property.value}\n"
-            for prop in relic.sub_property:
-                value += f"{prop.name}+{prop.value}\n"
+            value = f"★{relic.rarity}{name}+{relic.main_affix.displayed_value}\n"
+            for prop in relic.sub_affixes:
+                value += f"{prop.name}+{prop.displayed_value}\n"
 
             embed.add_field(name=relic.name, value=value)
 
@@ -156,18 +217,26 @@ class Showcase:
         }
         crit_value: float = 0.0  # 雙爆分
 
-        base_hp = float(next(s for s in character.stats if s.name == "生命值").base)  # 生命白值
-        base_atk = float(next(s for s in character.stats if s.name == "攻擊力").base)  # 攻擊白值
-        base_def = float(next(s for s in character.stats if s.name == "防禦力").base)  # 防禦白值
+        base_hp = float(
+            next(s for s in character.attributes if s.name == "生命值").value
+        )  # 生命白值
+        base_atk = float(
+            next(s for s in character.attributes if s.name == "攻擊力").value
+        )  # 攻擊白值
+        base_def = float(
+            next(s for s in character.attributes if s.name == "防禦力").value
+        )  # 防禦白值
 
         for relic in relics:
-            main = relic.main_property
+            main = relic.main_affix
             if main.name == "暴擊率":
-                crit_value += float(main.value.removesuffix("%")) * 2
+                crit_value += float(main.value) * 100 * 2
             if main.name == "暴擊傷害":
-                crit_value += float(main.value.removesuffix("%"))
-            for prop in relic.sub_property:
-                v = prop.value
+                crit_value += float(main.value) * 100
+            for prop in relic.sub_affixes:
+                v = prop.displayed_value
+                if v is None:
+                    continue
                 match prop.name:
                     case "生命值":
                         p = float(v.removesuffix("%")) if v.endswith("%") else float(v) / base_hp
@@ -239,15 +308,14 @@ class Showcase:
         }
         embed = discord.Embed(
             title=f"★{character.rarity} {character.name}",
-            color=color.get(character.element),
+            color=color.get(character.element.name),
         )
         embed.set_thumbnail(url=self.client.get_icon_url(character.icon))
 
         player = self.data.player
         embed.set_author(
             name=f"{player.name} 的角色展示櫃",
-            url=f"https://api.mihomo.me/sr_panel/{player.uid}?lang=cht&chara_index={index}",
-            icon_url=self.client.get_icon_url(player.icon),
+            icon_url=self.client.get_icon_url(player.avatar.icon),
         )
         embed.set_footer(text=f"{player.name}．Lv. {player.level}．UID: {player.uid}")
 
