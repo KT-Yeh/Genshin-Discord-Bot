@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import discord
 import genshin
 
@@ -142,7 +144,9 @@ def parse_starrail_hall_overview(
     # 檢查皇冠資格
     has_crown: bool = False
     if isinstance(hall, genshin.models.StarRailChallenge):
-        if hall.total_stars == 36:
+        # 忘卻之庭 2023/12/20 前為 10 層，之後為 12 層
+        max_stars = 30 if hall.begin_time.datetime < datetime(2023, 12, 20) else 36
+        if hall.total_stars == max_stars:
             non_skip_battles = [floor.is_fast for floor in hall.floors].count(False)
             has_crown = hall.total_battles == non_skip_battles
     else:  # isinstance(hall, genshin.models.StarRailPureFiction)
