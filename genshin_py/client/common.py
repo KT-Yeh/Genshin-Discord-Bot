@@ -170,6 +170,38 @@ async def set_cookie(user_id: int, cookie: str, games: Sequence[genshin.Game]) -
     return result
 
 
+@generalErrorHandler
+async def redeem_code(
+    user_id: int, client: genshin.Client, code: str, game: genshin.Game = genshin.Game.GENSHIN
+) -> str:
+    """為使用者使用指定的兌換碼
+
+    Parameters
+    ------
+    user_id: `int`
+        使用者 Discord ID
+    client: `genshin.Client`
+        genshin.py 的 client
+    code: `str`
+        Hoyolab 兌換碼
+    game: `genshin.Game`
+        要兌換的遊戲
+    Returns
+    ------
+    `str`
+        回覆給使用者的訊息
+    """
+    try:
+        await client.redeem_code(code, client.uids.get(game), game=game)
+    except genshin.errors.GenshinException as e:
+        if "兌換碼" in e.original:  # genshin.py 只有對英文的 redemption 做處理
+            raise genshin.errors.RedemptionException(
+                {"retcode": e.retcode, "message": e.original}, e.msg
+            ) from e
+        raise
+    return "兌換碼使用成功！"
+
+
 async def claim_daily_reward(
     user_id: int,
     *,

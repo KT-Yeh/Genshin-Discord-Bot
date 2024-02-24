@@ -31,7 +31,7 @@ class CookieSettingCog(commands.Cog, name="Cookie 設定"):
                 "**2.** 按 **F12** 打開瀏覽器開發者工具\n"
                 "**3.** 切換至 **應用程式 (Application)** 頁面 (參考下圖)\n"
                 "**4.** 點選左邊 Cookies 底下的網址，右邊就會看到你的 Cookie\n"
-                "**5.** 找到 **ltuid_v2**、**ltoken_v2**、**ltmid_v2**，複製這三個欄位的值\n"
+                "**5.** 找到 **ltuid_v2**、**ltoken_v2**、**ltmid_v2**，**account_id_v2**,**cookie_token_v2**, 複製這三個欄位的值\n"
                 f"**6.** 在這裡使用指令 {get_app_command_mention('cookie設定')} 貼到對應的欄位\n"
                 "． 遇到問題嗎？點 >>[詳細教學](https://hackmd.io/66fq-6NsT1Kqxqbpkj1xTA)<< 查看解決方法\n",
                 title="原神小幫手 | 取得Cookie說明",
@@ -53,7 +53,7 @@ class CookieSettingCog(commands.Cog, name="Cookie 設定"):
             msg = (
                 "· Cookie的內容包含你個人的識別代碼，不包含帳號與密碼\n"
                 "· 因此無法用來登入遊戲，也無法更改帳密，Cookie內容大概長這樣："
-                "`ltoken_v2=xxxx ltuid_v2=1234 ltmid_v2=yyyy`\n"
+                "`ltoken_v2=xxxx ltuid_v2=1234 ltmid_v2=yyyy cookie_token_v2=xxxx account_id_v2=1234`\n"
                 "· 小幫手保存並使用Cookie是為了在Hoyolab網站上取得你的原神資料並提供服務\n"
                 "· 小幫手將資料保存於雲端主機獨立環境，只與Discord、Hoyolab伺服器連線\n"
                 "· 更詳細說明可以到 [巴哈說明文](https://forum.gamer.com.tw/Co.php?bsn=36730&sn=162433) 查看，"

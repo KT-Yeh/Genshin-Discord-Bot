@@ -40,13 +40,13 @@ class CookieModal(discord.ui.Modal, title="提交Cookie"):
         max_length=20,
     )
 
-    ltoken_v2: discord.ui.TextInput[discord.ui.Modal] = discord.ui.TextInput(
-        label="ltoken_v2",
-        placeholder="請貼上取得的 ltoken_v2",
+    account_id_v2: discord.ui.TextInput[discord.ui.Modal] = discord.ui.TextInput(
+        label="account_id_v2",
+        placeholder="請貼上取得的 account_id_v2",
         style=discord.TextStyle.short,
         required=False,
-        min_length=30,
-        max_length=150,
+        min_length=5,
+        max_length=20,
     )
 
     ltmid_v2: discord.ui.TextInput[discord.ui.Modal] = discord.ui.TextInput(
@@ -58,9 +58,18 @@ class CookieModal(discord.ui.Modal, title="提交Cookie"):
         max_length=20,
     )
 
-    cookie: discord.ui.TextInput[discord.ui.Modal] = discord.ui.TextInput(
-        label="Cookie",
-        placeholder="非特殊需求本欄請保持空白，此處用來貼完整的 Cookie 字串",
+    ltoken_v2: discord.ui.TextInput[discord.ui.Modal] = discord.ui.TextInput(
+        label="ltoken_v2",
+        placeholder="請貼上取得的 ltoken_v2",
+        style=discord.TextStyle.short,
+        required=False,
+        min_length=30,
+        max_length=150,
+    )
+
+    cookie_token_v2: discord.ui.TextInput[discord.ui.Modal] = discord.ui.TextInput(
+        label="cookie_token_v2",
+        placeholder="請貼上取得的 cookie_token_v2.",
         style=discord.TextStyle.long,
         required=False,
         min_length=50,
@@ -78,7 +87,7 @@ class CookieModal(discord.ui.Modal, title="提交Cookie"):
 
         # 將 ltuid_v2 和 ltoken_v2 附加到 cookie 中
         v2_str = ""
-        cookie = self.cookie.value
+        cookie = ""
         if len(self.ltoken_v2.value) > 0:
             # 檢測 cookie 是否為 v2 版本
             if self.ltoken_v2.value.startswith("v2"):
@@ -87,12 +96,15 @@ class CookieModal(discord.ui.Modal, title="提交Cookie"):
         if len(self.ltuid_v2.value) > 0:
             if self.ltuid_v2.value.isdigit() is True:
                 cookie += f" ltuid{v2_str}={self.ltuid_v2.value};"
-            else:  # ltuid_v2 不是數字，可能是 ltmid_v2
-                cookie += f" ltmid_v2={self.ltuid_v2.value};"
+        if len(self.account_id_v2.value) > 0:
+            if self.account_id_v2.value.isdigit() is True:
+                cookie += f" account_id{v2_str}={self.account_id_v2.value};"
         if len(self.ltmid_v2.value) > 0:
             cookie += f" ltmid_v2={self.ltmid_v2.value};"
+        if len(self.cookie_token_v2.value) > 0:
+            cookie += f" cookie_token_v2={self.cookie_token_v2.value};"
 
-        LOG.Info(f"設定 {LOG.User(interaction.user)} 的Cookie：{self.cookie.value}")
+        LOG.Info(f"設定 {LOG.User(interaction.user)} 的Cookie：{cookie}")
         try:
             trimmed_cookie = await self._trim_cookies(cookie)
             if trimmed_cookie is None:
