@@ -16,10 +16,10 @@ class UIDModal(discord.ui.Modal, title="提交UID"):
 
     uid: discord.ui.TextInput[discord.ui.Modal] = discord.ui.TextInput(
         label="UID",
-        placeholder="請輸入遊戲內的UID(9位數字)",
+        placeholder="請輸入遊戲內的UID(9或10位數字)",
         required=True,
         min_length=9,
-        max_length=9,
+        max_length=10,
     )
 
     async def on_submit(self, interaction: discord.Interaction):
