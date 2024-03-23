@@ -145,7 +145,7 @@ async def showcase(
                 title="找不到角色UID",
             )
         )
-    elif len(str(uid)) != 9 or str(uid)[0] not in ["1", "2", "5", "6", "7", "8", "9"]:
+    elif len(str(uid)) < 9 or len(str(uid)) > 10 or str(uid)[0] not in ["1", "2", "5", "6", "7", "8", "9"]:
         await interaction.edit_original_response(embed=EmbedTemplate.error("輸入的UID格式錯誤"))
     else:
         showcase = Showcase(uid)
