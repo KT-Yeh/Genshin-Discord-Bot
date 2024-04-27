@@ -87,10 +87,13 @@ class CookieModal(discord.ui.Modal, title="提交Cookie"):
         if len(self.ltuid_v2.value) > 0:
             if self.ltuid_v2.value.isdigit() is True:
                 cookie += f" ltuid{v2_str}={self.ltuid_v2.value};"
+                cookie += f" account_id{v2_str}={self.ltuid_v2.value};"
             else:  # ltuid_v2 不是數字，可能是 ltmid_v2
                 cookie += f" ltmid_v2={self.ltuid_v2.value};"
+                cookie += f" account_mid_v2={self.ltuid_v2.value};"
         if len(self.ltmid_v2.value) > 0:
             cookie += f" ltmid_v2={self.ltmid_v2.value};"
+            cookie += f" account_mid_v2={self.ltmid_v2.value};"
 
         LOG.Info(f"設定 {LOG.User(interaction.user)} 的Cookie：{self.cookie.value}")
         try:
