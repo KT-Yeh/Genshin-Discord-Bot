@@ -44,7 +44,7 @@ async def get_client(
         case genshin.Game.GENSHIN:
             uid = user.uid_genshin or 0
             cookie = user.cookie_genshin or user.cookie_default
-            if str(uid)[0] in ["1", "2", "5"]:
+            if len(str(uid)) == 9 and str(uid)[0] in ["1", "2", "5"]:
                 client = genshin.Client(region=genshin.Region.CHINESE, lang="zh-cn")
         case genshin.Game.HONKAI:
             uid = user.uid_honkai3rd or 0
