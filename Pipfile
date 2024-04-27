@@ -21,6 +21,7 @@ alembic = "~=1.11.1"
 genshinpyrail = {ref = "gdb", git = "https://github.com/KT-Yeh/GenshinPyRail.git"}
 honkairail = "~=1.1"
 hsrcard = {ref = "gdb", git = "https://github.com/KT-Yeh/HSRCard.git"}
+pydantic = "==1.10.14"
 
 [dev-packages]
 black = "*"
