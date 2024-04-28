@@ -14,7 +14,7 @@ class Material(GenshinDbBase):
     description: str
     rarity: Optional[int] = None
     category: str
-    material_type: str = Field(alias="typeText")
+    material_type: Optional[str] = Field(None, alias="typeText")
     sources: List[str]
     """獲取來源"""
     images: Images
