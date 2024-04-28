@@ -1,5 +1,6 @@
 import asyncio
 import io
+import typing
 
 import discord
 import genshin
@@ -22,12 +23,17 @@ class CharactersCog(commands.Cog, name="角色一覽"):
         self.bot = bot
 
     @app_commands.command(name="character角色一覽", description="公開展示我的所有角色")
-    @app_commands.rename(game="遊戲", user="使用者")
+    @app_commands.rename(game="遊戲", sort_key="排序", user="使用者")
     @app_commands.describe(game="選擇遊戲", user="查詢其他成員的資料，不填寫則查詢自己")
     @app_commands.choices(
         game=[
             app_commands.Choice(name="原神", value="genshin"),
             app_commands.Choice(name="星穹鐵道", value="hkrpg"),
+        ],
+        sort_key=[
+            app_commands.Choice(name="等級", value="LEVEL"),
+            app_commands.Choice(name="元素", value="ELEMENT"),
+            app_commands.Choice(name="稀有度", value="RARITY"),
         ],
     )
     @SlashCommandLogger
@@ -35,6 +41,7 @@ class CharactersCog(commands.Cog, name="角色一覽"):
         self,
         interaction: discord.Interaction,
         game: genshin.Game,
+        sort_key: typing.Literal["LEVEL", "ELEMENT", "RARITY"] = "LEVEL",
         user: discord.User | discord.Member | None = None,
     ):
         user = user or interaction.user
@@ -55,6 +62,15 @@ class CharactersCog(commands.Cog, name="角色一覽"):
         except Exception as e:
             await interaction.edit_original_response(embed=EmbedTemplate.error(e))
             return
+
+        # 排序
+        match sort_key:
+            case "LEVEL":
+                characters = sorted(characters, key=lambda x: (x.level, x.rarity, x.element), reverse=True)
+            case "ELEMENT":
+                characters = sorted(characters, key=lambda x: (x.element, x.rarity, x.level), reverse=True)
+            case "RARITY":
+                characters = sorted(characters, key=lambda x: (x.rarity, x.level, x.element), reverse=True)
 
         try:
             # 使用 genshinpyrail 產生圖片
