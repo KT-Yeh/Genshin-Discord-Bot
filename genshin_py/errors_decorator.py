@@ -7,7 +7,7 @@ import genshin
 import sentry_sdk
 
 from database import Database, User
-from utility import LOG
+from utility import LOG, config
 
 from .errors import GenshinAPIException, UserDataNotFound
 
@@ -50,6 +50,10 @@ def generalErrorHandler(func: Callable):
         except genshin.errors.InvalidCookies as e:
             LOG.FuncExceptionLog(user_id, func.__name__, e)
             raise GenshinAPIException(e, "Cookie已失效，請從Hoyolab重新取得新Cookie")
+        except genshin.errors.GeetestError as e:
+            LOG.FuncExceptionLog(user_id, func.__name__, e)
+            url = f"{config.geetest_solver_url}/geetest/starrail_battlechronicle/{user_id}"
+            raise GenshinAPIException(e, f"觸發 Hoyolab 圖形驗證，請 [>>點擊此連結<<]({url}/) 到網頁上進行手動解鎖。")
         except genshin.errors.RedemptionException as e:
             LOG.FuncExceptionLog(user_id, func.__name__, e)
             raise GenshinAPIException(e, e.original)
