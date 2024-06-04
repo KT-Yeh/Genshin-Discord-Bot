@@ -277,11 +277,11 @@ async def _claim_reward(
         return f"{game_name[game]}今日獎勵已經領過了！"
     except genshin.errors.InvalidCookies:
         return "Cookie已失效，請從Hoyolab重新取得新Cookie。"
-    except genshin.errors.GeetestTriggered as exception:
+    except genshin.errors.DailyGeetestTriggered as exception:
         # 使用者選擇設定圖形驗證，回傳網址
         if is_geetest is True and config.geetest_solver_url is not None:
             url = config.geetest_solver_url
-            url += f"/geetest/{game}/{user_id}/{exception.gt}/{exception.challenge}"
+            url += f"/geetest/{game}/{user_id}?gt={exception.gt}&challenge={exception.challenge}"
             return f"請到網站上解鎖圖形驗證：[點我開啟連結]({url})\n若出現錯誤則再次使用本指令重新產生連結"
         # 提示使用者可以設定圖形驗證
         if config.geetest_solver_url is not None:
