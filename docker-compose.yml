@@ -40,6 +40,8 @@ services:
       # - PROMETHEUS_SERVER_PORT=9091
       # hoyolab-geetest-webserver 網頁服務的位址，若要給別人使用，要改成自己電腦的公開 IP
       - GEETEST_SOLVER_URL=http://127.0.0.1:8081
+      # 給 genshin_py 呼叫官方 API 使用的 proxy server 位址，若要使用，取消下面 warp-socks 整段註解
+      # - GENSHIN_PY_PROXY_SERVER=socks5://warp-socks:9091
       # ==========================
     volumes:
       - ./data:/app/data
@@ -52,6 +54,7 @@ services:
     container_name: HoyolabGeetestWebserver
     environment:
       - TZ=Asia/Taipei
+      # - PROXY_SERVER=socks5://warp-socks:9091
     volumes:
       - ./data/bot/:/app/data/
     ports:
@@ -73,3 +76,22 @@ services:
   #   volumes:
   #     - ./data/prometheus.yml:/etc/prometheus/prometheus.yml
   #   restart: always
+
+  # 若要使用 Proxy server
+  # 1. 上面進階設定，取消註解 GENSHIN_PY_PROXY_SERVER
+  # 2. 取消上面 hoyolab-geetest-webserver 的 PROXY_SERVER 註解
+  # 3. 取消下方整段註解
+  # warp-socks:
+  #   image: monius/docker-warp-socks:latest
+  #   privileged: true
+  #   cap_add:
+  #     - NET_ADMIN
+  #     - SYS_ADMIN
+  #   sysctls:
+  #     net.ipv6.conf.all.disable_ipv6: 0
+  #     net.ipv4.conf.all.src_valid_mark: 1
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "https://www.cloudflare.com/cdn-cgi/trace"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 5

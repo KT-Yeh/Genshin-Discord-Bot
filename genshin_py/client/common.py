@@ -67,6 +67,7 @@ async def get_client(
     client.set_cookies(cookie)
     client.default_game = game
     client.uid = uid
+    client.proxy = config.genshin_py_proxy_server
     return client
 
 
