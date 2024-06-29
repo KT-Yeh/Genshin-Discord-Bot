@@ -147,11 +147,11 @@ def parse_starrail_hall_overview(
         # 忘卻之庭 2023/12/20 前為 10 層，之後為 12 層
         max_stars = 30 if hall.begin_time.datetime < datetime(2023, 12, 20) else 36
         if hall.total_stars == max_stars:
-            non_skip_battles = [floor.is_fast for floor in hall.floors].count(False)
+            non_skip_battles = [floor.is_quick_clear for floor in hall.floors].count(False)
             has_crown = hall.total_battles == non_skip_battles
     else:  # isinstance(hall, genshin.models.StarRailPureFiction)
         if hall.total_stars == 12:
-            non_skip_battles = [floor.is_fast for floor in hall.floors].count(False)
+            non_skip_battles = [floor.is_quick_clear for floor in hall.floors].count(False)
             has_crown = hall.total_battles == non_skip_battles
     battle_nums = f"👑 ({hall.total_battles})" if has_crown else hall.total_battles
 
