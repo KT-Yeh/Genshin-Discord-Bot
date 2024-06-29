@@ -46,7 +46,7 @@ class CookieModal(discord.ui.Modal, title="提交Cookie"):
         style=discord.TextStyle.short,
         required=False,
         min_length=30,
-        max_length=150,
+        max_length=500,
     )
 
     ltmid_v2: discord.ui.TextInput[discord.ui.Modal] = discord.ui.TextInput(
