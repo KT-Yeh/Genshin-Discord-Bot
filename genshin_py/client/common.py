@@ -39,7 +39,7 @@ async def get_client(
     if check is False or user is None:
         raise UserDataNotFound(msg)
 
-    client = genshin.Client(lang="zh-tw")
+    client = genshin.Client(lang="zh-tw", proxy=config.genshin_py_proxy_server)
     match game:
         case genshin.Game.GENSHIN:
             uid = user.uid_genshin or 0

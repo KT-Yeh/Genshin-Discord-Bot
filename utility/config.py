@@ -43,6 +43,8 @@ class Config(BaseSettings):
     """Prometheus server 監聽的 Port，若為 None 表示不啟動 server"""
     geetest_solver_url: str | None = None
     """讓使用者設定圖形驗證的網址"""
+    genshin_py_proxy_server: str | None = None
+    """給 genshin_py 呼叫官方 API 使用的 proxy server 位址"""
 
     class Config:
         env_file = ".env"
