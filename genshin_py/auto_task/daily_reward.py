@@ -83,7 +83,10 @@ class DailyReward:
                 + f"{sum(cls._themis_count.values())} 人簽到未定事件簿\n"
             )
             for host in cls._total.keys():
-                _log_message += f"- {host}：{cls._total.get(host)}、{cls._honkai_count.get(host)}、{cls._starrail_count.get(host)}、{cls._zzz_count.get(host)}\n"
+                _log_message += (
+                    f"- {host}：{cls._total.get(host)}、{cls._honkai_count.get(host)}、"
+                    + f"{cls._starrail_count.get(host)}、{cls._zzz_count.get(host)}\n"
+                )
             LOG.System(_log_message)
         except Exception as e:
             sentry_sdk.capture_exception(e)
@@ -125,7 +128,7 @@ class DailyReward:
         cls._total[host] = 0  # 初始化簽到人數
         cls._honkai_count[host] = 0  # 初始化簽到崩壞3的人數
         cls._starrail_count[host] = 0  # 初始化簽到星穹鐵道的人數
-        cls._zzz_count[host] = 0 # 初始化簽到絕區零的人數
+        cls._zzz_count[host] = 0  # 初始化簽到絕區零的人數
         cls._themis_count[host] = 0  # 初始化簽到未定事件簿的人數
         MAX_API_ERROR_COUNT: Final[int] = 20  # 遠端 API 發生錯誤的最大次數
         api_error_count = 0  # 遠端 API 發生錯誤的次數

@@ -158,7 +158,7 @@ async def set_cookie(user_id: int, cookie: str, games: Sequence[genshin.Game]) -
             user.uid_starrail = sr_accounts[0].uid
         if len(sr_accounts) > 1:
             character_list.append(f"{len(sr_accounts)}名星穹鐵道角色")
-    
+
     if genshin.Game.ZZZ in games:
         user.cookie_zzz = cookie
         if len(zzz_accounts) == 1:
@@ -234,7 +234,10 @@ async def claim_daily_reward(
         LOG.FuncExceptionLog(user_id, "claimDailyReward: Hoyolab", e)
 
     # 遊戲簽到
-    if any([has_genshin, has_honkai3rd, has_starrail, has_zzz, has_themis, has_themis_tw]) is False:
+    if (
+        any([has_genshin, has_honkai3rd, has_starrail, has_zzz, has_themis, has_themis_tw])
+        is False
+    ):
         return "未選擇任何遊戲簽到"
 
     # 使用者保存的 geetest 驗證資料
