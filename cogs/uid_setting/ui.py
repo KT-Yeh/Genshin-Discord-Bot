@@ -34,6 +34,8 @@ class UIDModal(discord.ui.Modal, title="提交UID"):
                 user.uid_honkai3rd = int(self.uid.value)
             case genshin.Game.STARRAIL:
                 user.uid_starrail = int(self.uid.value)
+            case genshin.Game.ZZZ:
+                user.uid_zzz = int(self.uid.value)
         try:
             await Database.insert_or_replace(user)
         except Exception as e:
@@ -52,7 +54,7 @@ class UidDropdown(discord.ui.Select):
     ):
         options = [
             discord.SelectOption(
-                label=f"[{get_server_name(str(account.uid)[0])}] {account.uid}",
+                label=f"[{get_server_name(account.server)}] {account.uid}",
                 description=f"Lv.{account.level} {account.nickname}",
                 value=str(i),
             )
@@ -72,6 +74,8 @@ class UidDropdown(discord.ui.Select):
                 user.uid_genshin = uid
             case genshin.Game.STARRAIL:
                 user.uid_starrail = uid
+            case genshin.Game.ZZZ:
+                user.uid_zzz = uid
         await Database.insert_or_replace(user)
         await interaction.response.edit_message(
             embed=EmbedTemplate.normal(f"角色UID: {uid} 已設定完成"), view=None
