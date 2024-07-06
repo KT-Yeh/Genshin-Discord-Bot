@@ -20,6 +20,8 @@ class DailyRewardOptionsView(discord.ui.View):
         """是否有崩壞3"""
         self.has_starrail: bool = False
         """是否有星穹鐵道"""
+        self.has_zzz: bool = False
+        """是否有絕區零"""
         self.has_themis: bool = False
         """是否有未定事件簿(國際服)"""
         self.has_themis_tw: bool = False
@@ -42,11 +44,12 @@ class DailyRewardOptionsView(discord.ui.View):
             discord.SelectOption(label="原神", value="原神"),
             discord.SelectOption(label="崩壞3", value="崩壞3"),
             discord.SelectOption(label="星穹鐵道", value="星穹鐵道"),
+            discord.SelectOption(label="絕區零", value="絕區零"),
             discord.SelectOption(label="未定事件簿(國際服)", value="未定事件簿(國際服)"),
             discord.SelectOption(label="未定事件簿(台服)", value="未定事件簿(台服)"),
         ],
         min_values=1,
-        max_values=5,
+        max_values=6,
         placeholder="請選擇要簽到的遊戲(可多選)：",
     )
     async def select_games_callback(
@@ -60,6 +63,8 @@ class DailyRewardOptionsView(discord.ui.View):
             self.has_honkai3rd = True
         if "星穹鐵道" in self.selected_games:
             self.has_starrail = True
+        if "絕區零" in self.selected_games:
+            self.has_zzz = True
         if "未定事件簿(國際服)" in self.selected_games:
             self.has_themis = True
         if "未定事件簿(台服)" in self.selected_games:
@@ -116,14 +121,14 @@ class BaseNotesThresholdModal(discord.ui.Modal):
         return int(value) if len(value) > 0 else None
 
     @overload
-    def _to_msg(self, title: str, value: int | None, date_frequency: str = "每天") -> str:
-        ...
+    def _to_msg(self, title: str, value: int | None, date_frequency: str = "每天") -> str: ...
 
     @overload
-    def _to_msg(self, title: str, value: datetime | None, date_frequency: str = "每天") -> str:
-        ...
+    def _to_msg(self, title: str, value: datetime | None, date_frequency: str = "每天") -> str: ...
 
-    def _to_msg(self, title: str, value: int | datetime | None, date_frequency: str = "每天") -> str:
+    def _to_msg(
+        self, title: str, value: int | datetime | None, date_frequency: str = "每天"
+    ) -> str:
         if value is None:
             return ""
         if isinstance(value, datetime):

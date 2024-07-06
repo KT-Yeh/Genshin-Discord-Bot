@@ -24,6 +24,7 @@ class UIDSettingCog(commands.Cog, name="UID 設定"):
             Choice(name="原神", value="genshin"),
             Choice(name="崩壞3", value="honkai3rd"),
             Choice(name="星穹鐵道", value="hkrpg"),
+            Choice(name="絕區零", value="nap"),
         ]
     )
     @custom_log.SlashCommandLogger
@@ -38,11 +39,13 @@ class UIDSettingCog(commands.Cog, name="UID 設定"):
         if user is not None:
             match game:
                 case genshin.Game.GENSHIN:
-                    cookie = user.cookie_genshin
+                    cookie = user.cookie_genshin or user.cookie_default
                 case genshin.Game.HONKAI:
-                    cookie = user.cookie_honkai3rd
+                    cookie = user.cookie_honkai3rd or user.cookie_default
                 case genshin.Game.STARRAIL:
-                    cookie = user.cookie_starrail
+                    cookie = user.cookie_starrail or user.cookie_default
+                case genshin.Game.ZZZ:
+                    cookie = user.cookie_zzz or user.cookie_default
 
         if user is None or cookie is None:
             # 當只用展示櫃，沒有存過 Cookie 時，顯示 UID 設定表單

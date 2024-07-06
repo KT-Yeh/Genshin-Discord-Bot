@@ -54,6 +54,9 @@ async def get_client(
             cookie = user.cookie_starrail or user.cookie_default
             if str(uid)[0] in ["1", "2", "5"]:
                 client = genshin.Client(region=genshin.Region.CHINESE, lang="zh-cn")
+        case genshin.Game.ZZZ:
+            uid = user.uid_zzz or 0
+            cookie = user.cookie_zzz or user.cookie_default
         case genshin.Game.THEMIS:
             uid = 0
             cookie = user.cookie_themis or user.cookie_default
@@ -126,6 +129,7 @@ async def set_cookie(user_id: int, cookie: str, games: Sequence[genshin.Game]) -
     gs_accounts = [a for a in accounts if a.game == genshin.Game.GENSHIN]
     hk3_accounts = [a for a in accounts if a.game == genshin.Game.HONKAI]
     sr_accounts = [a for a in accounts if a.game == genshin.Game.STARRAIL]
+    zzz_accounts = [a for a in accounts if a.game == genshin.Game.ZZZ]
 
     user = await Database.select_one(User, User.discord_id.is_(user_id))
     if user is None:
@@ -154,6 +158,13 @@ async def set_cookie(user_id: int, cookie: str, games: Sequence[genshin.Game]) -
             user.uid_starrail = sr_accounts[0].uid
         if len(sr_accounts) > 1:
             character_list.append(f"{len(sr_accounts)}名星穹鐵道角色")
+    
+    if genshin.Game.ZZZ in games:
+        user.cookie_zzz = cookie
+        if len(zzz_accounts) == 1:
+            user.uid_zzz = zzz_accounts[0].uid
+        if len(zzz_accounts) > 1:
+            character_list.append(f"{len(zzz_accounts)}名絕區零角色")
 
     if genshin.Game.THEMIS in games:
         user.cookie_themis = cookie
@@ -177,6 +188,7 @@ async def claim_daily_reward(
     has_genshin: bool = False,
     has_honkai3rd: bool = False,
     has_starrail: bool = False,
+    has_zzz: bool = False,
     has_themis: bool = False,
     has_themis_tw: bool = False,
     is_geetest: bool = False,
@@ -193,6 +205,8 @@ async def claim_daily_reward(
         是否簽到崩壞3
     has_starrail: `bool`
         是否簽到星穹鐵道
+    has_zzz: `bool`
+        是否簽到絕區零
     has_themis: `bool`
         是否簽到未定事件簿(國際服)
     has_themis_tw: `bool`
@@ -220,7 +234,7 @@ async def claim_daily_reward(
         LOG.FuncExceptionLog(user_id, "claimDailyReward: Hoyolab", e)
 
     # 遊戲簽到
-    if any([has_genshin, has_honkai3rd, has_starrail, has_themis, has_themis_tw]) is False:
+    if any([has_genshin, has_honkai3rd, has_starrail, has_zzz, has_themis, has_themis_tw]) is False:
         return "未選擇任何遊戲簽到"
 
     # 使用者保存的 geetest 驗證資料
@@ -245,6 +259,9 @@ async def claim_daily_reward(
         result += await _claim_reward(
             user_id, client, genshin.Game.STARRAIL, is_geetest, challenge
         )
+    if has_zzz:
+        client = await get_client(user_id, game=genshin.Game.ZZZ, check_uid=False)
+        result += await _claim_reward(user_id, client, genshin.Game.ZZZ)
     if has_themis:
         client = await get_client(user_id, game=genshin.Game.THEMIS, check_uid=False)
         result += await _claim_reward(user_id, client, genshin.Game.THEMIS)
@@ -268,6 +285,7 @@ async def _claim_reward(
         genshin.Game.GENSHIN: "原神",
         genshin.Game.HONKAI: "崩壞3",
         genshin.Game.STARRAIL: "星穹鐵道",
+        genshin.Game.ZZZ: "絕區零",
         genshin.Game.THEMIS: "未定事件簿(國)",
         genshin.Game.THEMIS_TW: "未定事件簿(台)",
     }
@@ -292,6 +310,7 @@ async def _claim_reward(
             genshin.Game.GENSHIN: "https://act.hoyolab.com/ys/event/signin-sea-v3/index.html?act_id=e202102251931481",
             genshin.Game.HONKAI: "https://act.hoyolab.com/bbs/event/signin-bh3/index.html?act_id=e202110291205111",
             genshin.Game.STARRAIL: "https://act.hoyolab.com/bbs/event/signin/hkrpg/index.html?act_id=e202303301540311",
+            genshin.Game.ZZZ: "https://act.hoyolab.com/bbs/event/signin/zzz/index.html?act_id=e202406031448091",
         }.get(game, "")
         return f"{game_name[game]}簽到失敗：受到圖形驗證阻擋，請到 [官網]({link}) 上手動簽到。"
     except Exception as e:
