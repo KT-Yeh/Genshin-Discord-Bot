@@ -16,6 +16,7 @@ async def redeem(
     # 若兌換碼包含兌換網址，則移除該網址
     code = re.sub(r"(https://){0,1}genshin.hoyoverse.com(/.*){0,1}/gift\?code=", "", code)
     code = re.sub(r"(https://){0,1}hsr.hoyoverse.com(/.*){0,1}/gift\?code=", "", code)
+    code = re.sub(r"(https://){0,1}zenless.hoyoverse.com(/.*){0,1}/redemption\?code=", "", code)
     # 匹配多組兌換碼並存成list
     codes = re.findall(r"[A-Za-z0-9]{5,30}", code)
     if len(codes) == 0:
@@ -27,8 +28,14 @@ async def redeem(
     codes = codes[:5] if len(codes) > 5 else codes  # 避免使用者輸入過多內容
     msg = "請點下列連結兌換：\n"
     for i, code in enumerate(codes):
-        game_host = {genshin.Game.GENSHIN: "genshin", genshin.Game.STARRAIL: "hsr"}
-        msg += f"> {i+1}. [{code}](https://{game_host.get(game)}.hoyoverse.com/gift?code={code})\n"
+        match game:
+            case genshin.Game.GENSHIN:
+                url = f"https://genshin.hoyoverse.com/gift?code={code}"
+            case genshin.Game.STARRAIL:
+                url = f"https://hsr.hoyoverse.com/gift?code={code}"
+            case genshin.Game.ZZZ:
+                url = f"https://zenless.hoyoverse.com/redemption?code={code}"
+        msg += f"> {i+1}. [{code}]({url})\n"
 
     embed = discord.Embed(color=0x8FCE00, description=msg)
     await interaction.response.send_message(embed=embed)
@@ -53,3 +60,8 @@ async def setup(client: commands.Bot):
     @custom_log.ContextCommandLogger
     async def context_redeem_starrail(interaction: discord.Interaction, msg: discord.Message):
         await redeem(interaction, interaction.user, msg.content, genshin.Game.STARRAIL)
+
+    @client.tree.context_menu(name="使用兌換碼(絕區零)")
+    @custom_log.ContextCommandLogger
+    async def context_redeem_zzz(interaction: discord.Interaction, msg: discord.Message):
+        await redeem(interaction, interaction.user, msg.content, genshin.Game.ZZZ)
