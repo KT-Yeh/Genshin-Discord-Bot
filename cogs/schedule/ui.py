@@ -3,7 +3,7 @@ from typing import overload
 
 import discord
 
-from database import Database, GenshinScheduleNotes, StarrailScheduleNotes
+from database import Database, GenshinScheduleNotes, StarrailScheduleNotes, ZZZScheduleNotes
 from utility import EmbedTemplate, config
 
 
@@ -394,5 +394,79 @@ class StarrailCheckNotesThresholdModal(BaseNotesThresholdModal, title="設定星
                     f"{self._to_msg('每日實訓', dailytraining_time)}"
                     f"{self._to_msg('模擬宇宙', universe_time, '周日')}"
                     f"{self._to_msg('歷戰餘響', echoofwar_time, '周日')}"
+                )
+            )
+
+
+class ZZZCheckNotesThresholdModal(BaseNotesThresholdModal, title="設定絕區零即時便箋提醒"):
+    """設定絕區零檢查即時便箋各項閾值的表單"""
+
+    battery: discord.ui.TextInput[discord.ui.Modal] = discord.ui.TextInput(
+        label="電量：設定電量額滿之前幾小時發送提醒 (不填表示不提醒)",
+        placeholder="請輸入一個介於 0 ~ 8 的整數",
+        required=False,
+        max_length=1,
+    )
+    dailyengagement: discord.ui.TextInput[discord.ui.Modal] = discord.ui.TextInput(
+        label="今日活躍度：設定每天幾點提醒今天活躍度還未完成 (不填表示不提醒)",
+        placeholder="請輸入一個介於 0000~2359 的數，例如 0200、2135",
+        required=False,
+        max_length=4,
+        min_length=4,
+    )
+
+    def __init__(self, user_setting: ZZZScheduleNotes | None = None):
+        """設定表單預設值；若使用者在資料庫已有設定值，則帶入表單預設值"""
+        self.battery.default = "1"
+        self.dailyengagement.default = None
+
+        if user_setting:
+            self.battery.default = self._int_to_str(user_setting.threshold_battery)
+            self.dailyengagement.default = (
+                user_setting.check_daily_engagement_time.strftime("%H%M")
+                if user_setting.check_daily_engagement_time
+                else None
+            )
+        super().__init__()
+
+    async def on_submit(self, interaction: discord.Interaction) -> None:
+        try:
+            battery = self._str_to_int(self.battery.value)
+            dailyengagement = self._str_to_int(self.dailyengagement.value)
+
+            # 檢查數字範圍
+            if battery is None and dailyengagement is None:
+                raise ValueError()
+            if isinstance(battery, int) and not (0 <= battery <= 8):
+                raise ValueError()
+
+            dailyengagement_time: datetime | None = None
+            if isinstance(dailyengagement, int):
+                _time = time(dailyengagement // 100, dailyengagement % 100)
+                _date = date.today()
+                dailyengagement_time = datetime.combine(_date, _time)
+                # 當今天已經超過設定的時間，則將檢查時間設為明日
+                if dailyengagement_time < datetime.now():
+                    dailyengagement_time += timedelta(days=1)
+        except Exception:
+            await interaction.response.send_message(
+                embed=EmbedTemplate.error("輸入數值有誤，請確認輸入的數值為整數且在規定範圍內"),
+                ephemeral=True,
+            )
+        else:
+            # 儲存設定資料
+            await Database.insert_or_replace(
+                ZZZScheduleNotes(
+                    discord_id=interaction.user.id,
+                    discord_channel_id=interaction.channel_id or 0,
+                    threshold_battery=battery,
+                    check_daily_engagement_time=dailyengagement_time,
+                )
+            )
+            await interaction.response.send_message(
+                embed=EmbedTemplate.normal(
+                    f"絕區零設定完成，當達到以下設定值時會發送提醒訊息：\n"
+                    f"{self._to_msg('電量　　', battery)}"
+                    f"{self._to_msg('今日活躍', dailyengagement_time)}"
                 )
             )
