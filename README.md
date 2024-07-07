@@ -1,5 +1,13 @@
 # 原神 & 星穹鐵道 Discord Bot
 
+<p align="center">
+    <a href="https://github.com/KT-Yeh/Genshin-Discord-Bot/blob/master/LICENSE"><img src="https://img.shields.io/github/license/KT-Yeh/Genshin-Discord-Bot?style=flat-square"></a>
+    <a href="https://github.com/KT-Yeh/Genshin-Discord-Bot"><img src="https://img.shields.io/github/stars/KT-Yeh/Genshin-Discord-Bot?style=flat-square"></a>
+    <a href="https://discord.com/application-directory/943351827758460948"><img src="https://img.shields.io/badge/bot-%E2%9C%93%20verified-5865F2?style=flat-square&logo=discord&logoColor=white"></a>
+    <a href="https://discord.com/application-directory/943351827758460948"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fgenshin-dc-bot.kty.one%2Fguilds-count&style=flat-square&logo=Discord&logoColor=white&cacheSeconds=3600"></a>
+    <a href="https://discord.gg/myugWxgRjd"><img src="https://img.shields.io/discord/963975812443414538?style=flat-square&logo=Discord&logoColor=white&label=support&color=5865F2"></a>
+</p>
+
 歡迎將本專案所有或部分程式碼放入你自己的機器人中，只需要在你專案的網頁、README 或任何公開的說明文件放入本專案的作者與連結
 
 Feel free to take all or part of the code to your own bot, just put the author and URL of this project in your project's website, README or any public documentation.
@@ -12,14 +20,15 @@ Discord 支援伺服器：https://discord.gg/myugWxgRjd
 ## 簡介
 使用機器人直接在 Discord 聊天頻道內查看原神、星穹鐵道內各項資訊，包含：
 
-- 原神、崩壞3、星穹鐵道、未定事件簿：
+- 原神、崩壞3、星穹鐵道、未定事件簿、絕區零：
     - **自動簽到**：設定時間每天自動幫你簽到 Hoyolab 領獎
 
-- 原神、星穹鐵道：
+- 原神、星穹鐵道、絕區零：
     - 查詢**即時便箋**
         - 原神：包含樹脂、每日委託、洞天寶錢、參數質變儀、探索派遣
         - 星穹鐵道：包含開拓力、每日實訓、模擬宇宙、歷戰餘響、委託執行
-    - **自動檢查即時便箋**：樹脂 (開拓力)、每日、寶錢、質變儀、探索派遣，當快額滿時發送提醒
+        - 絕區零：包含電量、今日活躍度、刮刮樂、錄影帶店經營
+    - **自動檢查即時便箋**：樹脂 (開拓力、電量)、每日、寶錢、質變儀、探索派遣，當快額滿時發送提醒
     - 查詢深境螺旋、忘卻之庭、虛構敘事紀錄，並可以保存每一期紀錄
     - 查詢任意玩家的**角色展示櫃**，顯示展示櫃內角色的面板、聖遺物詳情
 
