@@ -37,6 +37,8 @@ class User(Base):
     """用來給星穹鐵道指令使用的 Hoyolab 或米游社網頁的 Cookie"""
     cookie_themis: Mapped[str | None] = mapped_column(default=None)
     """用來給未定事件簿指令使用的 Hoyolab 或米游社網頁的 Cookie"""
+    cookie_zzz: Mapped[str | None] = mapped_column(default=None)
+    """用來給絕區零指令使用的 Hoyolab 或米游社網頁的 Cookie"""
 
     uid_genshin: Mapped[int | None] = mapped_column(default=None)
     """原神角色的 UID"""
@@ -44,6 +46,8 @@ class User(Base):
     """崩壞3角色的 UID"""
     uid_starrail: Mapped[int | None] = mapped_column(default=None)
     """星穹鐵道角色的 UID"""
+    uid_zzz: Mapped[int | None] = mapped_column(default=None)
+    """絕區零角色的 UID"""
 
 
 class ScheduleDailyCheckin(Base):
@@ -70,6 +74,8 @@ class ScheduleDailyCheckin(Base):
     """是否要簽到未定事件簿(國際服)"""
     has_themis_tw: Mapped[bool] = mapped_column(default=False)
     """是否要簽到未定事件簿(台服)"""
+    has_zzz: Mapped[bool] = mapped_column(default=False)
+    """是否要簽到絕區零"""
 
     def update_next_checkin_time(self) -> None:
         """將下次簽到時間更新為明日"""
@@ -345,3 +351,23 @@ class StarrailShowcase(Base):
         """Mihomo API 資料"""
         data = zlib.decompress(self._raw_data).decode("utf-8")
         return StarrailInfoParsed.parse_raw(data)
+
+
+class ZZZScheduleNotes(Base):
+    """絕區零排程自動檢查即時便箋資料庫 Table"""
+
+    __tablename__ = "zzz_schedule_notes"
+
+    discord_id: Mapped[int] = mapped_column(primary_key=True)
+    """使用者 Discord ID"""
+    discord_channel_id: Mapped[int]
+    """發送通知訊息的 Discord 頻道的 ID"""
+    next_check_time: Mapped[datetime.datetime | None] = mapped_column(
+        insert_default=sqlalchemy.func.now(), default=None
+    )
+    """下次檢查的時間，當檢查時超過此時間才會對 Hoyolab 請求資料"""
+
+    threshold_battery: Mapped[int | None] = mapped_column(default=None)
+    """電量額滿之前幾小時發送提醒"""
+    check_daily_engagement_time: Mapped[datetime.datetime | None] = mapped_column(default=None)
+    """下次檢查今天的每日活躍還未完成的時間"""

@@ -49,6 +49,7 @@ class Tool:
                 (game == genshin.Game.GENSHIN and user.uid_genshin is None)
                 or (game == genshin.Game.HONKAI and user.uid_honkai3rd is None)
                 or (game == genshin.Game.STARRAIL and user.uid_starrail is None)
+                or (game == genshin.Game.ZZZ and user.uid_zzz is None)
             ):
                 return False, f'找不到角色UID，請先使用 {get_app_command_mention("uid設定")} 來設定UID)'
 

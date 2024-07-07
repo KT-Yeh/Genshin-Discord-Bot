@@ -7,12 +7,13 @@ import sentry_sdk
 import sqlalchemy
 from discord.ext import commands
 
-from database import Database, GenshinScheduleNotes, StarrailScheduleNotes
+from database import Database, GenshinScheduleNotes, StarrailScheduleNotes, ZZZScheduleNotes
 from utility import LOG, config
 
 from .common import CheckResult, T_User
 from .genshin import check_genshin_notes
 from .starrail import check_starrail_notes
+from .zzz import check_zzz_notes
 
 
 class RealtimeNotes:
@@ -45,6 +46,7 @@ class RealtimeNotes:
             await asyncio.gather(
                 cls._check_games_note(GenshinScheduleNotes, "原神", check_genshin_notes),
                 cls._check_games_note(StarrailScheduleNotes, "星穹鐵道", check_starrail_notes),
+                cls._check_games_note(ZZZScheduleNotes, "絕區零", check_zzz_notes),
             )
         except Exception as e:
             sentry_sdk.capture_exception(e)
@@ -105,12 +107,16 @@ class RealtimeNotes:
             discord.NotFound,
             discord.InvalidData,
         ) as e:  # 發送訊息失敗，移除此使用者
-            LOG.Except(f"自動檢查即時便箋發送訊息失敗，移除此使用者 {LOG.User(user.discord_id)}：{e}")
+            LOG.Except(
+                f"自動檢查即時便箋發送訊息失敗，移除此使用者 {LOG.User(user.discord_id)}：{e}"
+            )
             await Database.delete_instance(user)
         except Exception as e:
             sentry_sdk.capture_exception(e)
         else:  # 成功發送訊息
             # 若使用者不在發送訊息的頻道則移除
             if discord_user.mentioned_in(msg_sent) is False:
-                LOG.Except(f"自動檢查即時便箋使用者不在頻道，移除此使用者 {LOG.User(discord_user)}")
+                LOG.Except(
+                    f"自動檢查即時便箋使用者不在頻道，移除此使用者 {LOG.User(discord_user)}"
+                )
                 await Database.delete_instance(user)

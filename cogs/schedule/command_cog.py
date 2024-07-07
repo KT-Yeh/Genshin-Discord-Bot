@@ -9,7 +9,13 @@ from discord.app_commands import Choice
 from discord.ext import commands
 
 import database
-from database import Database, GenshinScheduleNotes, ScheduleDailyCheckin, StarrailScheduleNotes
+from database import (
+    Database,
+    GenshinScheduleNotes,
+    ScheduleDailyCheckin,
+    StarrailScheduleNotes,
+    ZZZScheduleNotes,
+)
 from utility import EmbedTemplate, get_app_command_mention
 from utility.custom_log import SlashCommandLogger
 
@@ -17,6 +23,7 @@ from .ui import (
     DailyRewardOptionsView,
     GenshinNotesThresholdModal,
     StarrailCheckNotesThresholdModal,
+    ZZZCheckNotesThresholdModal,
 )
 
 
@@ -25,7 +32,9 @@ class ScheduleCommandCog(commands.Cog, name="排程設定指令"):
         self.bot = bot
 
     # 設定自動排程功能的斜線指令
-    @app_commands.command(name="schedule排程", description="設定排程功能(Hoyolab每日簽到、樹脂額滿提醒)")
+    @app_commands.command(
+        name="schedule排程", description="設定排程功能(Hoyolab每日簽到、樹脂額滿提醒)"
+    )
     @app_commands.rename(function="功能", switch="開關")
     @app_commands.describe(function="選擇要執行排程的功能", switch="選擇開啟或關閉此功能")
     @app_commands.choices(
@@ -35,6 +44,7 @@ class ScheduleCommandCog(commands.Cog, name="排程設定指令"):
             Choice(name="★ 每日自動簽到", value="DAILY"),
             Choice(name="★ 即時便箋提醒(原神)", value="GENSHIN_NOTES"),
             Choice(name="★ 即時便箋提醒(星穹鐵道)", value="STARRAIL_NOTES"),
+            Choice(name="★ 即時便箋提醒(絕區零)", value="ZZZ_NOTES"),
         ],
         switch=[Choice(name="開啟或更新設定", value="ON"), Choice(name="關閉功能", value="OFF")],
     )
@@ -42,7 +52,7 @@ class ScheduleCommandCog(commands.Cog, name="排程設定指令"):
     async def slash_schedule(
         self,
         interaction: discord.Interaction,
-        function: Literal["HELP", "TEST", "DAILY", "GENSHIN_NOTES", "STARRAIL_NOTES"],
+        function: Literal["HELP", "TEST", "DAILY", "GENSHIN_NOTES", "STARRAIL_NOTES", "ZZZ_NOTES"],
         switch: Literal["ON", "OFF"],
     ):
         msg: str | None  # 欲傳給使用者的訊息
@@ -68,7 +78,9 @@ class ScheduleCommandCog(commands.Cog, name="排程設定指令"):
                 msg_sent = await interaction.channel.send(embed=EmbedTemplate.normal("測試推送訊息..."))  # type: ignore
             except Exception:
                 await interaction.response.send_message(
-                    embed=EmbedTemplate.error("小幫手無法在本頻道推送訊息，請管理員檢查小幫手或此頻道有「發送訊息」與「嵌入連結」的權限")
+                    embed=EmbedTemplate.error(
+                        "小幫手無法在本頻道推送訊息，請管理員檢查小幫手或此頻道有「發送訊息」與「嵌入連結」的權限"
+                    )
                 )
             else:
                 await interaction.response.send_message(
@@ -91,6 +103,10 @@ class ScheduleCommandCog(commands.Cog, name="排程設定指令"):
             case "STARRAIL_NOTES":
                 check, msg = await database.Tool.check_user(
                     user, check_uid=True, game=genshin.Game.STARRAIL
+                )
+            case "ZZZ_NOTES":
+                check, msg = await database.Tool.check_user(
+                    user, check_uid=True, game=genshin.Game.ZZZ
                 )
 
         if check is False:
@@ -127,6 +143,7 @@ class ScheduleCommandCog(commands.Cog, name="排程設定指令"):
                     has_genshin=options_view.has_genshin,
                     has_honkai3rd=options_view.has_honkai3rd,
                     has_starrail=options_view.has_starrail,
+                    has_zzz=options_view.has_zzz,
                     has_themis=options_view.has_themis,
                     has_themis_tw=options_view.has_themis_tw,
                 )
@@ -148,7 +165,9 @@ class ScheduleCommandCog(commands.Cog, name="排程設定指令"):
                 await Database.delete(
                     ScheduleDailyCheckin, ScheduleDailyCheckin.discord_id.is_(interaction.user.id)
                 )
-                await interaction.response.send_message(embed=EmbedTemplate.normal("每日自動簽到已關閉"))
+                await interaction.response.send_message(
+                    embed=EmbedTemplate.normal("每日自動簽到已關閉")
+                )
 
         elif function == "GENSHIN_NOTES":  # 原神即時便箋檢查提醒
             if switch == "ON":  # 開啟即時便箋檢查功能
@@ -184,8 +203,26 @@ class ScheduleCommandCog(commands.Cog, name="排程設定指令"):
                     embed=EmbedTemplate.normal("星穹鐵道即時便箋檢查提醒已關閉")
                 )
 
+        elif function == "ZZZ_NOTES":  # 絕區零即時便箋檢查提醒
+            if switch == "ON":  # 開啟即時便箋檢查功能
+                zzz_setting = await Database.select_one(
+                    ZZZScheduleNotes,
+                    ZZZScheduleNotes.discord_id.is_(interaction.user.id),
+                )
+                await interaction.response.send_modal(ZZZCheckNotesThresholdModal(zzz_setting))
+            elif switch == "OFF":  # 關閉即時便箋檢查功能
+                await Database.delete(
+                    ZZZScheduleNotes,
+                    ZZZScheduleNotes.discord_id.is_(interaction.user.id),
+                )
+                await interaction.response.send_message(
+                    embed=EmbedTemplate.normal("絕區零即時便箋檢查提醒已關閉")
+                )
+
     # 具有頻道管理訊息權限的人可使用本指令，移除指定使用者的頻道排程設定
-    @app_commands.command(name="排程管理-移除使用者", description="管理者專用，移除指定使用者的排程設定")
+    @app_commands.command(
+        name="排程管理-移除使用者", description="管理者專用，移除指定使用者的排程設定"
+    )
     @app_commands.rename(function="功能", user="使用者")
     @app_commands.describe(function="選擇要移除的功能")
     @app_commands.choices(
@@ -193,6 +230,7 @@ class ScheduleCommandCog(commands.Cog, name="排程設定指令"):
             Choice(name="每日自動簽到", value="DAILY"),
             Choice(name="即時便箋提醒(原神)", value="GENSHIN_NOTES"),
             Choice(name="即時便箋提醒(星穹鐵道)", value="STARRAIL_NOTES"),
+            Choice(name="即時便箋提醒(絕區零)", value="ZZZ_NOTES"),
         ]
     )
     @app_commands.default_permissions(manage_messages=True)
@@ -200,7 +238,7 @@ class ScheduleCommandCog(commands.Cog, name="排程設定指令"):
     async def slash_remove_user(
         self,
         interaction: discord.Interaction,
-        function: Literal["DAILY", "GENSHIN_NOTES", "STARRAIL_NOTES"],
+        function: Literal["DAILY", "GENSHIN_NOTES", "STARRAIL_NOTES", "ZZZ_NOTES"],
         user: discord.User,
     ):
         channel_id = interaction.channel_id
@@ -231,17 +269,32 @@ class ScheduleCommandCog(commands.Cog, name="排程設定指令"):
             await interaction.response.send_message(
                 embed=EmbedTemplate.normal(f"{user.name}的星穹鐵道即時便箋提醒已關閉")
             )
+        elif function == "ZZZ_NOTES":
+            await Database.delete(
+                ZZZScheduleNotes,
+                ZZZScheduleNotes.discord_id.is_(user.id)
+                & ZZZScheduleNotes.discord_channel_id.is_(channel_id),
+            )
+            await interaction.response.send_message(
+                embed=EmbedTemplate.normal(f"{user.name}的絕區零即時便箋提醒已關閉")
+            )
 
     # 具有頻道管理訊息權限的人可使用本指令，將頻道內所有排程使用者的訊息移動到另一個頻道
-    @app_commands.command(name="排程管理-更改使用者頻道", description="管理者專用，將此頻道內所有排程使用者的訊息移動到另一個頻道")
+    @app_commands.command(
+        name="排程管理-更改使用者頻道",
+        description="管理者專用，將此頻道內所有排程使用者的訊息移動到另一個頻道",
+    )
     @app_commands.rename(function="功能", dest_channel="目的地頻道")
-    @app_commands.describe(function="選擇要移除的功能", dest_channel="選擇要將使用者的訊息通知移動到哪個頻道")
+    @app_commands.describe(
+        function="選擇要移除的功能", dest_channel="選擇要將使用者的訊息通知移動到哪個頻道"
+    )
     @app_commands.choices(
         function=[
             Choice(name="全部", value="全部"),
             Choice(name="每日自動簽到", value="每日自動簽到"),
             Choice(name="即時便箋提醒(原神)", value="即時便箋提醒(原神)"),
             Choice(name="即時便箋提醒(星穹鐵道)", value="即時便箋提醒(星穹鐵道)"),
+            Choice(name="即時便箋提醒(絕區零)", value="即時便箋提醒(絕區零)"),
         ]
     )
     @app_commands.default_permissions(manage_messages=True)
@@ -249,7 +302,13 @@ class ScheduleCommandCog(commands.Cog, name="排程設定指令"):
     async def slash_move_users(
         self,
         interaction: discord.Interaction,
-        function: Literal["全部", "每日自動簽到", "即時便箋提醒(原神)", "即時便箋提醒(星穹鐵道)"],
+        function: Literal[
+            "全部",
+            "每日自動簽到",
+            "即時便箋提醒(原神)",
+            "即時便箋提醒(星穹鐵道)",
+            "即時便箋提醒(絕區零)",
+        ],
         dest_channel: discord.TextChannel | discord.Thread,
     ):
         src_channel = interaction.channel
@@ -272,6 +331,11 @@ class ScheduleCommandCog(commands.Cog, name="排程設定指令"):
             .where(StarrailScheduleNotes.discord_channel_id.is_(src_channel.id))
             .values({StarrailScheduleNotes.discord_channel_id: dest_channel.id})
         )
+        stmt_zzz_notes = (
+            sqlalchemy.update(ZZZScheduleNotes)
+            .where(ZZZScheduleNotes.discord_channel_id.is_(src_channel.id))
+            .values({ZZZScheduleNotes.discord_channel_id: dest_channel.id})
+        )
         async with Database.sessionmaker() as session:
             if function == "全部" or function == "每日自動簽到":
                 await session.execute(stmt_daily)
@@ -279,6 +343,8 @@ class ScheduleCommandCog(commands.Cog, name="排程設定指令"):
                 await session.execute(stmt_gs_notes)
             if function == "全部" or function == "即時便箋提醒(星穹鐵道)":
                 await session.execute(stmt_st_notes)
+            if function == "全部" or function == "即時便箋提醒(絕區零)":
+                await session.execute(stmt_zzz_notes)
             await session.commit()
 
         await interaction.response.send_message(

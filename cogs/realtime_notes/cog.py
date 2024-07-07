@@ -39,6 +39,11 @@ class RealtimeNotes:
                     embed = await genshin_py.parse_starrail_notes(
                         notes, user, short_form=short_form
                     )
+                case genshin.Game.ZZZ:
+                    defer, notes = await asyncio.gather(
+                        interaction.response.defer(), genshin_py.get_zzz_notes(user.id)
+                    )
+                    embed = await genshin_py.parse_zzz_notes(notes, user)
                 case _:
                     return
         except Exception as e:
@@ -53,13 +58,19 @@ class RealtimeNotesCog(commands.Cog, name="即時便箋"):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @app_commands.command(name="notes即時便箋", description="查詢即時便箋，包含樹脂、洞天寶錢、探索派遣...等")
+    @app_commands.command(
+        name="notes即時便箋", description="查詢即時便箋，包含樹脂、洞天寶錢、探索派遣...等"
+    )
     @app_commands.rename(game="遊戲", short_form="顯示格式", user="使用者")
-    @app_commands.describe(short_form="選擇顯示完整或簡約格式(省略每日、週本、探索派遣)", user="查詢其他成員的資料，不填寫則查詢自己")
+    @app_commands.describe(
+        short_form="選擇顯示完整或簡約格式(省略每日、週本、探索派遣)",
+        user="查詢其他成員的資料，不填寫則查詢自己",
+    )
     @app_commands.choices(
         game=[
             Choice(name="原神", value="genshin"),
             Choice(name="星穹鐵道", value="hkrpg"),
+            Choice(name="絕區零", value="nap"),
         ],
         short_form=[Choice(name="完整", value="完整"), Choice(name="簡約", value="簡約")],
     )

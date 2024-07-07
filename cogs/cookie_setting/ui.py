@@ -16,11 +16,12 @@ class GameSelectionView(discord.ui.View):
         options=[
             discord.SelectOption(label="原神", value="genshin"),
             discord.SelectOption(label="崩壞3", value="honkai3rd"),
+            discord.SelectOption(label="絕區零", value="nap"),
             discord.SelectOption(label="星穹鐵道", value="hkrpg"),
             discord.SelectOption(label="未定事件簿", value="tot"),
         ],
         min_values=1,
-        max_values=4,
+        max_values=5,
         placeholder="請選擇遊戲 (可多選)：",
     )
     async def select_callback(self, interaction: discord.Interaction, select: discord.ui.Select):
@@ -46,7 +47,7 @@ class CookieModal(discord.ui.Modal, title="提交Cookie"):
         style=discord.TextStyle.short,
         required=False,
         min_length=30,
-        max_length=150,
+        max_length=500,
     )
 
     ltmid_v2: discord.ui.TextInput[discord.ui.Modal] = discord.ui.TextInput(

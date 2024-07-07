@@ -44,8 +44,6 @@ async def get_genshin_spiral_abyss(user_id: int, previous: bool = False) -> Gens
         查詢結果
     """
     client = await get_client(user_id)
-    # 為了刷新戰鬥數據榜，需要先對record card發出請求
-    await client.get_record_cards()
     abyss, characters = await asyncio.gather(
         client.get_genshin_spiral_abyss(client.uid or 0, previous=previous),
         client.get_genshin_characters(client.uid or 0),

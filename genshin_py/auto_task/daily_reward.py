@@ -31,6 +31,8 @@ class DailyReward:
     """簽到崩壞3的人數 dict[host, count]"""
     _starrail_count: ClassVar[dict[str, int]] = {}
     """簽到星穹鐵道的人數 dict[host, count]"""
+    _zzz_count: ClassVar[dict[str, int]] = {}
+    """簽到絕區零的人數 dict[host, count]"""
     _themis_count: ClassVar[dict[str, int]] = {}
     """簽到未定事件簿的人數 dict[host, count]"""
 
@@ -54,6 +56,8 @@ class DailyReward:
             cls._total = {}
             cls._honkai_count = {}
             cls._starrail_count = {}
+            cls._zzz_count = {}
+            cls._themis_count = {}
             daily_users = await Database.select_all(ScheduleDailyCheckin)
 
             # 將所有需要簽到的使用者放入佇列 (Producer)
@@ -73,10 +77,16 @@ class DailyReward:
 
             _log_message = (
                 f"自動簽到結束：總共 {sum(cls._total.values())} 人簽到，"
-                + f"其中 {sum(cls._honkai_count.values())} 人簽到崩壞3、{sum(cls._starrail_count.values())} 人簽到星穹鐵道\n"
+                + f"其中 {sum(cls._honkai_count.values())} 人簽到崩壞3、"
+                + f"{sum(cls._starrail_count.values())} 人簽到星穹鐵道、"
+                + f"{sum(cls._zzz_count.values())} 人簽到絕區零、"
+                + f"{sum(cls._themis_count.values())} 人簽到未定事件簿\n"
             )
             for host in cls._total.keys():
-                _log_message += f"- {host}：{cls._total.get(host)}、{cls._honkai_count.get(host)}、{cls._starrail_count.get(host)}\n"
+                _log_message += (
+                    f"- {host}：{cls._total.get(host)}、{cls._honkai_count.get(host)}、"
+                    + f"{cls._starrail_count.get(host)}、{cls._zzz_count.get(host)}\n"
+                )
             LOG.System(_log_message)
         except Exception as e:
             sentry_sdk.capture_exception(e)
@@ -118,6 +128,7 @@ class DailyReward:
         cls._total[host] = 0  # 初始化簽到人數
         cls._honkai_count[host] = 0  # 初始化簽到崩壞3的人數
         cls._starrail_count[host] = 0  # 初始化簽到星穹鐵道的人數
+        cls._zzz_count[host] = 0  # 初始化簽到絕區零的人數
         cls._themis_count[host] = 0  # 初始化簽到未定事件簿的人數
         MAX_API_ERROR_COUNT: Final[int] = 20  # 遠端 API 發生錯誤的最大次數
         api_error_count = 0  # 遠端 API 發生錯誤的次數
@@ -143,6 +154,7 @@ class DailyReward:
                     cls._total[host] += 1
                     cls._honkai_count[host] += int(user.has_honkai3rd)
                     cls._starrail_count[host] += int(user.has_starrail)
+                    cls._zzz_count[host] += int(user.has_zzz)
                     cls._themis_count[host] += int(user.has_themis) + int(user.has_themis_tw)
                     await asyncio.sleep(config.schedule_loop_delay)
             finally:
@@ -178,6 +190,7 @@ class DailyReward:
                 has_genshin=user.has_genshin,
                 has_honkai3rd=user.has_honkai3rd,
                 has_starrail=user.has_starrail,
+                has_zzz=user.has_zzz,
                 has_themis=user.has_themis,
                 has_themis_tw=user.has_themis_tw,
             )
@@ -200,10 +213,12 @@ class DailyReward:
                 "cookie_genshin": user_data.cookie_genshin,
                 "cookie_honkai3rd": user_data.cookie_honkai3rd,
                 "cookie_starrail": user_data.cookie_starrail,
+                "cookie_zzz": user_data.cookie_zzz,
                 "cookie_themis": user_data.cookie_themis,
                 "has_genshin": "true" if user.has_genshin else "false",
                 "has_honkai": "true" if user.has_honkai3rd else "false",
                 "has_starrail": "true" if user.has_starrail else "false",
+                "has_zzz": "true" if user.has_zzz else "false",
                 "has_themis": "true" if user.has_themis else "false",
                 "has_themis_tw": "true" if user.has_themis_tw else "false",
             }
