@@ -351,3 +351,23 @@ class StarrailShowcase(Base):
         """Mihomo API 資料"""
         data = zlib.decompress(self._raw_data).decode("utf-8")
         return StarrailInfoParsed.parse_raw(data)
+
+
+class ZZZScheduleNotes(Base):
+    """絕區零排程自動檢查即時便箋資料庫 Table"""
+
+    __tablename__ = "zzz_schedule_notes"
+
+    discord_id: Mapped[int] = mapped_column(primary_key=True)
+    """使用者 Discord ID"""
+    discord_channel_id: Mapped[int]
+    """發送通知訊息的 Discord 頻道的 ID"""
+    next_check_time: Mapped[datetime.datetime | None] = mapped_column(
+        insert_default=sqlalchemy.func.now(), default=None
+    )
+    """下次檢查的時間，當檢查時超過此時間才會對 Hoyolab 請求資料"""
+
+    threshold_battery: Mapped[int | None] = mapped_column(default=None)
+    """電量額滿之前幾小時發送提醒"""
+    check_daily_engagement_time: Mapped[datetime.datetime | None] = mapped_column(default=None)
+    """下次檢查今天的每日活躍還未完成的時間"""

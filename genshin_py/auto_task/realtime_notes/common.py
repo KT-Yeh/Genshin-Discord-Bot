@@ -4,11 +4,11 @@ from typing import NamedTuple, TypeVar
 import discord
 import genshin
 
-from database import Database, GenshinScheduleNotes, StarrailScheduleNotes
+from database import Database, GenshinScheduleNotes, StarrailScheduleNotes, ZZZScheduleNotes
 
-from ... import errors, get_genshin_notes, get_starrail_notes
+from ... import errors, get_genshin_notes, get_starrail_notes, get_zzz_notes
 
-T_User = TypeVar("T_User", GenshinScheduleNotes, StarrailScheduleNotes)
+T_User = TypeVar("T_User", GenshinScheduleNotes, StarrailScheduleNotes, ZZZScheduleNotes)
 
 
 class CheckResult(NamedTuple):
@@ -20,7 +20,7 @@ class CheckResult(NamedTuple):
 
 async def get_realtime_notes(
     user: T_User,
-) -> genshin.models.Notes | genshin.models.StarRailNote | None:
+) -> genshin.models.Notes | genshin.models.StarRailNote | genshin.models.ZZZNotes | None:
     """根據傳入的使用者取得即時便箋，若發生 InternalDatabaseError 以外的例外則拋出"""
     notes = None
     try:
@@ -28,6 +28,8 @@ async def get_realtime_notes(
             notes = await get_genshin_notes(user.discord_id)
         if isinstance(user, StarrailScheduleNotes):
             notes = await get_starrail_notes(user.discord_id)
+        if isinstance(user, ZZZScheduleNotes):
+            notes = await get_zzz_notes(user.discord_id)
     except Exception as e:
         # 當錯誤為 InternalDatabaseError 時，忽略並設定1小時後檢查
         if isinstance(e, errors.GenshinAPIException) and isinstance(

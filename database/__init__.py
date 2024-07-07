@@ -13,5 +13,6 @@ from .models import (
     StarrailScheduleNotes,
     StarrailShowcase,
     User,
+    ZZZScheduleNotes,
 )
 from .tools import Tool
