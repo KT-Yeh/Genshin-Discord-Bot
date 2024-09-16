@@ -31,18 +31,16 @@ def draw_basic_card(
     img = img.convert("RGBA")
 
     avatar: Image.Image = Image.open(BytesIO(avatar_bytes)).resize((250, 250))
-    draw_avatar(img, avatar, (70, 210))
+    draw_avatar(img, avatar, (70, 100))
 
-    draw_rounded_rect(img, (340, 270, 990, 460), radius=30, fill=(0, 0, 0, 120))
-    draw_rounded_rect(img, (90, 520, 990, 1810), radius=30, fill=(0, 0, 0, 120))
+    draw_rounded_rect(img, (340, 130, 990, 320), radius=30, fill=(0, 0, 0, 120))
+    draw_rounded_rect(img, (90, 380, 990, 1810), radius=30, fill=(0, 0, 0, 120))
 
     info = user_stats.info
-    draw_text(
-        img, (665, 335), info.nickname, "SourceHanSerifTC-Bold.otf", 88, (255, 255, 255, 255), "mm"
-    )
+    draw_text(img, (665, 195), info.nickname, "SourceHanSerifTC-Bold.otf", 88, (255, 255, 255, 255), "mm")
     draw_text(
         img,
-        (665, 415),
+        (665, 275),
         f"{get_server_name(info.server)}  Lv.{info.level}  UID:{uid}",
         "SourceHanSansTC-Medium.otf",
         40,
@@ -82,6 +80,7 @@ def draw_record_card(
         (s.electroculi, "雷神瞳"),
         (s.dendroculi, "草神瞳"),
         (s.hydroculi, "水神瞳"),
+        (s.pyroculi, "火神瞳"),
         (s.unlocked_waypoints, "解鎖傳送點"),
         (s.unlocked_domains, "解鎖秘境"),
         (s.spiral_abyss, "深境螺旋"),
@@ -97,7 +96,7 @@ def draw_record_card(
         row = int(n / 3)
         draw_text(
             img,
-            (245 + column * 295, 630 + row * 200),
+            (245 + column * 295, 500 + row * 210),
             str(stat[0]),
             "SourceHanSansTC-Bold.otf",
             80,
@@ -106,7 +105,7 @@ def draw_record_card(
         )
         draw_text(
             img,
-            (245 + column * 295, 700 + row * 200),
+            (245 + column * 295, 570 + row * 210),
             str(stat[1]),
             "SourceHanSansTC-Regular.otf",
             40,
@@ -151,8 +150,10 @@ def draw_exploration_card(
         9: ["楓丹", 0],
         12: ["沉玉谷·南陵", 0],
         13: ["沉玉谷·上谷", 0],
+        14: ["舊日之海", 0],
+        15: ["納塔", 0],
     }
-    offering_list = [["忍冬之樹", 0], ["神櫻眷顧", 0], ["流明石", 0], ["夢之樹", 0], ["露景泉", 0]]
+    offering_list = [["忍冬之樹", 0], ["神櫻眷顧", 0], ["流明石", 0], ["夢之樹", 0], ["露景泉", 0], ["煅石之火", 0]]
 
     for e in user_stats.explorations:
         if e.id not in explored_list:
@@ -169,6 +170,8 @@ def draw_exploration_card(
             offering_list[3][1] = e.offerings[0].level
         if e.id == 9 and len(e.offerings) >= 2:  # 9: 楓丹
             offering_list[4][1] = e.offerings[0].level
+        if e.id == 15 and len(e.offerings) >= 1:  # 15: 納塔
+            offering_list[5][1] = e.offerings[0].level
 
     stat_list: list[tuple[str, float, str]] = []  # (探索/等級, 數值, 地名)
     for id, e in explored_list.items():
@@ -181,7 +184,7 @@ def draw_exploration_card(
         row = int(n / 3)
         draw_text(
             img,
-            (245 + column * 295, 590 + row * 205),
+            (245 + column * 295, 430 + row * 200),
             stat[0],
             "SourceHanSansTC-Regular.otf",
             30,
@@ -190,7 +193,7 @@ def draw_exploration_card(
         )
         draw_text(
             img,
-            (245 + column * 295, 643 + row * 205),
+            (245 + column * 295, 483 + row * 200),
             f"{stat[1]:g}",
             "SourceHanSansTC-Bold.otf",
             82,
@@ -199,7 +202,7 @@ def draw_exploration_card(
         )
         draw_text(
             img,
-            (245 + column * 295, 710 + row * 205),
+            (245 + column * 295, 550 + row * 200),
             stat[2],
             "SourceHanSansTC-Regular.otf",
             45,
