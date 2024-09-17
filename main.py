@@ -36,7 +36,7 @@ class GenshinDiscordBot(commands.AutoShardedBot):
         await database.Database.init()
 
         # 初始化 genshin api 角色名字
-        await genshin.utility.update_characters_ambr(["zh-tw"])
+        await genshin.utility.update_characters_enka(["zh-tw"])
 
         # 從 cogs 資料夾載入所有 cog
         for filepath in Path("./cogs").glob("**/*cog.py"):

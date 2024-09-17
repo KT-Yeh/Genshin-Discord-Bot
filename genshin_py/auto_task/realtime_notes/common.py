@@ -37,6 +37,13 @@ async def get_realtime_notes(
         ):
             user.next_check_time = datetime.now() + timedelta(hours=1)
             await Database.insert_or_replace(user)
+        # 當錯誤為觸發圖形驗證錯誤時，設定24小時後檢查
+        elif isinstance(e, errors.GenshinAPIException) and isinstance(
+            e.origin, genshin.errors.GeetestError
+        ):
+            user.next_check_time = datetime.now() + timedelta(hours=24)
+            await Database.insert_or_replace(user)
+            raise e
         else:  # 當發生錯誤時，預計5小時後再檢查
             user.next_check_time = datetime.now() + timedelta(hours=5)
             await Database.insert_or_replace(user)
