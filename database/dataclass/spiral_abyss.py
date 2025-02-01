@@ -64,7 +64,7 @@ class CharacterData(BaseModel):
         角色命之座
     weapon: `Weapon`
         角色裝備的武器
-    artifacts: `list[Artifact]`
+    artifacts: `list[Artifact] | None = None`
         角色裝備的聖遺物
     """
 
@@ -78,7 +78,7 @@ class CharacterData(BaseModel):
     """角色命之座"""
     weapon: Weapon
     """角色裝備的武器"""
-    artifacts: list[Artifact]
+    artifacts: list[Artifact] | None = None
     """角色裝備的聖遺物"""
 
     class Config:
