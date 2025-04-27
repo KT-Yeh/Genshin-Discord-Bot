@@ -34,10 +34,18 @@ class ShowcaseCharactersDropdown(discord.ui.Select):
         index = int(self.values[0])
         if index >= 0:  # 角色資料
             await interaction.response.defer()
-            embed, file = await self.showcase.get_character_card_embed_file(index)
-            await interaction.edit_original_response(
-                embed=embed, view=ShowcaseView(self.showcase, index), attachments=[file]
-            )
+            try:
+                embed, file = await self.showcase.get_character_card_embed_file(index)
+                await interaction.edit_original_response(
+                    embed=embed, view=ShowcaseView(self.showcase, index), attachments=[file]
+                )
+            except Exception as e:
+                LOG.ErrorLog(interaction, e)
+                sentry_sdk.capture_exception(e)
+                embed = self.showcase.get_character_stat_embed(index)
+                await interaction.edit_original_response(
+                    embed=embed, view=ShowcaseView(self.showcase, index), attachments=[]
+                )
         elif index == -1:  # 玩家資料一覽
             embed = self.showcase.get_player_overview_embed()
             await interaction.response.edit_message(
