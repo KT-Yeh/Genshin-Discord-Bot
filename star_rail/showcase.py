@@ -124,7 +124,7 @@ class Showcase:
                 value=f"疊影：{light_cone.superimpose} 階\n等級：Lv. {light_cone.level}",
             )
         # 技能
-        traces_seen = set() # 記憶命途的憶靈技、憶靈天賦會有重複的 type_text
+        traces_seen = set()  # 記憶命途的憶靈技、憶靈天賦會有重複的 type_text
         embed.add_field(
             name="技能",
             value="\n".join(
