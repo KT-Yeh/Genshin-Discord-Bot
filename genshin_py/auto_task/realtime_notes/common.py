@@ -12,10 +12,11 @@ T_User = TypeVar("T_User", GenshinScheduleNotes, StarrailScheduleNotes, ZZZSched
 
 
 class CheckResult(NamedTuple):
-    """`tuple[str, embed]`: The return result of the check_xxx_notes function"""
+    """`tuple[str, embed, bool]`: The return result of the check_xxx_notes function"""
 
     message: str
     embed: discord.Embed
+    is_error: bool
 
 
 async def get_realtime_notes(

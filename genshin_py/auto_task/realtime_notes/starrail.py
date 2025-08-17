@@ -15,16 +15,16 @@ async def check_starrail_notes(user: StarrailScheduleNotes) -> CheckResult | Non
         notes = await get_realtime_notes(user)
     except Exception as e:
         if isinstance(e, errors.GenshinAPIException) and isinstance(e.origin, genshin.errors.GeetestError):
-            return CheckResult("星穹鐵道自動檢查即時便箋時發生錯誤，預計24小時後再檢查。", EmbedTemplate.error(e))
+            return CheckResult("星穹鐵道自動檢查即時便箋時發生錯誤，預計24小時後再檢查。", EmbedTemplate.error(e), True)
         else:
-            return CheckResult("星穹鐵道自動檢查即時便箋時發生錯誤，預計5小時後再檢查。", EmbedTemplate.error(e))
+            return CheckResult("星穹鐵道自動檢查即時便箋時發生錯誤，預計5小時後再檢查。", EmbedTemplate.error(e), True)
 
     if not isinstance(notes, genshin.models.StarRailNote):
         return None
 
     msg = await check_threshold(user, notes)
     embed = await parse_starrail_notes(notes, short_form=True)
-    return CheckResult(msg, embed)
+    return CheckResult(msg, embed, False)
 
 
 async def check_threshold(user: StarrailScheduleNotes, notes: genshin.models.StarRailNote) -> str:

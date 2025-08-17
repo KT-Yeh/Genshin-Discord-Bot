@@ -15,7 +15,7 @@ async def check_zzz_notes(user: ZZZScheduleNotes) -> CheckResult | None:
         notes = await get_realtime_notes(user)
     except Exception as e:
         return CheckResult(
-            "絕區零自動檢查即時便箋時發生錯誤，預計5小時後再檢查。", EmbedTemplate.error(e)
+            "絕區零自動檢查即時便箋時發生錯誤，預計5小時後再檢查。", EmbedTemplate.error(e), True
         )
 
     if not isinstance(notes, genshin.models.ZZZNotes):
@@ -23,7 +23,7 @@ async def check_zzz_notes(user: ZZZScheduleNotes) -> CheckResult | None:
 
     msg = await check_threshold(user, notes)
     embed = await parse_zzz_notes(notes)
-    return CheckResult(msg, embed)
+    return CheckResult(msg, embed, False)
 
 
 async def check_threshold(user: ZZZScheduleNotes, notes: genshin.models.ZZZNotes) -> str:

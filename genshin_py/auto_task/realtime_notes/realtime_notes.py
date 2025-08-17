@@ -88,20 +88,24 @@ class RealtimeNotes:
                 count += 1
             # 當有錯誤訊息或是即時便箋快要額滿時，向使用者發送訊息
             if r and len(r.message) > 0:
-                await cls._send_message(user, r.message, r.embed)
+                await cls._send_message(user, r)
             # 使用者之間的檢查間隔時間
             await asyncio.sleep(config.schedule_loop_delay)
         LOG.System(f"{game_name}自動檢查即時便箋結束，{count}/{len(user_ids)} 人已檢查")
 
     @classmethod
-    async def _send_message(cls, user: T_User, message: str, embed: discord.Embed) -> None:
+    async def _send_message(cls, user: T_User, result: CheckResult) -> None:
         """發送訊息提醒使用者"""
         bot = cls._bot
         try:
             _id = user.discord_channel_id
             channel = bot.get_channel(_id) or await bot.fetch_channel(_id)
             discord_user = bot.get_user(user.discord_id) or await bot.fetch_user(user.discord_id)
-            msg_sent = await channel.send(f"{discord_user.mention}，{message}", embed=embed)  # type: ignore
+            if result.is_error:
+                # 當發生錯誤時，不使用 @ 提及使用者
+                msg_sent = await channel.send(f"{discord_user.display_name}，{result.message}", embed=result.embed)  # type: ignore
+            else:
+                msg_sent = await channel.send(f"{discord_user.mention}，{result.message}", embed=result.embed)  # type: ignore
         except (
             discord.Forbidden,
             discord.NotFound,

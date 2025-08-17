@@ -14,14 +14,14 @@ async def check_genshin_notes(user: GenshinScheduleNotes) -> CheckResult | None:
     try:
         notes = await get_realtime_notes(user)
     except Exception as e:
-        return CheckResult("原神自動檢查即時便箋時發生錯誤，預計5小時後再檢查。", EmbedTemplate.error(e))
+        return CheckResult("原神自動檢查即時便箋時發生錯誤，預計5小時後再檢查。", EmbedTemplate.error(e), True)
 
     if not isinstance(notes, genshin.models.Notes):
         return None
 
     msg = await check_threshold(user, notes)
     embed = await parse_genshin_notes(notes, short_form=True)
-    return CheckResult(msg, embed)
+    return CheckResult(msg, embed, False)
 
 
 async def check_threshold(user: GenshinScheduleNotes, notes: genshin.models.Notes) -> str:
