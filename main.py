@@ -36,7 +36,10 @@ class GenshinDiscordBot(commands.AutoShardedBot):
         await database.Database.init()
 
         # 初始化 genshin api 角色名字
-        await genshin.utility.update_characters_enka(["zh-tw"])
+        try:
+            await genshin.utility.update_characters_enka(["zh-tw"])
+        except Exception as e:
+            LOG.Error(f"初始化 genshin api 角色名字失敗: {e}")
 
         # 從 cogs 資料夾載入所有 cog
         for filepath in Path("./cogs").glob("**/*cog.py"):
